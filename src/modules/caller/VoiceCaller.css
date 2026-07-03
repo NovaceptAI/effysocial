@@ -1,0 +1,124 @@
+/* EffySocial AI Caller — themed to the EffySocial palette (accent #5a48f5). */
+
+.vc {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 40px 28px 72px;
+  font-family: var(--font);
+  color: var(--ink);
+}
+
+.vc-top { margin-bottom: 28px; }
+.vc-eyebrow {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+.vc-top h1 {
+  margin: 0 0 12px;
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.vc-lead { margin: 0; color: var(--ink-soft); line-height: 1.55; max-width: 560px; }
+
+.vc-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 48px 32px 36px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+/* Pulsing orb */
+.vc-orb {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  transition: background 0.3s ease, transform 0.3s ease;
+}
+.vc-orb-core {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--accent);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.vc-orb.is-live { background: color-mix(in srgb, var(--accent) 22%, white); }
+.vc-orb.is-live::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  opacity: 0.35;
+  animation: vc-pulse 2s ease-out infinite;
+}
+.vc-orb.is-agent .vc-orb-core {
+  transform: scale(1.18);
+  box-shadow: 0 0 0 10px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+.vc-orb.is-user .vc-orb-core {
+  transform: scale(1.08);
+  box-shadow: 0 0 0 8px color-mix(in srgb, var(--ok) 30%, transparent);
+}
+@keyframes vc-pulse {
+  0% { transform: scale(1); opacity: 0.4; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+.vc-status { font-size: 1.05rem; font-weight: 600; min-height: 1.4em; }
+.vc-error {
+  font-size: 0.9rem;
+  color: #b42318;
+  background: #fef3f2;
+  border: 1px solid #fda29b;
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+}
+
+.vc-actions { margin-top: 4px; }
+.vc-btn {
+  border: none;
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 1.05rem;
+  font-weight: 700;
+  padding: 14px 34px;
+  border-radius: 999px;
+  transition: transform 0.15s ease, opacity 0.15s ease, background 0.15s ease;
+}
+.vc-btn:active { transform: scale(0.97); }
+.vc-btn-call { background: var(--accent); color: #fff; }
+.vc-btn-call:hover { background: var(--accent-ink); }
+.vc-btn-end { background: #d92d20; color: #fff; }
+.vc-btn-end:hover { background: #b42318; }
+
+.vc-hint { margin: 4px 0 0; font-size: 0.82rem; color: var(--ink-faint); }
+.vc-audio { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+.vc-back {
+  display: inline-block;
+  margin-top: 28px;
+  color: var(--ink-soft);
+  text-decoration: none;
+  font-weight: 600;
+}
+.vc-back:hover { color: var(--accent); }
+
+@media (prefers-reduced-motion: reduce) {
+  .vc-orb.is-live::before { animation: none; }
+  .vc-orb-core, .vc-btn { transition: none; }
+}

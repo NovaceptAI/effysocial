@@ -1,0 +1,95 @@
+/* EffySocial design system — light "creator studio": near-white canvas,
+   electric indigo accent, soft cards. Independent of the platform theme. */
+
+:root {
+  --bg: #faf6f0;            /* warm cream canvas */
+  --surface: #ffffff;
+  --surface-2: #f5efe6;     /* warm muted */
+  --ink: #2a2320;           /* warm charcoal */
+  --ink-soft: #6f645c;
+  --ink-faint: #a89d93;
+  --accent: #e84a33;        /* PRIMARY — coral */
+  --accent-soft: #ffe7e2;   /* light coral tint */
+  --accent-ink: #c2410c;    /* deep coral for text/links (AA on white) */
+  --ok: #0e9f6e;
+  --warn: #d97706;
+  --line: #ece2d6;          /* warm border */
+  --radius: 16px;
+  --radius-sm: 10px;
+  --shadow: 0 8px 28px rgba(42, 35, 32, 0.08);
+  --font: 'Manrope', system-ui, -apple-system, sans-serif;
+
+  /* ---- Bright Studio design system (additive) ---- */
+  /* Spark — coral warmth for highlights, AI/new tags, energy */
+  --spark: #ff6b5e;
+  --spark-soft: #ffe7e2;
+  --spark-deep: #c23a2e;           /* AA text on white */
+  /* Warm cream for alternating sections */
+  --cream: #fbf4ea;
+  /* Semantic */
+  --success: #0e9f6e;  --success-soft: #d6f3e7;
+  --warning: #d97706;  --warning-soft: #fdecd2;
+  --error: #e5484d;    --error-soft: #fde7e7;
+  --info: #3b82f6;     --info-soft: #e3edff;
+  /* Signature gradient */
+  --aurora: linear-gradient(100deg, #ff6b5e 0%, #fb7185 48%, #f59e0b 100%);
+  /* Data-viz categorical palette (coral-led; cool hues kept for chart legibility only) */
+  --dv-1: #ff6b5e;  --dv-2: #f59e0b;  --dv-3: #14b8a6;
+  --dv-4: #ec4899;  --dv-5: #38bdf8;  --dv-6: #475569;
+  /* Radius scale */
+  --r-xs: 8px;  --r-sm: 10px;  --r-md: 14px;  --r-lg: 18px;  --r-xl: 24px;
+  /* Elevation scale */
+  --e1: 0 1px 2px rgba(42, 35, 32, 0.06), 0 1px 3px rgba(42, 35, 32, 0.05);
+  --e2: 0 8px 28px rgba(42, 35, 32, 0.08);
+  --e3: 0 20px 48px rgba(42, 35, 32, 0.12);
+  /* Tabular figures for metrics */
+  --num: 'Manrope', ui-monospace, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html { background: var(--bg); }
+
+/* Premium background: warm cream base + soft coral/amber light-blooms +
+   fine film grain. Fixed so it reads as depth, not scroll texture. */
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100dvh;
+  color: var(--ink);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  background-color: var(--bg);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E"),
+    radial-gradient(900px 560px at 6% -12%, rgba(255, 107, 94, 0.14), transparent 60%),
+    radial-gradient(820px 600px at 102% -6%, rgba(245, 158, 11, 0.12), transparent 58%),
+    radial-gradient(1000px 720px at 50% 118%, rgba(255, 138, 101, 0.10), transparent 60%);
+  background-repeat: repeat, no-repeat, no-repeat, no-repeat;
+  background-size: 200px 200px, auto, auto, auto;
+  background-attachment: fixed;
+}
+
+button {
+  font-family: var(--font);
+  cursor: pointer;
+}
+
+input, select, textarea {
+  font-family: var(--font);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+::selection { background: var(--accent-soft); }

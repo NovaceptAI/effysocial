@@ -1,0 +1,16 @@
+# Dependencies & build artifacts
+node_modules/
+dist/
+
+# Environment (commit .env.example instead)
+.env
+.env.local
+
+# Binary deliverables & assets not needed in source control
+*.docx
+*.pdf
+mahesh.png
+
+# Editor/OS noise
+.DS_Store
+*.log
