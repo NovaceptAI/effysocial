@@ -99,5 +99,22 @@ Chat: deterministic keyword router picks one of 8 agents; the Groq reply is grou
 
 **Lead shape:** `{ id, workspaceId, campaignId?, conversationId?, name, phone, email, source, channel, interest, stage, quality, value, owner, notes[], lostReason, created }` · stages: new/contacted/qualified/appointment/proposal/won/lost.
 
+## Convert — Forms  ([Convert-Forms.md](modules/Convert-Forms.md))
+Authed:
+| Method | Path | Auth | Body → Response |
+|---|---|---|---|
+| GET | `/api/effy/forms?workspace=ws_N` | 🔒🏢 | → `{forms[]}` (with submission counts) |
+| POST | `/api/effy/forms` | 🔒🏢 write-role | `{workspace, name, type?, fields?, campaignId?, consent_text?, thankyou?}` → `{form}` (slug generated) |
+| PATCH | `/api/effy/forms/:id` | 🔒🏢 write-role | `{name?, fields?, status?, consent_text?, thankyou?, campaignId?}` → `{form}` |
+| GET | `/api/effy/forms/:id/submissions` | 🔒🏢 | → `{submissions[]}` |
+
+Public (published forms only):
+| Method | Path | Auth | Body → Response |
+|---|---|---|---|
+| GET | `/api/effy/public/forms/:slug` | 🔓 | → `{form:{name,type,fields,consentText}}` · 404 if draft |
+| POST | `/api/effy/public/forms/:slug/submit` | 🔓 | `{data, utm:{source,medium,campaign}, website:""}` → `{thankyou}` — creates **lead** (source=form, channel=utm_source) + submission; honeypot `website` swallowed silently; required fields → 400 |
+
+Hosted form page: `/f/:slug` (auto-captures `utm_*` query params).
+
 ## Planned (not yet implemented)
 Brand Brain **RAG over uploaded docs** (pgvector, enabled in DB) pending an embedding provider · RBAC per-feature enforcement · Effy AI agents · Phase-2 modules (Advertise/Convert). This file gets a new section as each ships.

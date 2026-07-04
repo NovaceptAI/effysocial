@@ -26,6 +26,7 @@ One doc per module describing **what it does** and **how it connects to the plat
 | Administration (Integrations, Team) | [Administration.md](Administration.md) | ✅ Integrations + Team |
 | Effy AI assistant & agents | [Effy-AI.md](Effy-AI.md) | ✅ v1 |
 | Convert — Leads & Pipeline | [Convert-Leads.md](Convert-Leads.md) | ✅ slice 1 |
+| Convert — Forms | [Convert-Forms.md](Convert-Forms.md) | ✅ slice 2 |
 | …(remaining per BUILD_TRACKER) | | ⬜ |
 
 Source of truth for requirements: [../../EffySocial_Claude_Design_Prompt.md](../../EffySocial_Claude_Design_Prompt.md).

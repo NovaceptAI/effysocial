@@ -68,4 +68,16 @@ export const effyApi = {
   updateLead: (id, payload) =>
     http(`/leads/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.lead),
   convertLead: (conversationId) => http(`/conversations/${conversationId}/convert-lead`, { method: 'POST' }),
+
+  // Convert — forms
+  listForms: (workspaceId) => http(`/forms?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.forms),
+  createForm: (payload) =>
+    http('/forms', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.form),
+  updateForm: (id, payload) =>
+    http(`/forms/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.form),
+  formSubmissions: (id) => http(`/forms/${id}/submissions`).then((d) => d.submissions),
+  // public (no auth)
+  publicForm: (slug) => http(`/public/forms/${slug}`).then((d) => d.form),
+  publicSubmit: (slug, payload) =>
+    http(`/public/forms/${slug}/submit`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
 };

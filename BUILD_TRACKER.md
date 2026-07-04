@@ -84,7 +84,7 @@ Living status of every module/screen. **Update the Status column as we build.**
 | Screen | Route | Status |
 |---|---|---|
 | Landing Pages + builder | `/app/landing` | 🧩 P2 |
-| Forms + builder | `/app/forms` | 🧩 P2 |
+| Forms + builder | `/app/forms` | ✅ P2 | list + field editor + publish + share `/f/:slug`; submissions → leads w/ UTM |
 | Link-in-bio | — | ⬜ P2 |
 | Lead Pipeline | `/app/pipeline` | ✅ P2 | kanban+table, stage moves, add lead, value totals; Inbox/EngageLeads convert wired |
 | Lead detail | — | ⬜ P2 |
@@ -139,6 +139,7 @@ All additive + namespaced `effy_*` / `/api/effy/*`. No existing tables/tools tou
 | Engage — real persistence | ✅ effy_conversations + effy_reviews + reply/close/respond endpoints; Inbox/Comments/EngageLeads/Reviews live with **working reply & respond** |
 | Effy AI — assistant runtime | ✅ `/api/effy/assistant/chat` + `/recommendations`; grounded chat verified with real numbers |
 | Leads (Convert) — real persistence | ✅ effy_leads + `/api/effy/leads` (list/create/patch) + convert-from-conversation (idempotent, attributed) |
+| Forms — real persistence + public capture | ✅ effy_forms/submissions + authed CRUD + public GET/submit (honeypot, UTM → lead) + hosted `/f/:slug` page |
 | Organic Analytics — real endpoint | ✅ `/api/effy/analytics/organic` — top posts/reach aggregate real post metrics; series flagged `derived` until channel sync |
 | RBAC enforcement | ✅ View-only = read-only; Client approver = approval actions only; enforced on every write endpoint |
 | Other module data endpoints (Brand Brain, Publish, Engage, Analytics) | ⬜ (still mock-derived off real workspace) |
@@ -158,9 +159,10 @@ Suite lives in `novalab-engine/tests/` · run: `PYTHONPATH=. myenv/bin/pytest te
 | Effy AI (router, grounding, rec rules, severity) | ✅ `test_effy_assistant.py` |
 | RBAC (view-only blocked, approver approval-only, writers pass) | ✅ `test_effy_rbac.py` |
 | Leads (CRUD, stages, convert idempotency+attribution, RBAC) | ✅ `test_effy_leads.py` |
+| Forms (publish gate, public submit→lead+UTM, honeypot, validation) | ✅ `test_effy_forms.py` |
 | Live external smoke (Groq key/gen, API health) — opt-in `RUN_SMOKE=1` | ✅ `test_smoke_external.py` |
 | Frontend (Vitest) | ⬜ later |
 
 **Rule going forward: every new backend slice ships with its tests** (add cases to the tenancy matrix + a contract file per module).
 
-_Last updated: **PHASE 1 COMPLETE** — all P1 screens real, 8 backend modules live (auth/tenancy/email, Campaigns, Brand Brain, AI Studio, Publish, Engage, Analytics, Effy AI), RBAC enforced, agency overview + notifications + workspace-select shipped, 95 tests green. Right context panel partially covered by the Effy drawer. Phase 2 STARTED: slice 1 (Lead Pipeline + convert-from-conversation) shipped, 100 tests green. Next P2 slices: Forms, Landing pages, ad dashboards (mock adapter), Tracking Centre, follow-ups._
+_Last updated: **PHASE 1 COMPLETE** — all P1 screens real, 8 backend modules live (auth/tenancy/email, Campaigns, Brand Brain, AI Studio, Publish, Engage, Analytics, Effy AI), RBAC enforced, agency overview + notifications + workspace-select shipped, 95 tests green. Right context panel partially covered by the Effy drawer. Phase 2 slices 1–2 shipped (Lead Pipeline, Forms w/ public capture), 106 tests green. Next P2 slices: Landing pages, ad dashboards (mock adapter), Tracking Centre, follow-ups._
