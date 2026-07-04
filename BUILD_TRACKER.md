@@ -73,7 +73,7 @@ Living status of every module/screen. **Update the Status column as we build.**
 ## Advertise (spec §13 · Phase 2–3)
 | Screen | Route | Status |
 |---|---|---|
-| Ad dashboard / Campaigns | `/app/ads` | 🧩 P2 |
+| Ad dashboard / Campaigns | `/app/ads` | ✅ P2 | KPIs + spend/leads chart + campaign→adset→ad drill-down; mock adapter, honest banner |
 | Creatives | `/app/creatives` | 🧩 P2 |
 | Audiences | `/app/audiences` | 🧩 P3 |
 | Budgets | `/app/budgets` | 🧩 P3 |
@@ -143,7 +143,7 @@ All additive + namespaced `effy_*` / `/api/effy/*`. No existing tables/tools tou
 | Organic Analytics — real endpoint | ✅ `/api/effy/analytics/organic` — top posts/reach aggregate real post metrics; series flagged `derived` until channel sync |
 | RBAC enforcement | ✅ View-only = read-only; Client approver = approval actions only; enforced on every write endpoint |
 | Other module data endpoints (Brand Brain, Publish, Engage, Analytics) | ⬜ (still mock-derived off real workspace) |
-| Integration-adapter layer (mock→real providers) | ⬜ |
+| Integration-adapter layer (mock→real providers) | ✅ (v1) AdsManager: MockAdsProvider live behind `get_ads_provider()`; Meta/Google implement same interface in Phase 3 |
 | AI agent runtime (Groq + Brand Brain RAG via pgvector) | ⬜ |
 | Celery jobs / webhooks | ⬜ |
 
@@ -160,9 +160,10 @@ Suite lives in `novalab-engine/tests/` · run: `PYTHONPATH=. myenv/bin/pytest te
 | RBAC (view-only blocked, approver approval-only, writers pass) | ✅ `test_effy_rbac.py` |
 | Leads (CRUD, stages, convert idempotency+attribution, RBAC) | ✅ `test_effy_leads.py` |
 | Forms (publish gate, public submit→lead+UTM, honeypot, validation) | ✅ `test_effy_forms.py` |
+| Ads adapter (determinism, shape, realistic-range guards) | ✅ `test_effy_ads.py` |
 | Live external smoke (Groq key/gen, API health) — opt-in `RUN_SMOKE=1` | ✅ `test_smoke_external.py` |
 | Frontend (Vitest) | ⬜ later |
 
 **Rule going forward: every new backend slice ships with its tests** (add cases to the tenancy matrix + a contract file per module).
 
-_Last updated: **PHASE 1 COMPLETE** — all P1 screens real, 8 backend modules live (auth/tenancy/email, Campaigns, Brand Brain, AI Studio, Publish, Engage, Analytics, Effy AI), RBAC enforced, agency overview + notifications + workspace-select shipped, 95 tests green. Right context panel partially covered by the Effy drawer. Phase 2 slices 1–2 shipped (Lead Pipeline, Forms w/ public capture), 106 tests green. Next P2 slices: Landing pages, ad dashboards (mock adapter), Tracking Centre, follow-ups._
+_Last updated: **PHASE 1 COMPLETE** — all P1 screens real, 8 backend modules live (auth/tenancy/email, Campaigns, Brand Brain, AI Studio, Publish, Engage, Analytics, Effy AI), RBAC enforced, agency overview + notifications + workspace-select shipped, 95 tests green. Right context panel partially covered by the Effy drawer. Phase 2 slices 1–3 shipped (Lead Pipeline, Forms, Ad Dashboard + adapter pattern), 110 tests green. Next P2 slices: Landing pages, Tracking Centre, follow-ups._

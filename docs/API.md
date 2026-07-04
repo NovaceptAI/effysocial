@@ -116,5 +116,12 @@ Public (published forms only):
 
 Hosted form page: `/f/:slug` (auto-captures `utm_*` query params).
 
+## Advertise — Ad Dashboard  ([Advertise-Dashboard.md](modules/Advertise-Dashboard.md))
+| Method | Path | Auth | Response |
+|---|---|---|---|
+| GET | `/api/effy/ads/dashboard?workspace=ws_N` | 🔒🏢 | `{provider, totals:{spend,impressions,reach,cpm,clicks,ctr,cpc,leads,cpl,roas,budget,pacing}, series[], campaigns[{...adsets[{...ads[]}]}]}` |
+
+First use of the **integration-adapter pattern**: `get_ads_provider(workspace)` returns `MockAdsProvider` (deterministic, workspace-seeded, realistic economics, flagged `provider:"mock"`) until real Meta/Google providers land in Phase 3 behind the same interface.
+
 ## Planned (not yet implemented)
 Brand Brain **RAG over uploaded docs** (pgvector, enabled in DB) pending an embedding provider · RBAC per-feature enforcement · Effy AI agents · Phase-2 modules (Advertise/Convert). This file gets a new section as each ships.

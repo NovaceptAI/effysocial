@@ -34,6 +34,7 @@ import EngageLeads from './pages/EngageLeads';
 import WorkspaceSelect from './pages/WorkspaceSelect';
 import Pipeline from './pages/Pipeline';
 import Forms from './pages/Forms';
+import AdsDashboard from './pages/AdsDashboard';
 import ModulePlaceholder from './pages/ModulePlaceholder';
 
 const queryClient = new QueryClient();
@@ -47,7 +48,7 @@ const BUILT = new Set([
   '/app/plan', '/app/trends', '/app/competitors', '/app/listening',
   '/app/ideas', '/app/media', '/app/templates',
   '/app/billing', '/app/settings', '/app/comments', '/app/engage-leads',
-  '/app/pipeline', '/app/forms',
+  '/app/pipeline', '/app/forms', '/app/ads',
 ]);
 
 // Strip the "/app" prefix to get the nested route path for each nav item.
@@ -89,6 +90,7 @@ export default function AppRoot() {
             <Route path="workspaces" element={<WorkspaceSelect />} />
             <Route path="pipeline" element={<Pipeline />} />
             <Route path="forms" element={<Forms />} />
+            <Route path="ads" element={<AdsDashboard />} />
             {NAV_ITEMS.filter((i) => !BUILT.has(i.to)).map((i) => (
               <Route key={i.to} path={childPath(i.to)} element={<ModulePlaceholder />} />
             ))}
