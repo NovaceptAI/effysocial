@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Search, Plus, Sparkles, Bell, HelpCircle, ChevronDown, Calendar, Check, LogOut, AlertTriangle, Info, ShieldAlert, CheckSquare } from 'lucide-react';
+import { Search, Plus, Sparkles, Bell, HelpCircle, ChevronDown, Calendar, Check, LogOut, AlertTriangle, Info, ShieldAlert, CheckSquare, Menu } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useAppAuth } from '../context/AppAuth';
 import { usePosts } from '../api/hooks';
@@ -69,7 +69,7 @@ function Notifications() {
   );
 }
 
-export default function TopBar({ onOpenPalette, onOpenAssistant }) {
+export default function TopBar({ onOpenPalette, onOpenAssistant, onOpenNav }) {
   const { org, user, workspaces, workspace, setWorkspaceId } = useWorkspace();
   const { user: authUser, logout } = useAppAuth();
   const [wsOpen, setWsOpen] = useState(false);
@@ -80,17 +80,22 @@ export default function TopBar({ onOpenPalette, onOpenAssistant }) {
   const createItems = ['Campaign', 'Social post', 'Ad creative', 'Landing page', 'Form', 'Report', 'Automation rule', 'Client workspace'];
 
   return (
-    <header className="h-16 shrink-0 sticky top-0 z-20 bg-canvas/70 backdrop-blur-xl border-b border-hair flex items-center gap-3 px-6">
+    <header className="h-16 shrink-0 sticky top-0 z-20 bg-canvas/70 backdrop-blur-xl border-b border-hair flex items-center gap-2 sm:gap-3 px-3 sm:px-6">
+      {/* Mobile menu (opens nav drawer) */}
+      <button onClick={onOpenNav} className="md:hidden grid place-items-center w-9 h-9 rounded-lg hover:bg-surface2 transition text-ink-soft shrink-0" title="Menu">
+        <Menu className="w-5 h-5" />
+      </button>
+
       {/* Workspace switcher */}
-      <div className="relative">
+      <div className="relative shrink-0">
         <button
           onClick={() => setWsOpen((v) => !v)}
-          className="flex items-center gap-2.5 pl-1.5 pr-2.5 py-1.5 rounded-lg hover:bg-surface2 transition"
+          className="flex items-center gap-2.5 pl-1.5 pr-2 sm:pr-2.5 py-1.5 rounded-lg hover:bg-surface2 transition"
         >
           <span className="grid place-items-center w-8 h-8 rounded-lg text-lg" style={{ background: workspace.accent + '22' }}>{workspace.logo}</span>
-          <span className="text-left leading-tight">
-            <span className="block text-sm font-bold text-ink">{workspace.name}</span>
-            <span className="block text-[0.7rem] text-ink-faint">{org.name}</span>
+          <span className="hidden sm:block text-left leading-tight max-w-[10rem]">
+            <span className="block text-sm font-bold text-ink truncate">{workspace.name}</span>
+            <span className="block text-[0.7rem] text-ink-faint truncate">{org.name}</span>
           </span>
           <ChevronDown className="w-4 h-4 text-ink-faint" />
         </button>
@@ -114,14 +119,17 @@ export default function TopBar({ onOpenPalette, onOpenAssistant }) {
         </Dropdown>
       </div>
 
-      {/* Command / search */}
+      {/* Command / search — full bar on sm+, icon-only on mobile */}
       <button
         onClick={onOpenPalette}
-        className="flex-1 max-w-md flex items-center gap-2 px-3 py-2 rounded-lg bg-surface2 border border-line text-ink-faint text-sm hover:border-coral transition"
+        className="hidden sm:flex flex-1 max-w-md items-center gap-2 px-3 py-2 rounded-lg bg-surface2 border border-line text-ink-faint text-sm hover:border-coral transition"
       >
         <Search className="w-4 h-4" />
         <span className="flex-1 text-left">Search or jump to…</span>
         <kbd className="text-[0.68rem] font-semibold bg-surface border border-line rounded px-1.5 py-0.5">⌘K</kbd>
+      </button>
+      <button onClick={onOpenPalette} title="Search" className="sm:hidden grid place-items-center w-9 h-9 rounded-lg hover:bg-surface2 transition text-ink-soft">
+        <Search className="w-[18px] h-[18px]" />
       </button>
 
       <div className="flex-1" />
@@ -133,8 +141,8 @@ export default function TopBar({ onOpenPalette, onOpenAssistant }) {
 
       {/* Create */}
       <div className="relative">
-        <button onClick={() => setCreateOpen((v) => !v)} className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-coral text-white text-sm font-bold shadow-[0_8px_20px_rgba(232,74,51,0.24)] hover:-translate-y-0.5 transition">
-          <Plus className="w-4 h-4" /> Create
+        <button onClick={() => setCreateOpen((v) => !v)} className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-lg bg-coral-btn text-white text-sm font-bold shadow-coral hover:shadow-coral-lg hover:brightness-105 transition-all">
+          <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Create</span>
         </button>
         <Dropdown open={createOpen} onClose={() => setCreateOpen(false)} className="right-0 w-52">
           {createItems.map((c) => (
@@ -147,7 +155,7 @@ export default function TopBar({ onOpenPalette, onOpenAssistant }) {
         <Sparkles className="w-[18px] h-[18px]" />
       </button>
       <Notifications />
-      <button title="Help" className="grid place-items-center w-9 h-9 rounded-lg hover:bg-surface2 transition text-ink-soft">
+      <button title="Help" className="hidden sm:grid place-items-center w-9 h-9 rounded-lg hover:bg-surface2 transition text-ink-soft">
         <HelpCircle className="w-[18px] h-[18px]" />
       </button>
       <div className="relative">

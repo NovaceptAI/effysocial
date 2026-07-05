@@ -13,7 +13,7 @@ const loadOpen = () => {
   try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch { return {}; }
 };
 
-export default function NavRail() {
+export default function NavRail({ mobileOpen = false, onNavigate }) {
   const { org } = useWorkspace();
   const isAgency = org?.type === 'agency';
   // Default: Overview/Strategy/Content/Publish open; others collapsed.
@@ -31,7 +31,14 @@ export default function NavRail() {
   });
 
   return (
-    <nav className="w-[248px] shrink-0 h-dvh sticky top-0 bg-rail text-rail-ink flex flex-col border-r border-black/20">
+    <nav className={cn(
+      'w-[248px] shrink-0 bg-rail text-rail-ink flex flex-col border-r border-black/20',
+      // Mobile: off-canvas drawer that slides in over a backdrop.
+      'fixed inset-y-0 left-0 z-50 h-dvh transition-transform duration-300 ease-out',
+      // Desktop (md+): a static sticky sidebar, always visible.
+      'md:sticky md:top-0 md:z-auto md:translate-x-0 md:transition-none',
+      mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full',
+    )}>
       <div className="flex items-center gap-2.5 px-5 h-16 border-b border-rail-line/70">
         <span className="grid place-items-center w-8 h-8 rounded-[10px] bg-aurora text-white text-base shadow-[0_4px_14px_-2px_rgba(232,74,51,0.55)]">✦</span>
         <span className="font-display font-semibold text-[1.2rem] tracking-tight text-white">EffySocial</span>
@@ -54,6 +61,7 @@ export default function NavRail() {
                     <NavLink
                       to={item.to}
                       end={item.end}
+                      onClick={onNavigate}
                       className={({ isActive }) => cn(
                         'group relative flex items-center gap-2.5 px-3 py-2 rounded-[10px] text-sm font-medium transition-all duration-200',
                         isActive

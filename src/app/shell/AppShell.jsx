@@ -29,13 +29,22 @@ function VerifyBanner() {
 export default function AppShell() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
   return (
     <div className="app-root flex min-h-dvh bg-canvas text-ink">
-      <NavRail />
+      <NavRail mobileOpen={navOpen} onNavigate={() => setNavOpen(false)} />
+      {/* Mobile drawer backdrop */}
+      {navOpen && (
+        <div className="fixed inset-0 z-40 bg-ink/40 backdrop-blur-sm md:hidden" onClick={() => setNavOpen(false)} />
+      )}
       <div className="flex-1 min-w-0 flex flex-col">
-        <TopBar onOpenPalette={() => setPaletteOpen(true)} onOpenAssistant={() => setAssistantOpen(true)} />
+        <TopBar
+          onOpenPalette={() => setPaletteOpen(true)}
+          onOpenAssistant={() => setAssistantOpen(true)}
+          onOpenNav={() => setNavOpen(true)}
+        />
         <VerifyBanner />
-        <main className="flex-1 min-w-0 p-6 max-w-[1400px] w-full mx-auto">
+        <main className="flex-1 min-w-0 p-4 sm:p-6 max-w-[1400px] w-full mx-auto">
           <Outlet />
         </main>
       </div>
