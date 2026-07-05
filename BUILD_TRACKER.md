@@ -83,22 +83,22 @@ Living status of every module/screen. **Update the Status column as we build.**
 ## Convert (spec §14 · Phase 2)
 | Screen | Route | Status |
 |---|---|---|
-| Landing Pages + builder | `/app/landing` | 🧩 P2 |
+| Landing Pages + builder | `/app/landing` | ✅ P2 | section editor (hero/features/testimonial/CTAs) + AI copy + publish + hosted `/p/:slug` w/ views + embedded form → leads w/ UTM |
 | Forms + builder | `/app/forms` | ✅ P2 | list + field editor + publish + share `/f/:slug`; submissions → leads w/ UTM |
-| Link-in-bio | — | ⬜ P2 |
+| Link-in-bio | `/app/bio` | ✅ P2 | profile/theme/socials/links editor + publish + hosted `/b/:slug` w/ views + per-link click analytics + form → leads w/ UTM |
 | Lead Pipeline | `/app/pipeline` | ✅ P2 | kanban+table, stage moves, add lead, value totals; Inbox/EngageLeads convert wired |
-| Lead detail | — | ⬜ P2 |
-| Follow-ups (workflow builder) | `/app/followups` | 🧩 P2 |
-| Conversion Tracking Centre | `/app/tracking` | 🧩 P2 |
+| Lead detail | `/app/pipeline/:id` | ✅ P2 | attribution (campaign/form+UTM/conversation), duplicates, follow-up runs, notes, §14.7 outcomes → mock offline-conversion signals |
+| Follow-ups (workflow builder) | `/app/followups` | ✅ P2 | trigger/condition/delay/action blocks, activate/pause, dry-run preview, per-lead run log; fires on lead create + stage change (mock messaging) |
+| Conversion Tracking Centre | `/app/tracking` | ✅ P2 | source diagnostics (status/events/match quality/dupes/consent) + test-event tool + UTM coverage + domain + fix recs |
 
 ## Analytics (spec §15)
 | Screen | Route | Status |
 |---|---|---|
 | Organic | `/app/analytics/organic` | ✅ 🔌 P1 | KPIs, growth/reach charts, what's-working, top posts, demographics, best-times heatmap |
-| Advertising | `/app/analytics/ads` | 🧩 P2 |
-| Leads | `/app/analytics/leads` | 🧩 P2 |
-| Revenue | `/app/analytics/revenue` | 🧩 P2 |
-| Creative performance | `/app/analytics/creative` | 🧩 P2 |
+| Advertising | `/app/analytics/ads` | ✅ P2 | channel comparison (spend/leads chart + CPL/CTR/ROAS scorecard) + per-campaign spend pacing w/ near-cap flags |
+| Leads | `/app/analytics/leads` | ✅ P2 | real-pipeline KPIs, stage funnel, by source/campaign, quality mix, outcomes, lost reasons |
+| Revenue | `/app/analytics/revenue` | ✅ P2 | attributed revenue (won + purchase-completed), CAC/ROAS off adapter spend, by channel/campaign (last-touch) |
+| Creative performance | `/app/analytics/creative` | ✅ P2 | attribute analysis (best format, avg CTR, fatigue count) + sortable creative cards (CTR/CPL/spend) |
 | Reports list + builder + client view | `/app/reports` | ✅ 🔌 P1 | saved list + builder w/ sections, white-label, AI summary, PDF/share |
 
 ## Administration (spec §17)
@@ -139,8 +139,13 @@ All additive + namespaced `effy_*` / `/api/effy/*`. No existing tables/tools tou
 | Engage — real persistence | ✅ effy_conversations + effy_reviews + reply/close/respond endpoints; Inbox/Comments/EngageLeads/Reviews live with **working reply & respond** |
 | Effy AI — assistant runtime | ✅ `/api/effy/assistant/chat` + `/recommendations`; grounded chat verified with real numbers |
 | Leads (Convert) — real persistence | ✅ effy_leads + `/api/effy/leads` (list/create/patch) + convert-from-conversation (idempotent, attributed) |
+| Lead detail + outcomes — closed loop (§14.7) | ✅ `GET /leads/:id` (attribution, duplicates, follow-up runs, offline signals) + PATCH outcome → note + mock offline-conversion `effy_tracking_events` row (real Meta/Google uploads Phase 3) |
 | Forms — real persistence + public capture | ✅ effy_forms/submissions + authed CRUD + public GET/submit (honeypot, UTM → lead) + hosted `/f/:slug` page |
+| Landing pages — real persistence + public page | ✅ effy_landing_pages + authed CRUD + Groq AI copy (Brand-Brain-grounded) + public GET w/ view counting + hosted `/p/:slug` page (embedded form reuses Forms flow) |
+| Conversion Tracking Centre — live diagnostics | ✅ effy_tracking_events + `/api/effy/tracking` (native sources computed from real forms/landing/leads data; pixels via mock adapter) + test-event tool |
+| Follow-up automation — engine + runs | ✅ effy_followup_workflows/runs + `/api/effy/followups` CRUD/runs/dry-run; synchronous engine hooked into lead create/convert/stage-change + form submit; messaging via mock adapter until Phase 3 |
 | Organic Analytics — real endpoint | ✅ `/api/effy/analytics/organic` — top posts/reach aggregate real post metrics; series flagged `derived` until channel sync |
+| Analytics expansion — leads/revenue/creative | ✅ `/api/effy/analytics/leads|revenue|creative` — lead/revenue aggregate real `effy_leads` (funnel, source/campaign rollups, last-touch revenue, CAC/ROAS); creative + spend via ads adapter (`spendProvider:"mock"` until Phase 3) |
 | RBAC enforcement | ✅ View-only = read-only; Client approver = approval actions only; enforced on every write endpoint |
 | Other module data endpoints (Brand Brain, Publish, Engage, Analytics) | ⬜ (still mock-derived off real workspace) |
 | Integration-adapter layer (mock→real providers) | ✅ (v1) AdsManager: MockAdsProvider live behind `get_ads_provider()`; Meta/Google implement same interface in Phase 3 |
@@ -161,9 +166,15 @@ Suite lives in `novalab-engine/tests/` · run: `PYTHONPATH=. myenv/bin/pytest te
 | Leads (CRUD, stages, convert idempotency+attribution, RBAC) | ✅ `test_effy_leads.py` |
 | Forms (publish gate, public submit→lead+UTM, honeypot, validation) | ✅ `test_effy_forms.py` |
 | Ads adapter (determinism, shape, realistic-range guards) | ✅ `test_effy_ads.py` |
+| Landing pages (CRUD, publish gate, view counting, form embed, AI copy mocked) | ✅ `test_effy_landing.py` |
+| Tracking Centre (diagnostics from real data, UTM coverage, recs, test-event) | ✅ `test_effy_tracking.py` |
+| Follow-ups (CRUD/validation, trigger matching, engine side effects, dry-run) | ✅ `test_effy_followups.py` |
+| Lead detail (attribution, duplicates, runs, outcome marking + signals) | ✅ `test_effy_leads.py` |
+| Link-in-bio (CRUD, publish gate, public payload, click tracking, form gating) | ✅ `test_effy_bio.py` |
+| Analytics expansion (lead funnel/rollups, revenue attribution, creative flatten) | ✅ `test_effy_analytics.py` |
 | Live external smoke (Groq key/gen, API health) — opt-in `RUN_SMOKE=1` | ✅ `test_smoke_external.py` |
 | Frontend (Vitest) | ⬜ later |
 
 **Rule going forward: every new backend slice ships with its tests** (add cases to the tenancy matrix + a contract file per module).
 
-_Last updated: **PHASE 1 COMPLETE** — all P1 screens real, 8 backend modules live (auth/tenancy/email, Campaigns, Brand Brain, AI Studio, Publish, Engage, Analytics, Effy AI), RBAC enforced, agency overview + notifications + workspace-select shipped, 95 tests green. Right context panel partially covered by the Effy drawer. Phase 2 slices 1–3 shipped (Lead Pipeline, Forms, Ad Dashboard + adapter pattern), 110 tests green. Next P2 slices: Landing pages, Tracking Centre, follow-ups._
+_Last updated: **PHASE 2 COMPLETE** — all P1 screens real, 8 backend modules live (auth/tenancy/email, Campaigns, Brand Brain, AI Studio, Publish, Engage, Analytics, Effy AI), RBAC enforced, agency overview + notifications + workspace-select shipped. Right context panel partially covered by the Effy drawer. Phase 2 slices 1–9 shipped (Lead Pipeline, Forms, Ad Dashboard + adapter pattern, Landing Pages, Tracking Centre, Follow-up Automation, Lead Detail + outcomes, Link-in-bio, Analytics expansion: Ads/Leads/Revenue/Creative), 149 tests green. Next: Phase 3 — real integrations (Meta/Google ads, social publishing, messaging) through the existing adapters._

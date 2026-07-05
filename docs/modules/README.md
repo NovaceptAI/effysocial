@@ -25,9 +25,13 @@ One doc per module describing **what it does** and **how it connects to the plat
 | Analytics & Reports | [Analytics.md](Analytics.md) | ✅ Organic + Reports frontend |
 | Administration (Integrations, Team) | [Administration.md](Administration.md) | ✅ Integrations + Team |
 | Effy AI assistant & agents | [Effy-AI.md](Effy-AI.md) | ✅ v1 |
-| Convert — Leads & Pipeline | [Convert-Leads.md](Convert-Leads.md) | ✅ slice 1 |
+| Convert — Leads & Pipeline | [Convert-Leads.md](Convert-Leads.md) | ✅ slice 1 + slice 7 (lead detail + outcomes) |
 | Convert — Forms | [Convert-Forms.md](Convert-Forms.md) | ✅ slice 2 |
 | Advertise — Ad Dashboard | [Advertise-Dashboard.md](Advertise-Dashboard.md) | ✅ slice 3 (mock adapter) |
+| Convert — Landing Pages | [Convert-Landing.md](Convert-Landing.md) | ✅ slice 4 |
+| Convert — Tracking Centre | [Convert-Tracking.md](Convert-Tracking.md) | ✅ slice 5 |
+| Convert — Follow-up Automation | [Convert-Followups.md](Convert-Followups.md) | ✅ slice 6 (mock messaging) |
+| Convert — Link-in-bio | [Convert-Bio.md](Convert-Bio.md) | ✅ slice 8 |
 | …(remaining per BUILD_TRACKER) | | ⬜ |
 
 Source of truth for requirements: [../../EffySocial_Claude_Design_Prompt.md](../../EffySocial_Claude_Design_Prompt.md).

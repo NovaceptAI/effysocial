@@ -78,8 +78,11 @@ Grounded in the workspace's Brand Brain (tone/approved/prohibited). `type` ∈ {
 | Method | Path | Auth | Response |
 |---|---|---|---|
 | GET | `/api/effy/analytics/organic?workspace=ws_N` | 🔒🏢 | `{provider:"derived", kpis, followerSeries, reachSeries, topPosts, demographics, bestTimes, insights}` |
+| GET | `/api/effy/analytics/leads?workspace=ws_N` | 🔒🏢 | `{provider:"live", spendProvider:"mock", kpis:{total,qualified,qualificationRate,won,pipelineValue,costPerQualified}, funnel[], bySource[], byCampaign[], quality[], lostReasons[], outcomes[]}` |
+| GET | `/api/effy/analytics/revenue?workspace=ws_N` | 🔒🏢 | `{provider:"live", spendProvider:"mock", attributionModel:"last-touch", kpis:{revenue,customers,avgDeal,spend,cac,roas}, byChannel[], byCampaign[]}` |
+| GET | `/api/effy/analytics/creative?workspace=ws_N` | 🔒🏢 | `{provider:"mock", creatives:[{id,name,format,thumb,campaign,platform,adset,spend,ctr,cpl,fatigue}], attributes:{bestFormat, byFormat[], fatigued}}` |
 
-Top posts + reach/engagement KPIs **aggregate real `effy_posts` metrics**; series/demographics are deterministic derived values (flagged `provider:"derived"`) until social integrations sync real snapshots.
+Top posts + reach/engagement KPIs **aggregate real `effy_posts` metrics**; series/demographics are deterministic derived values (flagged `provider:"derived"`) until social integrations sync real snapshots. **Lead/revenue analytics aggregate real `effy_leads` rows** (funnel by stage, source/campaign rollups, lost reasons, sales outcomes; revenue = won-stage + purchase-completed leads, last-touch to campaign/channel). Ad spend (cost/qualified, CAC, ROAS denominators) and all creative rows come from the **ads adapter** (`spendProvider`/`provider:"mock"` until Phase 3 connects Meta/Google).
 
 ## Effy AI  ([Effy-AI.md](modules/Effy-AI.md))
 | Method | Path | Auth | Body → Response |
@@ -93,11 +96,13 @@ Chat: deterministic keyword router picks one of 8 agents; the Groq reply is grou
 | Method | Path | Auth | Body → Response |
 |---|---|---|---|
 | GET | `/api/effy/leads?workspace=ws_N` | 🔒🏢 | → `{leads:[...]}` |
+| GET | `/api/effy/leads/:id` | 🔒🏢 | → `{lead}` + `attribution:{source,channel,campaign?,form?{name,submitted,data},conversation?{person,kind,intent,messages},utm}`, `duplicates[{id,name,match:email\|phone,stage,created}]`, `followupRuns[{workflow,when,log}]`, `offlineSignals[]`, `outcomes[]` |
 | POST | `/api/effy/leads` | 🔒🏢 write-role | `{workspace, name, phone?, email?, source?, campaignId?, interest?, value?, quality?}` → `{lead}` |
-| PATCH | `/api/effy/leads/:id` | 🔒🏢 write-role | `{stage?, quality?, value?, owner?, lostReason?, note?}` → `{lead}` · 400 invalid stage |
+| PATCH | `/api/effy/leads/:id` | 🔒🏢 write-role | `{stage?, quality?, value?, owner?, lostReason?, note?, outcome?}` → `{lead}` · 400 invalid stage/outcome |
 | POST | `/api/effy/conversations/:id/convert-lead` | 🔒🏢 write-role | → `{lead, existing}` — idempotent; copies person/channel/interest, sales-intent → hot |
 
-**Lead shape:** `{ id, workspaceId, campaignId?, conversationId?, name, phone, email, source, channel, interest, stage, quality, value, owner, notes[], lostReason, created }` · stages: new/contacted/qualified/appointment/proposal/won/lost.
+**Lead shape:** `{ id, workspaceId, campaignId?, conversationId?, name, phone, email, source, channel, interest, stage, quality, value, owner, notes[], lostReason, outcome, created }` · stages: new/contacted/qualified/appointment/proposal/won/lost.
+**Outcomes (§14.7 closed loop):** `invalid|duplicate|unreachable` (negative) · `qualified|appointment_completed|purchase_completed` (positive). A **changed** outcome appends a note and records one `kind:"offline"` row in `effy_tracking_events` (mock offline-conversion signal; real Meta/Google uploads in Phase 3) — re-marking the same value is a no-op.
 
 ## Convert — Forms  ([Convert-Forms.md](modules/Convert-Forms.md))
 Authed:
@@ -115,6 +120,60 @@ Public (published forms only):
 | POST | `/api/effy/public/forms/:slug/submit` | 🔓 | `{data, utm:{source,medium,campaign}, website:""}` → `{thankyou}` — creates **lead** (source=form, channel=utm_source) + submission; honeypot `website` swallowed silently; required fields → 400 |
 
 Hosted form page: `/f/:slug` (auto-captures `utm_*` query params).
+
+## Convert — Landing Pages  ([Convert-Landing.md](modules/Convert-Landing.md))
+Authed:
+| Method | Path | Auth | Body → Response |
+|---|---|---|---|
+| GET | `/api/effy/landing?workspace=ws_N` | 🔒🏢 | → `{pages[]}` (with views) |
+| POST | `/api/effy/landing` | 🔒🏢 write-role | `{workspace, name, sections?, campaignId?, whatsapp?, phone?}` → `{page}` (slug generated) |
+| PATCH | `/api/effy/landing/:id` | 🔒🏢 write-role | `{name?, sections?, status?, formSlug?, whatsapp?, phone?, campaignId?}` → `{page}` |
+| POST | `/api/effy/landing/:id/ai-copy` | 🔒🏢 write-role | `{topic?}` → `{headline, sub, cta, features[], cited[]}` — Groq grounded in Brand Brain (tone/approved/prohibited) · 503 if Groq down |
+
+Public (published pages only):
+| Method | Path | Auth | Body → Response |
+|---|---|---|---|
+| GET | `/api/effy/public/landing/:slug` | 🔓 | → `{page:{name,workspace,accent,logo,sections,formSlug,whatsapp,phone}}` — increments `views`; `formSlug` only when it points at a **published** form in the same workspace; CTA fields blank when their section is disabled · 404 if draft |
+
+**Sections shape:** `{hero:{headline,sub,cta}, features:{title,items[]}, testimonial:{quote,author}, enabled:{features,testimonial,form,whatsapp,call}}`.
+Hosted page: `/p/:slug` — brand-accented; the embedded form reuses `/api/effy/public/forms/:slug*` end-to-end, so `utm_*` query params flow into the submission → lead.
+
+## Convert — Link-in-bio  ([Convert-Bio.md](modules/Convert-Bio.md))
+Authed:
+| Method | Path | Auth | Body → Response |
+|---|---|---|---|
+| GET | `/api/effy/bio?workspace=ws_N` | 🔒🏢 | → `{pages[]}` (with views + total clicks) |
+| POST | `/api/effy/bio` | 🔒🏢 write-role | `{workspace, name, title?, bio?, avatar?, socials?, links?, whatsapp?}` → `{page}` (slug generated; title/avatar default to workspace) |
+| PATCH | `/api/effy/bio/:id` | 🔒🏢 write-role | `{name?, title?, bio?, avatar?, theme?, socials?, links?, formSlug?, whatsapp?, status?}` → `{page}` — links sanitised (max 12, label+url required, kind ∈ link\|product\|appointment\|payment\|featured), **clicks preserved by link id**; theme ∈ warm\|dark\|mint |
+
+Public (published pages only):
+| Method | Path | Auth | Body → Response |
+|---|---|---|---|
+| GET | `/api/effy/public/bio/:slug` | 🔓 | → `{page:{title,bio,avatar,accent,theme,socials,links[],formSlug,whatsapp}}` — increments `views`; links exclude click counts; `formSlug` only when it points at a **published** form in the same workspace · 404 if draft |
+| POST | `/api/effy/public/bio/:slug/click` | 🔓 | `{linkId}` → `{status:"ok"}` — increments that link's `clicks` · 400 unknown link · 404 if draft |
+
+Hosted page: `/b/:slug` — themed profile + links; the lead form button opens `/f/:formSlug` forwarding `utm_*` query params → submission → lead.
+
+## Convert — Conversion Tracking Centre  ([Convert-Tracking.md](modules/Convert-Tracking.md))
+| Method | Path | Auth | Body → Response |
+|---|---|---|---|
+| GET | `/api/effy/tracking?workspace=ws_N` | 🔒🏢 | → `{provider, sources[], domain, utm:{submissions,tagged,coverage,topSources[]}, recommendations[], guide[]}` |
+| POST | `/api/effy/tracking/test-event` | 🔒🏢 write-role | `{workspace, source}` → `{event:{source,kind:"test",at}}` · 400 unknown source |
+
+**Source shape:** `{id, name, kind:native|pixel, status:healthy|warning|not_connected, events, lastEvent, lastTest, matchQuality, duplicates, consent, detail}`.
+Native sources (forms/landing/whatsapp) are computed live from real submissions, page views and leads; pixel sources (Meta Pixel/Google Tag) + domain verification go through `get_tracking_provider(ws)` — `MockTrackingProvider` (`provider:"mock"`) until Phase 3. Test events persist in `effy_tracking_events`.
+
+## Convert — Follow-up Automation  ([Convert-Followups.md](modules/Convert-Followups.md))
+| Method | Path | Auth | Body → Response |
+|---|---|---|---|
+| GET | `/api/effy/followups?workspace=ws_N` | 🔒🏢 | → `{workflows[]}` |
+| POST | `/api/effy/followups` | 🔒🏢 write-role | `{workspace, name, trigger?, steps?}` → `{workflow}` (status starts `draft`) · 400 invalid trigger/steps |
+| PATCH | `/api/effy/followups/:id` | 🔒🏢 write-role | `{name?, status?(draft\|active\|paused), trigger?, steps?}` → `{workflow}` |
+| GET | `/api/effy/followups/:id/runs` | 🔒🏢 | → `{runs[{id,lead,log[],at}]}` (last 20) |
+| POST | `/api/effy/followups/:id/dry-run` | 🔒🏢 | `{lead?:{name,phone,email,source,stage,quality,channel}}` → `{log[{step,text}]}` — sample lead, **no side effects**, works on drafts |
+
+**Workflow shape:** `{id, workspaceId, name, status, trigger:{type:lead_created\|stage_changed, source?, stage?}, steps[≤10]:[{kind:condition\|delay\|action, …}], runs, created}`.
+**Execution:** active workflows fire synchronously inside the lead transaction — on lead create (`/leads`, convert-from-conversation, public form submit) and on actual pipeline stage transitions. Conditions stop the run on mismatch; delays log instantly (scheduled in Phase 3); message actions (whatsapp/email/sms/ai_voice) go through `get_messaging_provider(ws)` → `MockMessagingProvider` until Phase 3, appending notes to the lead; `assign_salesperson` sets the lead owner. Runs persist in `effy_followup_runs`.
 
 ## Advertise — Ad Dashboard  ([Advertise-Dashboard.md](modules/Advertise-Dashboard.md))
 | Method | Path | Auth | Response |

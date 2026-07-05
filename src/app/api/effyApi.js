@@ -50,6 +50,10 @@ export const effyApi = {
 
   // Analytics
   organicAnalytics: (workspaceId) => http(`/analytics/organic?workspace=${encodeURIComponent(workspaceId)}`),
+  leadAnalytics: (workspaceId) => http(`/analytics/leads?workspace=${encodeURIComponent(workspaceId)}`),
+  revenueAnalytics: (workspaceId) => http(`/analytics/revenue?workspace=${encodeURIComponent(workspaceId)}`),
+  creativeAnalytics: (workspaceId) => http(`/analytics/creative?workspace=${encodeURIComponent(workspaceId)}`),
+  adsDashboard: (workspaceId) => http(`/ads/dashboard?workspace=${encodeURIComponent(workspaceId)}`),
 
   // Effy AI assistant
   assistantChat: (workspaceId, message, history = []) =>
@@ -63,6 +67,7 @@ export const effyApi = {
 
   // Convert — leads
   listLeads: (workspaceId) => http(`/leads?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.leads),
+  getLead: (id) => http(`/leads/${id}`).then((d) => d.lead),
   createLead: (payload) =>
     http('/leads', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.lead),
   updateLead: (id, payload) =>
@@ -80,4 +85,41 @@ export const effyApi = {
   publicForm: (slug) => http(`/public/forms/${slug}`).then((d) => d.form),
   publicSubmit: (slug, payload) =>
     http(`/public/forms/${slug}/submit`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
+
+  // Convert — landing pages
+  listLanding: (workspaceId) => http(`/landing?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.pages),
+  createLanding: (payload) =>
+    http('/landing', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.page),
+  updateLanding: (id, payload) =>
+    http(`/landing/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.page),
+  landingAiCopy: (id, topic) =>
+    http(`/landing/${id}/ai-copy`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ topic }) }),
+  // public (no auth)
+  publicLanding: (slug) => http(`/public/landing/${slug}`).then((d) => d.page),
+
+  // Convert — link-in-bio
+  listBio: (workspaceId) => http(`/bio?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.pages),
+  createBio: (payload) =>
+    http('/bio', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.page),
+  updateBio: (id, payload) =>
+    http(`/bio/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.page),
+  // public (no auth)
+  publicBio: (slug) => http(`/public/bio/${slug}`).then((d) => d.page),
+  publicBioClick: (slug, linkId) =>
+    http(`/public/bio/${slug}/click`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ linkId }) }),
+
+  // Convert — conversion tracking centre
+  getTracking: (workspaceId) => http(`/tracking?workspace=${encodeURIComponent(workspaceId)}`),
+  sendTestEvent: (payload) =>
+    http('/tracking/test-event', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.event),
+
+  // Convert — follow-up automation
+  listFollowups: (workspaceId) => http(`/followups?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.workflows),
+  createFollowup: (payload) =>
+    http('/followups', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.workflow),
+  updateFollowup: (id, payload) =>
+    http(`/followups/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.workflow),
+  followupRuns: (id) => http(`/followups/${id}/runs`).then((d) => d.runs),
+  followupDryRun: (id, lead) =>
+    http(`/followups/${id}/dry-run`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lead }) }).then((d) => d.log),
 };

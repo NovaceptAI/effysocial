@@ -33,8 +33,17 @@ import Comments from './pages/Comments';
 import EngageLeads from './pages/EngageLeads';
 import WorkspaceSelect from './pages/WorkspaceSelect';
 import Pipeline from './pages/Pipeline';
+import LeadDetail from './pages/LeadDetail';
 import Forms from './pages/Forms';
+import LandingPages from './pages/LandingPages';
+import Tracking from './pages/Tracking';
+import Followups from './pages/Followups';
+import BioPages from './pages/BioPages';
 import AdsDashboard from './pages/AdsDashboard';
+import AdsAnalytics from './pages/AdsAnalytics';
+import LeadAnalytics from './pages/LeadAnalytics';
+import RevenueAnalytics from './pages/RevenueAnalytics';
+import CreativeAnalytics from './pages/CreativeAnalytics';
 import ModulePlaceholder from './pages/ModulePlaceholder';
 
 const queryClient = new QueryClient();
@@ -48,7 +57,10 @@ const BUILT = new Set([
   '/app/plan', '/app/trends', '/app/competitors', '/app/listening',
   '/app/ideas', '/app/media', '/app/templates',
   '/app/billing', '/app/settings', '/app/comments', '/app/engage-leads',
-  '/app/pipeline', '/app/forms', '/app/ads',
+  '/app/pipeline', '/app/forms', '/app/ads', '/app/landing', '/app/tracking',
+  '/app/followups', '/app/bio',
+  '/app/analytics/ads', '/app/analytics/leads', '/app/analytics/revenue',
+  '/app/analytics/creative',
 ]);
 
 // Strip the "/app" prefix to get the nested route path for each nav item.
@@ -89,8 +101,17 @@ export default function AppRoot() {
             <Route path="engage-leads" element={<EngageLeads />} />
             <Route path="workspaces" element={<WorkspaceSelect />} />
             <Route path="pipeline" element={<Pipeline />} />
+            <Route path="pipeline/:id" element={<LeadDetail />} />
             <Route path="forms" element={<Forms />} />
+            <Route path="landing" element={<LandingPages />} />
+            <Route path="tracking" element={<Tracking />} />
+            <Route path="followups" element={<Followups />} />
+            <Route path="bio" element={<BioPages />} />
             <Route path="ads" element={<AdsDashboard />} />
+            <Route path="analytics/ads" element={<AdsAnalytics />} />
+            <Route path="analytics/leads" element={<LeadAnalytics />} />
+            <Route path="analytics/revenue" element={<RevenueAnalytics />} />
+            <Route path="analytics/creative" element={<CreativeAnalytics />} />
             {NAV_ITEMS.filter((i) => !BUILT.has(i.to)).map((i) => (
               <Route key={i.to} path={childPath(i.to)} element={<ModulePlaceholder />} />
             ))}

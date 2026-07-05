@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Flame, Plus, ChevronRight, LayoutGrid, Table2 } from 'lucide-react';
 import { useWorkspace, inr, num } from '../context/WorkspaceContext';
@@ -85,7 +86,7 @@ export default function Pipeline() {
                       <div className="flex items-start gap-2">
                         <Flame className={cn('w-3.5 h-3.5 shrink-0 mt-0.5', HEAT[l.quality])} />
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-semibold text-ink truncate">{l.name}</div>
+                          <Link to={`/app/pipeline/${l.id}`} className="block text-sm font-semibold text-ink truncate hover:text-coral-ink">{l.name}</Link>
                           {l.interest && <div className="text-xs text-ink-faint truncate">{l.interest}</div>}
                         </div>
                       </div>
@@ -115,7 +116,7 @@ export default function Pipeline() {
             <tbody>
               {leads.map((l) => (
                 <tr key={l.id} className="border-b border-line/70 last:border-0 hover:bg-surface2/60">
-                  <td className="px-4 py-3"><span className="font-semibold text-ink">{l.name}</span><span className="block text-xs text-ink-faint">{l.phone || l.email || '—'}</span></td>
+                  <td className="px-4 py-3"><Link to={`/app/pipeline/${l.id}`} className="font-semibold text-ink hover:text-coral-ink">{l.name}</Link><span className="block text-xs text-ink-faint">{l.phone || l.email || '—'}</span></td>
                   <td className="px-4 py-3"><Badge tone={SOURCE_TONE[l.source] || 'default'}>{l.source}</Badge></td>
                   <td className="px-4 py-3 text-ink-soft">{l.interest || '—'}</td>
                   <td className="px-4 py-3">

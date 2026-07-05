@@ -9,6 +9,8 @@ import Verify from './marketing/Verify';
 import Forgot from './marketing/Forgot';
 import Reset from './marketing/Reset';
 import PublicForm from './marketing/PublicForm';
+import PublicLanding from './marketing/PublicLanding';
+import PublicBio from './marketing/PublicBio';
 import Hub from './Hub';
 
 // The full product app shell (Phase 0+). Code-split so the marketing site stays light.
@@ -43,6 +45,8 @@ export default function App() {
             <Route path="/forgot" element={<Forgot />} />
             <Route path="/reset" element={<Reset />} />
             <Route path="/f/:slug" element={<PublicForm />} />
+            <Route path="/p/:slug" element={<PublicLanding />} />
+            <Route path="/b/:slug" element={<PublicBio />} />
             <Route path="/onboarding" element={<RequireAuth><Onboarding /></RequireAuth>} />
 
             {/* Authenticated product */}

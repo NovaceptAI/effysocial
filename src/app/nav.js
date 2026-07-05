@@ -4,7 +4,7 @@ import {
   Calendar, Clock3, CheckSquare, Send,
   Inbox, MessageSquare, Star, UserPlus,
   Target, Palette, UsersRound, Wallet, Zap,
-  Globe, FileInput, GitBranch, Repeat2, Crosshair,
+  Globe, FileInput, GitBranch, Repeat2, Crosshair, AtSign,
   BarChart3, LineChart, PieChart, IndianRupee, ImagePlay, FileBarChart,
   Building2, Users, Plug, CreditCard, Settings,
 } from 'lucide-react';
@@ -49,6 +49,7 @@ export const NAV = [
   ]},
   { group: 'Convert', items: [
     { label: 'Landing Pages', to: '/app/landing', icon: Globe, phase: 2 },
+    { label: 'Link-in-bio', to: '/app/bio', icon: AtSign, phase: 2 },
     { label: 'Forms', to: '/app/forms', icon: FileInput, phase: 2 },
     { label: 'Lead Pipeline', to: '/app/pipeline', icon: GitBranch, phase: 2 },
     { label: 'Follow-ups', to: '/app/followups', icon: Repeat2, phase: 2 },
