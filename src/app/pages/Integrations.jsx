@@ -29,6 +29,11 @@ export default function Integrations() {
   const [params, setParams] = useSearchParams();
   const [setup, setSetup] = useState(null); // {provider, steps[]}
   const [busy, setBusy] = useState(null);
+  const [igModal, setIgModal] = useState(false);
+  const [igToken, setIgToken] = useState('');
+  const [igErr, setIgErr] = useState('');
+  const [igBusy, setIgBusy] = useState(false);
+  const [testPost, setTestPost] = useState(null); // {imageUrl, caption, result}
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ['integrations', workspace?.id],
@@ -39,6 +44,28 @@ export default function Integrations() {
     (provider) => effyApi.disconnectIntegration(provider, workspace.id),
     () => ['integrations', workspace?.id],
   );
+  const connectIgToken = async () => {
+    setIgErr(''); setIgBusy(true);
+    try {
+      await effyApi.connectInstagramToken(workspace.id, igToken.trim());
+      setIgModal(false); setIgToken('');
+      window.location.search = '?connected=instagram&status=success';
+    } catch (e) {
+      setIgErr(e.message || 'Could not connect. Check the token and scopes.');
+    } finally {
+      setIgBusy(false);
+    }
+  };
+
+  const sendTestPost = async () => {
+    setTestPost((p) => ({ ...p, busy: true, result: null }));
+    try {
+      const r = await effyApi.publishInstagram(workspace.id, testPost.imageUrl.trim(), testPost.caption);
+      setTestPost((p) => ({ ...p, busy: false, result: { ok: true, ...r } }));
+    } catch (e) {
+      setTestPost((p) => ({ ...p, busy: false, result: { ok: false, message: e.message } }));
+    }
+  };
 
   // OAuth callback returns here with ?connected=<provider>&status=<...>
   const cbStatus = params.get('status');
@@ -108,9 +135,21 @@ export default function Integrations() {
                       <div className="flex items-center justify-between">
                         <Badge tone={s.tone}>{s.label}</Badge>
                         {isConnected ? (
-                          <Button size="sm" variant="ghost" onClick={() => disconnect.mutate(it.provider)} disabled={disconnect.isPending}>
-                            <X className="w-3.5 h-3.5" /> Disconnect
-                          </Button>
+                          <div className="flex gap-1.5">
+                            {it.provider === 'instagram' && (
+                              <Button size="sm" variant="secondary" onClick={() => setTestPost({ imageUrl: '', caption: '' })}>Test post</Button>
+                            )}
+                            <Button size="sm" variant="ghost" onClick={() => disconnect.mutate(it.provider)} disabled={disconnect.isPending}>
+                              <X className="w-3.5 h-3.5" /> Disconnect
+                            </Button>
+                          </div>
+                        ) : it.provider === 'instagram' ? (
+                          <div className="flex gap-1.5">
+                            <Button size="sm" variant="secondary" onClick={() => { setIgErr(''); setIgModal(true); }}>Use token</Button>
+                            <Button size="sm" onClick={() => connect(it.provider)} disabled={busy === it.provider}>
+                              {busy === it.provider ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Connect'}
+                            </Button>
+                          </div>
                         ) : it.state === 'pending_credentials' ? (
                           <Button size="sm" variant="secondary" onClick={() => connect(it.provider)}>
                             <KeyRound className="w-3.5 h-3.5" /> Setup steps
@@ -147,6 +186,57 @@ export default function Integrations() {
               ))}
             </ol>
             <div className="mt-5 flex justify-end"><Button onClick={() => setSetup(null)}>Got it</Button></div>
+          </Card>
+        </div>
+      )}
+
+      {igModal && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4" onClick={() => setIgModal(false)}>
+          <Card className="max-w-lg w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-extrabold text-ink flex items-center gap-2"><KeyRound className="w-4 h-4 text-coral-ink" /> Connect Instagram with a token</h3>
+              <button onClick={() => setIgModal(false)} className="text-ink-faint hover:text-ink"><X className="w-5 h-5" /></button>
+            </div>
+            <p className="text-sm text-ink-soft mb-3">
+              Dev-mode fast path for one owned account. In <a className="text-coral-ink underline" href="https://developers.facebook.com/tools/explorer/" target="_blank" rel="noreferrer">Graph API Explorer</a>,
+              select your app + these permissions, generate a <strong>User token</strong>, and paste it:
+            </p>
+            <code className="block text-xs bg-surface2 rounded-md p-2.5 mb-3 text-ink-soft break-words">
+              instagram_basic · instagram_content_publish · pages_show_list · pages_read_engagement · business_management
+            </code>
+            <p className="text-xs text-ink-faint mb-3">Requires: IG account is <strong>Business/Creator</strong> and linked to a Facebook Page.</p>
+            {igErr && <div className="mb-3 text-sm rounded-lg bg-error-soft text-error px-3.5 py-2.5">{igErr}</div>}
+            <textarea rows={3} value={igToken} onChange={(e) => setIgToken(e.target.value)} placeholder="Paste user access token…"
+              className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm font-mono" />
+            <div className="mt-4 flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setIgModal(false)}>Cancel</Button>
+              <Button onClick={connectIgToken} disabled={igBusy || !igToken.trim()}>{igBusy ? 'Connecting…' : 'Connect'}</Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {testPost && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4" onClick={() => setTestPost(null)}>
+          <Card className="max-w-lg w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-extrabold text-ink flex items-center gap-2"><Check className="w-4 h-4 text-success" /> Post to Instagram</h3>
+              <button onClick={() => setTestPost(null)} className="text-ink-faint hover:text-ink"><X className="w-5 h-5" /></button>
+            </div>
+            <p className="text-xs text-ink-faint mb-3">Instagram publishes from a public image URL (JPEG, https).</p>
+            <input value={testPost.imageUrl} onChange={(e) => setTestPost({ ...testPost, imageUrl: e.target.value })}
+              placeholder="https://…/image.jpg" className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm mb-2" />
+            <textarea rows={3} value={testPost.caption} onChange={(e) => setTestPost({ ...testPost, caption: e.target.value })}
+              placeholder="Caption…" className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm" />
+            {testPost.result && (
+              <div className={cn('mt-3 text-sm rounded-lg px-3.5 py-2.5', testPost.result.ok ? 'bg-success-soft text-success' : 'bg-error-soft text-error')}>
+                {testPost.result.ok ? `Posted! Media ID ${testPost.result.mediaId}` : testPost.result.message}
+              </div>
+            )}
+            <div className="mt-4 flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setTestPost(null)}>Close</Button>
+              <Button onClick={sendTestPost} disabled={testPost.busy || !testPost.imageUrl.trim()}>{testPost.busy ? 'Posting…' : 'Publish now'}</Button>
+            </div>
           </Card>
         </div>
       )}

@@ -80,6 +80,10 @@ export const effyApi = {
     http(`/integrations/${provider}/connect`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId }) }),
   disconnectIntegration: (provider, workspaceId) =>
     http(`/integrations/${provider}/disconnect`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId }) }),
+  connectInstagramToken: (workspaceId, token) =>
+    http('/integrations/instagram/connect-token', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId, token }) }),
+  publishInstagram: (workspaceId, imageUrl, caption) =>
+    http('/publish/instagram', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId, imageUrl, caption }) }),
 
   // Convert — forms
   listForms: (workspaceId) => http(`/forms?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.forms),
