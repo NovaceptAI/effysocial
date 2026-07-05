@@ -28,6 +28,8 @@ export default function Landing() {
   return (
     <div className="min-h-dvh bg-canvas text-ink font-sans overflow-x-hidden">
       <style>{`
+        html { scroll-behavior: smooth; }
+        @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
         @keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
         .rise { animation: rise .8s cubic-bezier(.2,.7,.2,1) both; }
         .rise-2 { animation-delay: .1s; } .rise-3 { animation-delay: .2s; } .rise-4 { animation-delay: .3s; }
@@ -130,7 +132,7 @@ export default function Landing() {
       </section>
 
       {/* Journey */}
-      <section id="journey" className="max-w-5xl mx-auto px-6 py-20">
+      <section id="journey" className="scroll-mt-24 max-w-5xl mx-auto px-6 py-20">
         <p className="text-center text-xs font-bold uppercase tracking-[0.14em] text-ink-faint mb-8">One connected journey — not disconnected tools</p>
         <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-3">
           {JOURNEY.map((s, i) => (
@@ -143,7 +145,7 @@ export default function Landing() {
       </section>
 
       {/* Features */}
-      <section id="features" className="max-w-6xl mx-auto px-6 py-12">
+      <section id="features" className="scroll-mt-24 max-w-6xl mx-auto px-6 py-12">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <h2 className="font-display text-[2.4rem] font-semibold tracking-tightest leading-tight">Everything your growth needs</h2>
           <p className="mt-3 text-ink-soft leading-relaxed">From the first post to your next paying customer — with AI that explains itself and humans in control of spend.</p>
@@ -175,7 +177,7 @@ export default function Landing() {
       </section>
 
       {/* Who */}
-      <section id="who" className="max-w-5xl mx-auto px-6 py-16 text-center">
+      <section id="who" className="scroll-mt-24 max-w-5xl mx-auto px-6 py-16 text-center">
         <h2 className="font-display text-[2rem] font-semibold tracking-tight mb-2">Built for agencies and businesses</h2>
         <p className="text-ink-soft mb-8 max-w-xl mx-auto leading-relaxed">Local services that live on leads — plus the agencies that grow them. India-first, globally competitive.</p>
         <div className="flex flex-wrap justify-center gap-2.5">
