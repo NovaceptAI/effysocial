@@ -77,6 +77,14 @@ button {
   cursor: pointer;
 }
 
+/* Preflight is disabled, so anchors would otherwise render as default
+   blue/underlined "HTML links". Reset to inherit — designed links set their
+   own colour. (Lowest specificity, so component-styled links still win.) */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
 input, select, textarea {
   font-family: var(--font);
   font-size: 14px;
