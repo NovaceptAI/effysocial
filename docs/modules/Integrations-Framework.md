@@ -1,6 +1,6 @@
 # Module: Integrations — Connection Framework (Phase 3 slice 1)
 
-> Real per-workspace connection state driving adapter selection (mock ⇄ real). _Status: 🔨 building · spec §17.2 · Phase 3._
+> Real per-workspace connection state driving adapter selection (mock ⇄ real). _Status: ✅ framework + real OAuth (LinkedIn live) + frontend · spec §17.2 · Phase 3._
 
 ## 1. What it does
 Replaces the static Integrations mock with a real `effy_integrations` table: each workspace tracks which providers are connected, with what account and health. `get_ads_provider()` (and future publisher/messaging adapters) select **real providers when connected, mock otherwise** — making the Phase-2 adapter pattern operational.
@@ -29,3 +29,10 @@ Until credentials exist, "Connect" returns `pending_credentials` with exact setu
 
 ## 6. Tests
 Catalogue merge, connect → pending_credentials without env creds, disconnect, adapter selection honors connection state, tenancy/RBAC matrix.
+
+
+## 7. OAuth flow (real — shipped)
+`oauth.py` holds provider-agnostic OAuth 2.0: authorize-code flow, CSRF `state` via EffyToken (single-use, 15-min), token exchange + identity fetch, and **Fernet token encryption at rest** (key derived from SECRET_KEY; tokens never serialized to the client). Providers are data in `PROVIDERS` — adding Meta/Google is config, not new flow code.
+- `POST /integrations/:provider/connect` → `{state:"redirect", redirect}` when creds exist, else `{state:"pending_credentials", setup[]}`.
+- `GET /integrations/:provider/callback` (public) → exchanges code, stores encrypted token, redirects to `/app/integrations?connected=…&status=…`.
+- **LinkedIn is live** (real creds). **Redirect URI to register in each provider app:** `https://effysocial.effybiz.in/api/effy/integrations/<provider>/callback`.

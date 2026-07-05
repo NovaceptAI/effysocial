@@ -74,6 +74,13 @@ export const effyApi = {
     http(`/leads/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.lead),
   convertLead: (conversationId) => http(`/conversations/${conversationId}/convert-lead`, { method: 'POST' }),
 
+  // Integrations (Phase 3)
+  listIntegrations: (workspaceId) => http(`/integrations?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.integrations),
+  connectIntegration: (provider, workspaceId) =>
+    http(`/integrations/${provider}/connect`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId }) }),
+  disconnectIntegration: (provider, workspaceId) =>
+    http(`/integrations/${provider}/disconnect`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId }) }),
+
   // Convert — forms
   listForms: (workspaceId) => http(`/forms?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.forms),
   createForm: (payload) =>
