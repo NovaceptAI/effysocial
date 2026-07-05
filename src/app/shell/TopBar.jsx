@@ -80,7 +80,7 @@ export default function TopBar({ onOpenPalette, onOpenAssistant }) {
   const createItems = ['Campaign', 'Social post', 'Ad creative', 'Landing page', 'Form', 'Report', 'Automation rule', 'Client workspace'];
 
   return (
-    <header className="h-16 shrink-0 sticky top-0 z-20 bg-canvas/85 backdrop-blur border-b border-line flex items-center gap-3 px-5">
+    <header className="h-16 shrink-0 sticky top-0 z-20 bg-canvas/70 backdrop-blur-xl border-b border-hair flex items-center gap-3 px-6">
       {/* Workspace switcher */}
       <div className="relative">
         <button

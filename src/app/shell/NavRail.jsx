@@ -31,10 +31,10 @@ export default function NavRail() {
   });
 
   return (
-    <nav className="w-[248px] shrink-0 h-dvh sticky top-0 bg-rail text-rail-ink flex flex-col">
-      <div className="flex items-center gap-2.5 px-5 h-16 border-b border-rail-line">
-        <span className="grid place-items-center w-8 h-8 rounded-[9px] bg-coral text-white text-base shadow-[0_6px_16px_rgba(232,74,51,0.4)]">✦</span>
-        <span className="font-extrabold text-[1.05rem] tracking-tight text-white">EffySocial</span>
+    <nav className="w-[248px] shrink-0 h-dvh sticky top-0 bg-rail text-rail-ink flex flex-col border-r border-black/20">
+      <div className="flex items-center gap-2.5 px-5 h-16 border-b border-rail-line/70">
+        <span className="grid place-items-center w-8 h-8 rounded-[10px] bg-aurora text-white text-base shadow-[0_4px_14px_-2px_rgba(232,74,51,0.55)]">✦</span>
+        <span className="font-display font-semibold text-[1.2rem] tracking-tight text-white">EffySocial</span>
       </div>
 
       <div className="flex-1 overflow-y-auto py-3 px-3 space-y-1">
@@ -55,10 +55,10 @@ export default function NavRail() {
                       to={item.to}
                       end={item.end}
                       className={({ isActive }) => cn(
-                        'group flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition',
+                        'group relative flex items-center gap-2.5 px-3 py-2 rounded-[10px] text-sm font-medium transition-all duration-200',
                         isActive
-                          ? 'bg-coral text-white shadow-[0_6px_16px_rgba(232,74,51,0.35)]'
-                          : 'text-rail-ink/80 hover:bg-rail-soft hover:text-white',
+                          ? 'bg-coral-btn text-white shadow-[0_4px_14px_-3px_rgba(232,74,51,0.55)] before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-4 before:w-[3px] before:rounded-full before:bg-white/70 before:-ml-3'
+                          : 'text-rail-ink/75 hover:bg-rail-soft hover:text-white',
                       )}
                     >
                       <item.icon className="w-[18px] h-[18px] shrink-0" strokeWidth={1.9} />

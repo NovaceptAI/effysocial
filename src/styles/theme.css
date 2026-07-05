@@ -31,17 +31,19 @@
   --warning: #d97706;  --warning-soft: #fdecd2;
   --error: #e5484d;    --error-soft: #fde7e7;
   --info: #3b82f6;     --info-soft: #e3edff;
-  /* Signature gradient */
-  --aurora: linear-gradient(100deg, #ff6b5e 0%, #fb7185 48%, #f59e0b 100%);
+  /* Signature gradient — cohesive coral→amber warmth */
+  --aurora: linear-gradient(105deg, #ff6b5e 0%, #f0512f 46%, #f59e0b 100%);
   /* Data-viz categorical palette (coral-led; cool hues kept for chart legibility only) */
   --dv-1: #ff6b5e;  --dv-2: #f59e0b;  --dv-3: #14b8a6;
   --dv-4: #ec4899;  --dv-5: #38bdf8;  --dv-6: #475569;
   /* Radius scale */
   --r-xs: 8px;  --r-sm: 10px;  --r-md: 14px;  --r-lg: 18px;  --r-xl: 24px;
-  /* Elevation scale */
-  --e1: 0 1px 2px rgba(42, 35, 32, 0.06), 0 1px 3px rgba(42, 35, 32, 0.05);
-  --e2: 0 8px 28px rgba(42, 35, 32, 0.08);
-  --e3: 0 20px 48px rgba(42, 35, 32, 0.12);
+  /* Elevation scale — warmer, more diffuse */
+  --e1: 0 1px 1px rgba(39, 32, 29, 0.04), 0 2px 6px rgba(39, 32, 29, 0.05);
+  --e2: 0 2px 4px rgba(39, 32, 29, 0.04), 0 10px 30px -8px rgba(39, 32, 29, 0.10);
+  --e3: 0 8px 16px -8px rgba(39, 32, 29, 0.10), 0 28px 56px -16px rgba(39, 32, 29, 0.16);
+  /* Display serif for editorial headings */
+  --font-display: 'Fraunces', Georgia, Cambria, serif;
   /* Tabular figures for metrics */
   --num: 'Manrope', ui-monospace, sans-serif;
 }
@@ -92,4 +94,19 @@ input:focus, select:focus, textarea:focus {
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
-::selection { background: var(--accent-soft); }
+::selection { background: var(--accent-soft); color: var(--ink); }
+
+/* Editorial serif for the product's page/section headings (scoped to app). */
+.app-root :is(h1, h2).font-display,
+.app-root .font-display {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+}
+
+/* Refined custom scrollbars — thin, warm, unobtrusive. */
+.app-root *::-webkit-scrollbar { width: 10px; height: 10px; }
+.app-root *::-webkit-scrollbar-thumb {
+  background: #e0d4c5; border-radius: 10px; border: 3px solid transparent; background-clip: content-box;
+}
+.app-root *::-webkit-scrollbar-thumb:hover { background: #d0c2b0; background-clip: content-box; }
+.app-root *::-webkit-scrollbar-track { background: transparent; }
