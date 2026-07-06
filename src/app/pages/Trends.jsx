@@ -1,15 +1,21 @@
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Flame, Hash, Clapperboard, AlertTriangle, CalendarDays, Plus } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
-import { trends } from '../data/strategyData';
+import { effyApi } from '../api/effyApi';
 import { Card, PageHeader, Button, Badge } from '../../ui';
 import { cn } from '../../lib/cn';
 
 const HEAT = { hot: 'text-error', warm: 'text-warning' };
+const EMPTY = { trending: [], hashtags: [], formats: [], gaps: [], seasonal: [] };
 
 export default function Trends() {
   const { workspace } = useWorkspace();
-  const t = trends(workspace);
+  const { data: t = EMPTY } = useQuery({
+    queryKey: ['trends', workspace?.id],
+    queryFn: () => effyApi.strategyTrends(workspace.id),
+    enabled: !!workspace,
+  });
 
   return (
     <div>

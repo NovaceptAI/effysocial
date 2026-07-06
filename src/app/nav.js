@@ -6,8 +6,7 @@ import {
   Target, Palette, UsersRound, Wallet, Zap,
   Globe, FileInput, GitBranch, Repeat2, Crosshair, AtSign,
   BarChart3, LineChart, PieChart, IndianRupee, ImagePlay, FileBarChart,
-  Building2, Users, Plug, CreditCard, Settings,
-} from 'lucide-react';
+  Building2, Users, Plug, CreditCard, Settings, Rocket } from 'lucide-react';
 
 // phase: 1 available now, 2/3/4 = labelled "soon" but navigable to a placeholder.
 export const NAV = [
@@ -22,6 +21,7 @@ export const NAV = [
     { label: 'Social Listening', to: '/app/listening', icon: Radio, phase: 1 },
   ]},
   { group: 'Content', items: [
+    { label: 'Playbooks', to: '/app/playbooks', icon: Rocket, phase: 1 },
     { label: 'Ideas', to: '/app/ideas', icon: Lightbulb, phase: 1 },
     { label: 'AI Studio', to: '/app/studio', icon: Wand2, phase: 1 },
     { label: 'Media Library', to: '/app/media', icon: Images, phase: 1 },

@@ -1,13 +1,18 @@
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useWorkspace } from '../context/WorkspaceContext';
-import { competitors } from '../data/strategyData';
+import { effyApi } from '../api/effyApi';
 import { Card, PageHeader, Button, Badge } from '../../ui';
 import { ChannelDot } from '../components/parts';
 import { cn } from '../../lib/cn';
 
 export default function Competitors() {
   const { workspace } = useWorkspace();
-  const rows = competitors(workspace);
+  const { data: rows = [] } = useQuery({
+    queryKey: ['competitors', workspace?.id],
+    queryFn: () => effyApi.strategyCompetitors(workspace.id),
+    enabled: !!workspace,
+  });
 
   return (
     <div>

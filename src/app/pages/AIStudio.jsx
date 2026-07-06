@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Sparkles, Wand2, Image as ImageIcon, Type, Smartphone, Monitor, RefreshCw,
   Plus, Check, AlertTriangle, FileText, Video, Scissors, Crop, CalendarPlus, Send,
+  Flame, Swords, X,
 } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { brandBrainFor } from '../data/brandBrain';
@@ -54,28 +57,50 @@ function scoreTone(v, invert) {
 
 export default function AIStudio() {
   const { workspace } = useWorkspace();
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
   const brain = brandBrainFor(workspace);
   const [type, setType] = useState(TYPES[0]);
   const [mode, setMode] = useState(MODES[0]);
-  const [topic, setTopic] = useState('');
+  const [topic, setTopic] = useState(params.get('topic') || '');
   const [lang, setLang] = useState('English');
   const [tab, setTab] = useState('copy');
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState(null);
   const [preview, setPreview] = useState('mobile');
+  const [trend, setTrend] = useState(params.get('trend') || '');   // strategy context → generation (from Playbook or rail)
+  const [angle, setAngle] = useState(params.get('angle') || '');
+  const [sent, setSent] = useState(false);
+
+  // Live strategy context — trends + competitor angles, right beside the composer.
+  const { data: ctx } = useQuery({
+    queryKey: ['studio-context', workspace?.id],
+    queryFn: () => effyApi.studioContext(workspace.id),
+    enabled: !!workspace,
+  });
 
   const generate = async () => {
     if (!workspace) return;
     setBusy(true);
     setResult(null);
+    setSent(false);
     try {
-      const d = await effyApi.generateStudio({ workspace: workspace.id, type: type.id, topic, language: lang });
-      setResult({ caption: d.caption, hashtags: d.hashtags || [], scores: d.scores || [], hook: d.hook, cta: d.cta });
+      const d = await effyApi.generateStudio({ workspace: workspace.id, type: type.id, topic, language: lang, trend, angle });
+      setResult({ caption: d.caption, hashtags: d.hashtags || [], scores: d.scores || [], hook: d.hook, cta: d.cta, cited: d.cited || [] });
     } catch (e) {
       setResult({ caption: `Generation failed: ${e.message || 'try again'}`, hashtags: [], scores: [] });
     } finally {
       setBusy(false);
     }
+  };
+
+  const sendToApproval = async () => {
+    if (!result) return;
+    await effyApi.sendToApproval({
+      workspace: workspace.id, hook: result.hook, caption: result.caption,
+      channel: type.platform, type: type.id.split('_')[1] || 'post',
+    });
+    setSent(true);
   };
 
   return (
@@ -85,8 +110,10 @@ export default function AIStudio() {
         subtitle="Create brand-aware copy and visuals, scored and preview-ready."
         actions={
           <>
-            <Button variant="secondary" disabled={!result}><CalendarPlus className="w-4 h-4" /> Add to calendar</Button>
-            <Button disabled={!result}><Send className="w-4 h-4" /> Send to approval</Button>
+            <Button variant="secondary" disabled={!result} onClick={() => navigate('/app/calendar')}><CalendarPlus className="w-4 h-4" /> Add to calendar</Button>
+            <Button disabled={!result || sent} onClick={sendToApproval}>
+              {sent ? <><Check className="w-4 h-4" /> Sent</> : <><Send className="w-4 h-4" /> Send to approval</>}
+            </Button>
           </>
         }
       />
@@ -121,9 +148,43 @@ export default function AIStudio() {
             <select value={lang} onChange={(e) => setLang(e.target.value)} className="w-full rounded-sm border border-line bg-surface px-3 py-2 text-sm mb-3">
               {LANGS.map((l) => <option key={l}>{l}</option>)}
             </select>
+            {(trend || angle) && (
+              <div className="mb-3 space-y-1">
+                {trend && <div className="flex items-center gap-1.5 text-[0.7rem] bg-coral-tint text-coral-ink ring-1 ring-inset ring-coral/20 rounded-md px-2 py-1"><Flame className="w-3 h-3" /> Trend: {trend}<button onClick={() => setTrend('')} className="ml-auto"><X className="w-3 h-3" /></button></div>}
+                {angle && <div className="flex items-center gap-1.5 text-[0.7rem] bg-info-soft text-info ring-1 ring-inset ring-info/20 rounded-md px-2 py-1"><Swords className="w-3 h-3" /> Angle: {angle}<button onClick={() => setAngle('')} className="ml-auto"><X className="w-3 h-3" /></button></div>}
+              </div>
+            )}
             <Button variant="spark" className="w-full" onClick={generate} disabled={busy}>
               <Sparkles className="w-4 h-4" /> {busy ? 'Generating…' : 'Generate'}
             </Button>
+          </Card>
+
+          {/* Strategy context rail — trends + competitor angles, inline */}
+          <Card className="p-4">
+            <h3 className="font-bold text-ink mb-1 text-sm flex items-center gap-1.5"><Flame className="w-4 h-4 text-error" /> What's trending</h3>
+            <p className="text-xs text-ink-faint mb-2.5">Tap to write with this theme.</p>
+            <div className="space-y-1.5 mb-4">
+              {(ctx?.trends || []).map((t) => (
+                <button key={t.topic} onClick={() => setTrend(t.topic)}
+                  className={cn('w-full flex items-center gap-2 text-left text-xs px-2.5 py-2 rounded-lg border transition',
+                    trend === t.topic ? 'border-coral bg-coral-tint text-coral-ink' : 'border-line hover:border-coral/40 text-ink-soft')}>
+                  <span className={cn('w-1.5 h-1.5 rounded-full', t.heat === 'hot' ? 'bg-error' : 'bg-warning')} />
+                  <span className="flex-1">{t.topic}</span>
+                  {trend === t.topic && <Check className="w-3.5 h-3.5" />}
+                </button>
+              ))}
+            </div>
+            <h3 className="font-bold text-ink mb-1 text-sm flex items-center gap-1.5"><Swords className="w-4 h-4 text-coral-ink" /> Competitor angles</h3>
+            <p className="text-xs text-ink-faint mb-2.5">Differentiate — tap to set the angle.</p>
+            <div className="space-y-1.5">
+              {(ctx?.competitorAngles || []).map((a) => (
+                <button key={a} onClick={() => setAngle(a)}
+                  className={cn('w-full text-left text-xs px-2.5 py-2 rounded-lg border transition leading-snug',
+                    angle === a ? 'border-info bg-info-soft text-info' : 'border-line hover:border-info/40 text-ink-soft')}>
+                  {a}
+                </button>
+              ))}
+            </div>
           </Card>
 
           <Card className="p-4">

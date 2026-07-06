@@ -40,8 +40,8 @@ Living status of every module/screen. **Update the Status column as we build.**
 | Marketing Plan | `/app/plan` | ✅ 🔌 | pillars planned-vs-actual, split, themes, KPIs, budget, risks |
 | Campaigns list | `/app/campaigns` | ✅ | pacing, CPL, ROAS (backend-real) |
 | Campaign workspace | `/app/campaigns/:id` | ✅ 🔌 | funnel overview + 8 tabs (Overview built; others stubbed) |
-| Trends | `/app/trends` | ✅ 🔌 | trending + hashtags + formats + gaps + seasonal |
-| Competitors | `/app/competitors` | ✅ 🔌 | share-of-voice + benchmark table |
+| Trends | `/app/trends` | ✅ P4 | **backend-real**: gaps computed from real posts; feeds Studio |
+| Competitors | `/app/competitors` | ✅ P4 | **backend-real** SOV + benchmark; feeds Studio angles |
 | Social Listening | `/app/listening` | ✅ 🔌 | sentiment + trend + live mentions + intent → lead |
 
 ## Content (spec §10)

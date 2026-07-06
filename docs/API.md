@@ -182,5 +182,16 @@ Native sources (forms/landing/whatsapp) are computed live from real submissions,
 
 First use of the **integration-adapter pattern**: `get_ads_provider(workspace)` returns `MockAdsProvider` (deterministic, workspace-seeded, realistic economics, flagged `provider:"mock"`) until real Meta/Google providers land in Phase 3 behind the same interface.
 
+## Strategy Intelligence + Workflows  ([Workflows-Intelligence.md](modules/Workflows-Intelligence.md))
+| Method | Path | Auth | Response |
+|---|---|---|---|
+| GET | `/api/effy/strategy/trends?workspace=ws_N` | 🔒🏢 | `{provider:"derived", trending[], hashtags[], formats[], gaps[], seasonal[]}` — **gaps computed from real posts** |
+| GET | `/api/effy/strategy/competitors?workspace=ws_N` | 🔒🏢 | `{provider:"sample", competitors[{name,freq,platforms,engagement,sov,topPost,offers,you}]}` |
+| GET | `/api/effy/studio/context?workspace=ws_N` | 🔒🏢 | `{brand:{tone,approved,prohibited}, trends[], competitorAngles[]}` — powers the Studio context rail |
+| POST | `/api/effy/studio/generate` | 🔒🏢 write | now accepts optional `trend` / `angle` → woven into the grounded prompt, echoed in `cited[]` |
+| POST | `/api/effy/studio/send-to-approval` | 🔒🏢 write | `{workspace, caption, hook?, channel?, type?, campaignId?}` → creates `internal_review` post → `{postId}` |
+
+**Interlink:** Trends/Competitors → Studio context rail → generation consumes the chosen trend/angle → Send-to-approval creates a review post. The **Content Sprint playbook** (`/app/playbooks`) chains these with context flowing via query params.
+
 ## Planned (not yet implemented)
 Brand Brain **RAG over uploaded docs** (pgvector, enabled in DB) pending an embedding provider · RBAC per-feature enforcement · Effy AI agents · Phase-2 modules (Advertise/Convert). This file gets a new section as each ships.
