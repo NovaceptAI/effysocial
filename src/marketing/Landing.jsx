@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight, Wand2, CalendarCheck, Inbox, Target, GitBranch, BarChart3,
-  Sparkles, ShieldCheck, Zap,
+  Sparkles, ShieldCheck, Zap, Menu, X,
 } from 'lucide-react';
 
 const JOURNEY = ['Strategy', 'Content', 'Publishing', 'Engagement', 'Advertising', 'Leads', 'Revenue'];
@@ -25,6 +25,7 @@ const PRINCIPLES = [
 ];
 
 export default function Landing() {
+  const [menuOpen, setMenuOpen] = useState(false);
   return (
     <div className="min-h-dvh bg-canvas text-ink font-sans overflow-x-hidden">
       <style>{`
@@ -50,10 +51,24 @@ export default function Landing() {
             <Link to="/pricing" className="hover:text-ink transition-colors">Pricing</Link>
           </nav>
           <div className="flex items-center gap-2">
-            <Link to="/login" className="px-4 py-2 rounded-lg text-sm font-bold text-ink hover:bg-surface2 transition">Log in</Link>
+            <Link to="/login" className="hidden sm:inline-flex px-4 py-2 rounded-lg text-sm font-bold text-ink hover:bg-surface2 transition">Log in</Link>
             <Link to="/login" className="px-4 py-2 rounded-[11px] text-sm font-bold bg-coral-btn text-white shadow-coral hover:shadow-coral-lg hover:brightness-105 transition-all">Get started</Link>
+            <button onClick={() => setMenuOpen((v) => !v)} className="md:hidden grid place-items-center w-9 h-9 rounded-lg hover:bg-surface2 transition text-ink" aria-label="Menu">
+              {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile menu */}
+        {menuOpen && (
+          <nav className="md:hidden border-t border-hair bg-canvas/95 backdrop-blur-xl px-6 py-3 flex flex-col gap-1 text-sm font-semibold">
+            <a href="#features" onClick={() => setMenuOpen(false)} className="py-2 text-ink-soft hover:text-ink">Product</a>
+            <a href="#journey" onClick={() => setMenuOpen(false)} className="py-2 text-ink-soft hover:text-ink">How it works</a>
+            <a href="#who" onClick={() => setMenuOpen(false)} className="py-2 text-ink-soft hover:text-ink">Who it's for</a>
+            <Link to="/pricing" onClick={() => setMenuOpen(false)} className="py-2 text-coral-ink">Pricing</Link>
+            <Link to="/login" onClick={() => setMenuOpen(false)} className="py-2 text-ink-soft hover:text-ink">Log in</Link>
+          </nav>
+        )}
       </header>
 
       {/* Hero — dramatic warm-dark stage */}
