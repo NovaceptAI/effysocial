@@ -36,3 +36,4 @@ One doc per module describing **what it does** and **how it connects to the plat
 
 Source of truth for requirements: [../../EffySocial_Claude_Design_Prompt.md](../../EffySocial_Claude_Design_Prompt.md).
 Architecture/phasing: [../../IMPLEMENTATION_PLAN.md](../../IMPLEMENTATION_PLAN.md).
+Full engineering reference: [../TECHNICAL.md](../TECHNICAL.md).

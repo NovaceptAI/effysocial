@@ -11,6 +11,7 @@ Live: https://effysocial.effybiz.in · Product app at `/app` · Marketing landin
 ## Documentation (start here)
 | Doc | Purpose |
 |---|---|
+| **[docs/TECHNICAL.md](docs/TECHNICAL.md)** | **Top-to-bottom engineering reference** (architecture, data model, auth/tenancy, OAuth, deploy, testing) |
 | [EffySocial_Claude_Design_Prompt.md](EffySocial_Claude_Design_Prompt.md) | Master product spec (source of truth) |
 | [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) | Architecture, decisions, phases |
 | [BUILD_TRACKER.md](BUILD_TRACKER.md) | Live status of every screen/module |
