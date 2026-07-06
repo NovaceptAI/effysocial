@@ -18,6 +18,9 @@ export const effyApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     }).then((d) => d.campaign),
+  updateCampaign: (id, payload) =>
+    http(`/campaigns/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.campaign),
+  campaignAssembly: (id) => http(`/campaigns/${id}/assembly`),
 
   // Brand Brain
   getBrand: (workspaceId) => http(`/brand?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.brain),
@@ -39,6 +42,8 @@ export const effyApi = {
 
   // Publish
   listPosts: (workspaceId) => http(`/posts?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.posts),
+  createPost: (payload) =>
+    http('/posts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.post),
   approvePost: (id) => http(`/posts/${id}/approve`, { method: 'POST' }),
   requestChanges: (id, comment) =>
     http(`/posts/${id}/request-changes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ comment }) }),

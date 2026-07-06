@@ -78,7 +78,7 @@ Living status of every module/screen. **Update the Status column as we build.**
 | Audiences | `/app/audiences` | 🧩 P3 |
 | Budgets | `/app/budgets` | 🧩 P3 |
 | Automated Rules | `/app/rules` | 🧩 P3 |
-| Campaign creation wizard | — | ⬜ P2/3 |
+| Campaign creation wizard | `/app/launch` | ✅ P4 | Campaign Launch playbook: basics→content→landing+form→launch, real assembly checklist |
 
 ## Convert (spec §14 · Phase 2)
 | Screen | Route | Status |

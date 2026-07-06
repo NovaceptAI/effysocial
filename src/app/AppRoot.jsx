@@ -36,6 +36,7 @@ import Pipeline from './pages/Pipeline';
 import LeadDetail from './pages/LeadDetail';
 import Forms from './pages/Forms';
 import Playbooks from './pages/Playbooks';
+import CampaignLaunch from './pages/CampaignLaunch';
 import LandingPages from './pages/LandingPages';
 import Tracking from './pages/Tracking';
 import Followups from './pages/Followups';
@@ -58,7 +59,7 @@ const BUILT = new Set([
   '/app/plan', '/app/trends', '/app/competitors', '/app/listening',
   '/app/ideas', '/app/media', '/app/templates',
   '/app/billing', '/app/settings', '/app/comments', '/app/engage-leads',
-  '/app/pipeline', '/app/forms', '/app/ads', '/app/playbooks', '/app/landing', '/app/tracking',
+  '/app/pipeline', '/app/forms', '/app/ads', '/app/playbooks', '/app/launch', '/app/landing', '/app/tracking',
   '/app/followups', '/app/bio',
   '/app/analytics/ads', '/app/analytics/leads', '/app/analytics/revenue',
   '/app/analytics/creative',
@@ -105,6 +106,7 @@ export default function AppRoot() {
             <Route path="pipeline/:id" element={<LeadDetail />} />
             <Route path="forms" element={<Forms />} />
             <Route path="playbooks" element={<Playbooks />} />
+            <Route path="launch" element={<CampaignLaunch />} />
             <Route path="landing" element={<LandingPages />} />
             <Route path="tracking" element={<Tracking />} />
             <Route path="followups" element={<Followups />} />

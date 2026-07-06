@@ -22,7 +22,7 @@ Modules were destinations you visit manually. The content-creation side wasn't i
 
 ## 5. Workflows — the two kinds (roadmap)
 - **A. Automation** (background) — generalize the existing Follow-ups trigger→condition→delay→action engine beyond leads (e.g. "post >X engagement → draft ad").
-- **B. Playbooks** (guided, human-in-loop) — Content Sprint (this), then Campaign Launch, Winning-post→Ad, Competitor Response, Trend-jack.
+- **B. Playbooks** (guided, human-in-loop) — Content Sprint ✅ and Campaign Launch ✅ (`/app/launch`: basics→content→landing+form→launch, real `/campaigns/:id/assembly` checklist). Next: Winning-post→Ad, Competitor Response, Trend-jack.
 
 ## 6. Tests
 Trends gaps reflect real posts; competitors shape; studio/context bundle; generate honours `trend` (appears in citations); Send-to-approval creates a review post; tenancy matrix for the 3 new GETs.

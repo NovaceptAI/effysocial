@@ -33,6 +33,9 @@ Legend: 🔓 no auth · 🔒 requires session · 🏢 org-ownership enforced
 | GET | `/api/effy/campaigns?workspace=ws_N` | 🔒🏢 | → `{campaigns:[...]}` |
 | GET | `/api/effy/campaigns/:id` | 🔒🏢 | → `{campaign:{...}}` · 404 if not in your org |
 | POST | `/api/effy/campaigns` | 🔒🏢 | `{workspace, name, objective?, status?, channels?, budget?, ...}` → `{campaign}` |
+| PATCH | `/api/effy/campaigns/:id` | 🔒🏢 write | `{status?, name?, objective?, budget?}` → `{campaign}` (launch = status→live) |
+| GET | `/api/effy/campaigns/:id/assembly` | 🔒🏢 | `{campaign, counts:{content,forms,landing,leads}, checklist[], ready}` — real linked-children for the Launch playbook |
+
 
 **Campaign shape:** `{ id, workspaceId:"ws_N", name, objective, status, owner, pillar, channels[], start, end, budget, spent, kpis:{impressions,clicks,leads,qualified,customers,revenue,cpl,roas,ctr}, counts:{content,ads,landingPages,forms}, recommendations }`
 

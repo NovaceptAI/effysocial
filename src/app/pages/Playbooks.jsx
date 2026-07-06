@@ -16,7 +16,6 @@ const STEPS = [
 ];
 
 const OTHER_PLAYBOOKS = [
-  { icon: Rocket, title: 'Campaign Launch', body: 'Brief → audience → content set → landing page + form → ad → tracking.' },
   { icon: Target, title: 'Winning post → Ad', body: 'Take a top-performing post and turn it into an ad creative + campaign.' },
   { icon: Repeat, title: 'Competitor Response', body: 'A rival moves → draft an on-brand counter-angle → schedule.' },
 ];
@@ -68,6 +67,7 @@ export default function Playbooks() {
       <PageHeader
         title="Playbooks"
         subtitle="Guided workflows that chain your modules — context flows from strategy to published."
+        actions={<Button onClick={() => navigate('/app/launch')}><Rocket className="w-4 h-4" /> Launch a campaign</Button>}
       />
 
       {/* Content Sprint — the active playbook */}
