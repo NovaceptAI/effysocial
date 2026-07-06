@@ -115,3 +115,57 @@ backgrounds matters.
 - LiveKit: https://livekit.com/pricing
 - Cloudflare Workers AI: https://developers.cloudflare.com/workers-ai/platform/pricing/
 - Background removal (remove.bg / Replicate / fal): https://www.remove.bg/pricing · https://replicate.com/collections/remove-backgrounds
+
+---
+
+# EffySocial — Subscription Plans (2026)
+
+_FX ₹85/USD · ex-GST · USD prices are region-set (India-first), not a direct conversion._
+
+## Cost basis (why the margins hold)
+All in-app AI (AI Studio, Brand voice, Landing copy, Effy assistant) runs on
+**Groq `llama-3.3-70b-versatile`** — current rates **$0.59/M input, $0.79/M output**.
+A blended AI action (~800 in + 700 out tokens) costs **$0.001 ≈ ₹0.09** — we
+model **₹0.10/action** for safety. **Images are free** (Cloudflare FLUX Schnell /
+Pollinations); CEO-photo background removal (`rembg`) runs locally. So EffySocial's
+core marginal cost is dominated by fixed infra, not tokens.
+
+| Tier | AI actions/mo | AI cost | Infra alloc | **Total cost** | **Price/mo** | Margin |
+|------|--------------:|--------:|------------:|---------------:|-------------:|-------:|
+| Plus | 300 | ₹30 | ₹150 | **₹180** | **₹999** | 82% (5.5×) |
+| Pro | 1,500 | ₹150 | ₹450 | **₹600** | **₹2,999** | 80% (5.0×) |
+| Business | 6,000 | ₹600 | ₹1,500 | **₹2,100** | **₹8,999** | 77% (4.3×) |
+
+Every tier clears the **2× profit** floor by a wide margin; annual (2 months free)
+still holds 3.6×–4.6×.
+
+## Plans
+
+| | **Plus** | **Pro** ⭐ | **Business** |
+|--|--|--|--|
+| **Monthly** | ₹999 / $19 | ₹2,999 / $59 | ₹8,999 / $179 |
+| **Yearly** (2 mo free) | ₹9,990 / $190 | ₹29,990 / $590 | ₹89,990 / $1,790 |
+| For | Solo businesses | Growing businesses & freelancers | Agencies & multi-brand |
+| Workspaces (brands) | 1 | 3 | 15 |
+| Team seats | 2 | 5 | 20 |
+| AI generations / mo | 300 | 1,500 | 6,000 |
+| AI Studio + Brand Brain | ✅ | ✅ | ✅ |
+| Calendar, scheduling, inbox | ✅ | ✅ | ✅ |
+| Organic analytics | ✅ | ✅ | ✅ |
+| Ads dashboard (Meta+Google) | — | ✅ | ✅ |
+| Landing pages, forms, pipeline | — | ✅ | ✅ |
+| Follow-up automation | — | ✅ | ✅ |
+| Playbooks (Sprint + Launch) | — | ✅ | ✅ |
+| Full analytics (leads/revenue/ROAS) | — | ✅ | ✅ |
+| Approvals workflow | — | ✅ | ✅ |
+| White-label reports + client portals | — | — | ✅ |
+| Agency overview & oversight | — | — | ✅ |
+| Conversion Tracking Centre | — | — | ✅ |
+| API access + advanced RBAC | — | — | ✅ |
+| Support | Email | Priority | Priority + onboarding |
+
+## Usage-based add-ons (metered, ~2× cost)
+- **Extra AI generations:** ₹1 each (bundles of 500 = ₹400) — ~10× cost, protects margin.
+- **Lip-sync video / AI voice / dubbing / HD leadership photo:** per the per-creation
+  rates above (all at 50% gross margin).
+- **Extra workspace:** ₹499/mo · **Extra seat:** ₹299/mo.

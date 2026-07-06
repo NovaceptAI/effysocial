@@ -47,6 +47,7 @@ export default function Landing() {
             <a href="#features" className="hover:text-ink transition-colors">Product</a>
             <a href="#journey" className="hover:text-ink transition-colors">How it works</a>
             <a href="#who" className="hover:text-ink transition-colors">Who it's for</a>
+            <Link to="/pricing" className="hover:text-ink transition-colors">Pricing</Link>
           </nav>
           <div className="flex items-center gap-2">
             <Link to="/login" className="px-4 py-2 rounded-lg text-sm font-bold text-ink hover:bg-surface2 transition">Log in</Link>
