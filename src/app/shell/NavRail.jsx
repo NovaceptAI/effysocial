@@ -13,7 +13,7 @@ const loadOpen = () => {
   try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch { return {}; }
 };
 
-export default function NavRail({ mobileOpen = false, onNavigate }) {
+export default function NavRail({ mobileOpen = false, onNavigate, desktopHidden = false }) {
   const { org } = useWorkspace();
   const isAgency = org?.type === 'agency';
   // Default: Overview/Strategy/Content/Publish open; others collapsed.
@@ -35,8 +35,8 @@ export default function NavRail({ mobileOpen = false, onNavigate }) {
       'w-[248px] shrink-0 bg-rail text-rail-ink flex flex-col border-r border-black/20',
       // Mobile: off-canvas drawer that slides in over a backdrop.
       'fixed inset-y-0 left-0 z-50 h-dvh transition-transform duration-300 ease-out',
-      // Desktop (md+): a static sticky sidebar, always visible.
-      'md:sticky md:top-0 md:z-auto md:translate-x-0 md:transition-none',
+      // Desktop (md+): a static sticky sidebar — hidden when collapsed.
+      desktopHidden ? 'md:hidden' : 'md:sticky md:top-0 md:z-auto md:translate-x-0 md:transition-none',
       mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full',
     )}>
       <div className="flex items-center gap-2.5 px-5 h-16 border-b border-rail-line/70">

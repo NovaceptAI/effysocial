@@ -17,7 +17,7 @@ export function Button({ variant = 'primary', size = 'md', className, ...props }
 }
 
 export function Card({ className, ...props }) {
-  return <div className={cn('bg-surface border border-line rounded-2xl shadow-e1', className)} {...props} />;
+  return <div className={cn('bg-surface rounded-2xl shadow-e2', className)} {...props} />;
 }
 
 export function Badge({ tone = 'default', className, children }) {

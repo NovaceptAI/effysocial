@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Sparkles, Wand2, Image as ImageIcon, Type, Smartphone, Monitor, RefreshCw,
   Plus, Check, AlertTriangle, FileText, Video, Scissors, Crop, CalendarPlus, Send,
-  Flame, Swords, X,
+  Flame, Swords, X, ArrowRight,
 } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { brandBrainFor } from '../data/brandBrain';
@@ -130,7 +130,7 @@ export default function AIStudio() {
           ))}
         </div>
         <div className="flex-1" />
-        <select value={mode} onChange={(e) => setMode(e.target.value)} className="rounded-sm border border-line bg-surface px-3 py-1.5 text-sm">
+        <select value={mode} onChange={(e) => setMode(e.target.value)} className="rounded-lg border-0 bg-surface2 px-3 py-1.5 text-sm font-medium">
           {MODES.map((m) => <option key={m}>{m}</option>)}
         </select>
       </Card>
@@ -143,9 +143,9 @@ export default function AIStudio() {
             <h3 className="font-bold text-ink mb-3 text-sm">Brief</h3>
             <label className="block text-xs font-semibold text-ink-soft mb-1">Topic / message</label>
             <textarea value={topic} onChange={(e) => setTopic(e.target.value)} rows={3}
-              placeholder="e.g. monsoon dental check-up offer" className="w-full rounded-sm border border-line bg-surface px-3 py-2 text-sm mb-3" />
+              placeholder="e.g. monsoon dental check-up offer" className="w-full rounded-xl border-0 bg-surface2 px-3.5 py-2.5 text-sm mb-3" />
             <label className="block text-xs font-semibold text-ink-soft mb-1">Language</label>
-            <select value={lang} onChange={(e) => setLang(e.target.value)} className="w-full rounded-sm border border-line bg-surface px-3 py-2 text-sm mb-3">
+            <select value={lang} onChange={(e) => setLang(e.target.value)} className="w-full rounded-xl border-0 bg-surface2 px-3.5 py-2.5 text-sm mb-3 font-medium">
               {LANGS.map((l) => <option key={l}>{l}</option>)}
             </select>
             {(trend || angle) && (
@@ -163,25 +163,30 @@ export default function AIStudio() {
           <Card className="p-4">
             <h3 className="font-bold text-ink mb-1 text-sm flex items-center gap-1.5"><Flame className="w-4 h-4 text-error" /> What's trending</h3>
             <p className="text-xs text-ink-faint mb-2.5">Tap to write with this theme.</p>
-            <div className="space-y-1.5 mb-4">
+            <div className="space-y-2 mb-5">
               {(ctx?.trends || []).map((t) => (
                 <button key={t.topic} onClick={() => setTrend(t.topic)}
-                  className={cn('w-full flex items-center gap-2 text-left text-xs px-2.5 py-2 rounded-lg border transition',
-                    trend === t.topic ? 'border-coral bg-coral-tint text-coral-ink' : 'border-line hover:border-coral/40 text-ink-soft')}>
-                  <span className={cn('w-1.5 h-1.5 rounded-full', t.heat === 'hot' ? 'bg-error' : 'bg-warning')} />
-                  <span className="flex-1">{t.topic}</span>
-                  {trend === t.topic && <Check className="w-3.5 h-3.5" />}
+                  className={cn('group w-full flex items-center gap-2.5 text-left text-xs px-2.5 py-2.5 rounded-xl transition-all',
+                    trend === t.topic ? 'bg-coral-tint text-coral-ink shadow-e1' : 'bg-surface2/60 text-ink-soft hover:bg-coral-tint/60')}>
+                  <span className={cn('grid place-items-center w-6 h-6 rounded-lg shrink-0', t.heat === 'hot' ? 'bg-error/10 text-error' : 'bg-warning/10 text-warning')}>
+                    <Flame className="w-3 h-3" />
+                  </span>
+                  <span className="flex-1 font-medium leading-snug">{t.topic}</span>
+                  {trend === t.topic
+                    ? <Check className="w-3.5 h-3.5 shrink-0" />
+                    : <ArrowRight className="w-3.5 h-3.5 shrink-0 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all text-coral-ink" />}
                 </button>
               ))}
             </div>
             <h3 className="font-bold text-ink mb-1 text-sm flex items-center gap-1.5"><Swords className="w-4 h-4 text-coral-ink" /> Competitor angles</h3>
             <p className="text-xs text-ink-faint mb-2.5">Differentiate — tap to set the angle.</p>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               {(ctx?.competitorAngles || []).map((a) => (
                 <button key={a} onClick={() => setAngle(a)}
-                  className={cn('w-full text-left text-xs px-2.5 py-2 rounded-lg border transition leading-snug',
-                    angle === a ? 'border-info bg-info-soft text-info' : 'border-line hover:border-info/40 text-ink-soft')}>
-                  {a}
+                  className={cn('group w-full flex items-start gap-2.5 text-left text-xs px-2.5 py-2.5 rounded-xl transition-all leading-snug',
+                    angle === a ? 'bg-info-soft text-info shadow-e1' : 'bg-surface2/60 text-ink-soft hover:bg-info-soft/50')}>
+                  <span className="grid place-items-center w-6 h-6 rounded-lg shrink-0 bg-info/10 text-info"><Swords className="w-3 h-3" /></span>
+                  <span className="flex-1 font-medium">{a}</span>
                 </button>
               ))}
             </div>
@@ -199,7 +204,15 @@ export default function AIStudio() {
 
         {/* CENTRE — editor */}
         <Card className="p-5">
-          <Tabs tabs={[{ id: 'copy', label: 'Copy' }, { id: 'visual', label: 'Visual' }]} active={tab} onChange={setTab} />
+          <div className="inline-flex items-center gap-1 bg-surface2 rounded-full p-1 mb-5">
+            {[{ id: 'copy', label: 'Copy' }, { id: 'visual', label: 'Visual' }].map((t) => (
+              <button key={t.id} onClick={() => setTab(t.id)}
+                className={cn('px-5 py-1.5 rounded-full text-sm font-semibold transition-all',
+                  tab === t.id ? 'bg-surface text-ink shadow-e1' : 'text-ink-faint hover:text-ink')}>
+                {t.label}
+              </button>
+            ))}
+          </div>
           {tab === 'copy' ? (
             <div>
               <div className="flex flex-wrap gap-1.5 mb-3">

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Search, Plus, Sparkles, Bell, HelpCircle, ChevronDown, Calendar, Check, LogOut, AlertTriangle, Info, ShieldAlert, CheckSquare, Menu } from 'lucide-react';
+import { Search, Plus, Sparkles, Bell, HelpCircle, ChevronDown, Calendar, Check, LogOut, AlertTriangle, Info, ShieldAlert, CheckSquare, Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useAppAuth } from '../context/AppAuth';
 import { usePosts } from '../api/hooks';
@@ -69,7 +69,7 @@ function Notifications() {
   );
 }
 
-export default function TopBar({ onOpenPalette, onOpenAssistant, onOpenNav }) {
+export default function TopBar({ onOpenPalette, onOpenAssistant, onOpenNav, onToggleRail, railHidden }) {
   const { org, user, workspaces, workspace, setWorkspaceId } = useWorkspace();
   const { user: authUser, logout } = useAppAuth();
   const [wsOpen, setWsOpen] = useState(false);
@@ -84,6 +84,10 @@ export default function TopBar({ onOpenPalette, onOpenAssistant, onOpenNav }) {
       {/* Mobile menu (opens nav drawer) */}
       <button onClick={onOpenNav} className="md:hidden grid place-items-center w-9 h-9 rounded-lg hover:bg-surface2 transition text-ink-soft shrink-0" title="Menu">
         <Menu className="w-5 h-5" />
+      </button>
+      {/* Desktop: collapse / expand the nav rail for a full-width view */}
+      <button onClick={onToggleRail} className="hidden md:grid place-items-center w-9 h-9 rounded-lg hover:bg-surface2 transition text-ink-soft shrink-0" title={railHidden ? 'Show menu' : 'Hide menu'}>
+        {railHidden ? <PanelLeftOpen className="w-[18px] h-[18px]" /> : <PanelLeftClose className="w-[18px] h-[18px]" />}
       </button>
 
       {/* Workspace switcher */}
