@@ -65,7 +65,7 @@ export default function NavRail({ mobileOpen = false, onNavigate }) {
                       className={({ isActive }) => cn(
                         'group relative flex items-center gap-2.5 px-3 py-2 rounded-[10px] text-sm font-medium transition-all duration-200',
                         isActive
-                          ? 'bg-coral-btn text-white shadow-[0_4px_14px_-3px_rgba(232,74,51,0.55)] before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-4 before:w-[3px] before:rounded-full before:bg-white/70 before:-ml-3'
+                          ? 'bg-coral text-white before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-4 before:w-[3px] before:rounded-full before:bg-white/70 before:-ml-3'
                           : 'text-rail-ink/75 hover:bg-rail-soft hover:text-white',
                       )}
                     >

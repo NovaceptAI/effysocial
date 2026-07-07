@@ -44,7 +44,7 @@ export default function AppShell() {
           onOpenNav={() => setNavOpen(true)}
         />
         <VerifyBanner />
-        <main className="flex-1 min-w-0 p-4 sm:p-6 max-w-[1400px] w-full mx-auto">
+        <main className="flex-1 min-w-0 p-5 sm:p-8 max-w-[1360px] w-full mx-auto">
           <Outlet />
         </main>
       </div>

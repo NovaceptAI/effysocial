@@ -26,8 +26,8 @@ export default {
         cream: '#fbf4ea',
         surface: '#ffffff',
         surface2: '#f5efe6',
-        line: '#eadfd1',
-        hair: '#f0e7db',      // hairline — softer than line, for luxe dividers
+        line: '#efe8df',      // barely-there border (Linear/Vercel-soft)
+        hair: '#f4efe8',      // near-invisible hairline for quiet dividers
         ink: { DEFAULT: '#27201d', soft: '#6f645c', faint: '#a89d93' },
         coral: {
           DEFAULT: '#e84a33', // primary action
@@ -53,17 +53,17 @@ export default {
         dv: { 1: '#ff6b5e', 2: '#f59e0b', 3: '#14b8a6', 4: '#ec4899', 5: '#38bdf8', 6: '#475569' },
       },
       borderRadius: {
-        xs: '8px', sm: '10px', md: '14px', lg: '18px', xl: '24px', '2xl': '20px',
+        // Softer, larger radii — nothing boxy.
+        xs: '10px', sm: '12px', md: '16px', lg: '20px', xl: '26px', '2xl': '22px',
       },
       boxShadow: {
-        // Warmer, more diffuse, layered — reads as soft depth, not a hard drop.
-        e1: '0 1px 1px rgba(39,32,29,0.04), 0 2px 6px rgba(39,32,29,0.05)',
-        e2: '0 2px 4px rgba(39,32,29,0.04), 0 10px 30px -8px rgba(39,32,29,0.10)',
-        e3: '0 8px 16px -8px rgba(39,32,29,0.10), 0 28px 56px -16px rgba(39,32,29,0.16)',
-        coral: '0 6px 16px -4px rgba(232,74,51,0.32), 0 2px 4px rgba(232,74,51,0.20)',
-        'coral-lg': '0 12px 28px -6px rgba(232,74,51,0.38), 0 2px 6px rgba(232,74,51,0.22)',
-        // Inner top-highlight that gives white cards a subtle glassy lift.
-        sheen: 'inset 0 1px 0 rgba(255,255,255,0.7)',
+        // Very subtle, low-spread depth (Linear/Vercel) — presence without weight.
+        e1: '0 1px 2px rgba(39,32,29,0.04)',
+        e2: '0 1px 2px rgba(39,32,29,0.03), 0 6px 20px -10px rgba(39,32,29,0.10)',
+        e3: '0 4px 12px -6px rgba(39,32,29,0.08), 0 20px 44px -18px rgba(39,32,29,0.14)',
+        coral: '0 4px 14px -6px rgba(232,74,51,0.30)',
+        'coral-lg': '0 8px 22px -8px rgba(232,74,51,0.34)',
+        sheen: 'inset 0 1px 0 rgba(255,255,255,0.6)',
       },
       backgroundImage: {
         // Cohesive coral→amber warmth (no off-palette pink).

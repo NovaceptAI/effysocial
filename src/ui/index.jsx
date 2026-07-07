@@ -4,34 +4,34 @@ import { cn } from '../lib/cn';
 // Bright Studio UI primitives (Tailwind). The shared kit every app screen uses.
 
 export function Button({ variant = 'primary', size = 'md', className, ...props }) {
-  const base = 'inline-flex items-center justify-center gap-2 font-bold rounded-[11px] transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/40 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas';
+  const base = 'inline-flex items-center justify-center gap-2 font-semibold rounded-[12px] transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-coral/40 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas';
   const variants = {
-    primary: 'bg-coral-btn text-white shadow-coral hover:shadow-coral-lg hover:brightness-[1.04]',
-    spark: 'bg-aurora text-white shadow-coral hover:shadow-coral-lg hover:brightness-[1.04]',
-    secondary: 'bg-gradient-to-b from-white to-surface2 text-ink border border-line shadow-e1 hover:border-coral/40 hover:shadow-e2',
+    primary: 'bg-coral text-white shadow-coral hover:brightness-95',
+    spark: 'bg-aurora text-white shadow-coral hover:brightness-95',
+    secondary: 'bg-surface text-ink border border-line hover:bg-surface2',
     ghost: 'text-ink-soft hover:bg-surface2 hover:text-ink',
     railGhost: 'text-rail-ink/80 hover:bg-rail-soft hover:text-white',
   };
-  const sizes = { sm: 'text-[0.8rem] px-3 py-1.5', md: 'text-[0.9rem] px-4 py-2.5', lg: 'text-[0.95rem] px-6 py-3.5' };
+  const sizes = { sm: 'text-[0.8rem] px-3.5 py-1.5', md: 'text-[0.9rem] px-4 py-2.5', lg: 'text-[0.95rem] px-6 py-3.5' };
   return <button className={cn(base, variants[variant], sizes[size], className)} {...props} />;
 }
 
 export function Card({ className, ...props }) {
-  return <div className={cn('bg-card-sheen border border-hair rounded-2xl shadow-e2 shadow-sheen', className)} {...props} />;
+  return <div className={cn('bg-surface border border-line rounded-2xl shadow-e1', className)} {...props} />;
 }
 
 export function Badge({ tone = 'default', className, children }) {
   const tones = {
-    default: 'bg-surface2 text-ink-soft ring-1 ring-inset ring-line',
-    coral: 'bg-aurora text-white shadow-[0_2px_6px_-1px_rgba(232,74,51,0.4)]',
-    new: 'bg-coral-tint text-coral-ink ring-1 ring-inset ring-coral/20',
-    success: 'bg-success-soft text-success ring-1 ring-inset ring-success/15',
-    warning: 'bg-warning-soft text-warning ring-1 ring-inset ring-warning/15',
-    error: 'bg-error-soft text-error ring-1 ring-inset ring-error/15',
-    info: 'bg-info-soft text-info ring-1 ring-inset ring-info/15',
+    default: 'bg-surface2 text-ink-soft',
+    coral: 'bg-coral text-white',
+    new: 'bg-coral-tint text-coral-ink',
+    success: 'bg-success-soft text-success',
+    warning: 'bg-warning-soft text-warning',
+    error: 'bg-error-soft text-error',
+    info: 'bg-info-soft text-info',
   };
   return (
-    <span className={cn('inline-flex items-center gap-1 text-[0.7rem] font-bold px-2.5 py-1 rounded-full tracking-wide', tones[tone], className)}>
+    <span className={cn('inline-flex items-center gap-1 text-[0.7rem] font-semibold px-2.5 py-1 rounded-full tracking-wide', tones[tone], className)}>
       {children}
     </span>
   );
@@ -39,10 +39,10 @@ export function Badge({ tone = 'default', className, children }) {
 
 export function PageHeader({ title, subtitle, actions }) {
   return (
-    <div className="flex items-start justify-between gap-4 mb-7">
+    <div className="flex items-start justify-between gap-4 mb-8">
       <div>
         <h1 className="font-display text-[1.9rem] leading-[1.1] font-semibold tracking-tightest text-ink">{title}</h1>
-        {subtitle && <p className="mt-1.5 text-[0.9rem] text-ink-soft leading-relaxed">{subtitle}</p>}
+        {subtitle && <p className="mt-2 text-[0.9rem] text-ink-soft leading-relaxed">{subtitle}</p>}
       </div>
       {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
     </div>
@@ -53,7 +53,7 @@ const TREND_TONE = { up: 'text-success', down: 'text-error', flat: 'text-ink-fai
 
 export function MetricCard({ label, value, delta, deltaDir = 'up', hint, phase }) {
   return (
-    <Card className="p-5 flex flex-col gap-1 transition-shadow duration-200 hover:shadow-e3">
+    <Card className="p-6 flex flex-col gap-1 transition-shadow duration-200 hover:shadow-e2">
       <div className="flex items-center justify-between">
         <span className="text-[0.7rem] font-bold text-ink-faint uppercase tracking-[0.08em]">{label}</span>
         {phase && <Badge tone="new">{phase}</Badge>}
@@ -108,7 +108,7 @@ export function Pacing({ value, max, tone = 'coral' }) {
     error: 'bg-gradient-to-r from-error/80 to-error',
   }[tone];
   return (
-    <div className="w-full h-2 rounded-full bg-surface2 overflow-hidden ring-1 ring-inset ring-line/60">
+    <div className="w-full h-2 rounded-full bg-surface2 overflow-hidden">
       <div className={cn('h-full rounded-full transition-all duration-500', bar)} style={{ width: `${pct}%` }} />
     </div>
   );
@@ -116,9 +116,9 @@ export function Pacing({ value, max, tone = 'coral' }) {
 
 export function EmptyState({ icon, title, body, action }) {
   return (
-    <div className="text-center py-16 px-6 bg-card-sheen border border-hair rounded-2xl shadow-e1 flex flex-col items-center gap-2.5">
+    <div className="text-center py-20 px-6 bg-surface border border-line rounded-2xl flex flex-col items-center gap-2.5">
       {icon && (
-        <div className="grid place-items-center w-16 h-16 rounded-2xl bg-coral-tint text-3xl mb-1.5 ring-1 ring-inset ring-coral/15 shadow-e1">
+        <div className="grid place-items-center w-16 h-16 rounded-2xl bg-coral-tint text-3xl mb-1.5">
           {icon}
         </div>
       )}
