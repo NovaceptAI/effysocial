@@ -77,6 +77,26 @@ button {
   cursor: pointer;
 }
 
+/* Preflight is disabled globally (to protect legacy plain-CSS pages), so native
+   <button>/<input>/<textarea> keep the browser's DEFAULT border. Re-apply
+   Tailwind's border reset ONLY inside the product app so buttons/controls are
+   borderless by default; explicit `border` utilities still opt back in. */
+.app-root *,
+.app-root *::before,
+.app-root *::after {
+  border-width: 0;
+  border-style: solid;
+  border-color: var(--line);
+}
+
+/* Inside the app, default inputs are filled (not outlined) so they stay
+   visible on borderless white cards. Explicit border utilities still opt in. */
+.app-root input,
+.app-root select,
+.app-root textarea {
+  background: var(--surface-2);
+}
+
 /* Preflight is disabled, so anchors would otherwise render as default
    blue/underlined "HTML links". Reset to inherit — designed links set their
    own colour. (Lowest specificity, so component-styled links still win.) */

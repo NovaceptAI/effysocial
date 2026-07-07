@@ -218,7 +218,7 @@ export default function AIStudio() {
               <div className="flex flex-wrap gap-1.5 mb-3">
                 {COPY_TOOLS.map((tool) => (
                   <button key={tool} disabled={!result} onClick={generate}
-                    className="text-xs font-semibold px-2.5 py-1 rounded-full border border-line text-ink-soft hover:border-coral hover:text-coral-ink disabled:opacity-40">
+                    className="text-xs font-semibold px-3 py-1.5 rounded-full bg-surface2 text-ink-soft hover:bg-coral-tint hover:text-coral-ink disabled:opacity-40 transition">
                     {tool}
                   </button>
                 ))}
