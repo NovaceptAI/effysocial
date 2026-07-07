@@ -22,6 +22,7 @@ import VoiceCaller from './modules/caller/VoiceCaller';
 import CampaignGenerator from './modules/campaign/CampaignGenerator';
 import PhotoExperience from './modules/photo/PhotoExperience';
 import StyleGuide from './styleguide/StyleGuide';
+import BrightStyleGuide from './marketing/StyleGuide';
 
 // Gate the product: unauthenticated visitors are sent to the login screen.
 // Waits for the async session check so we don't flash a redirect on refresh.
@@ -70,7 +71,7 @@ export default function App() {
             <Route path="/caller" element={<VoiceCaller />} />
             <Route path="/campaign" element={<CampaignGenerator />} />
             <Route path="/photo" element={<PhotoExperience />} />
-            <Route path="/style-guide" element={<StyleGuide />} />
+            <Route path="/style-guide" element={<BrightStyleGuide />} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
