@@ -16,6 +16,7 @@ Live: https://effysocial.effybiz.in · Product app at `/app` · Marketing landin
 | [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) | Architecture, decisions, phases |
 | [BUILD_TRACKER.md](BUILD_TRACKER.md) | Live status of every screen/module |
 | [docs/API.md](docs/API.md) | Implemented backend endpoints |
+| [docs/READINESS.md](docs/READINESS.md) | Real-data readiness audit (de-mock status + missing creds) |
 | [docs/modules/](docs/modules/README.md) | Per-module contracts (frontend authors → backend obeys) |
 
 ## Development

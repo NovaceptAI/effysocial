@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
-import { MailWarning, Check } from 'lucide-react';
+import { Outlet, useLocation, Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { MailWarning, Check, Plug, ArrowRight } from 'lucide-react';
 import NavRail from './NavRail';
 import TopBar from './TopBar';
 import CommandPalette from './CommandPalette';
 import AssistantPanel from '../components/AssistantPanel';
 import { useAppAuth } from '../context/AppAuth';
+import { useWorkspace } from '../context/WorkspaceContext';
+import { effyApi } from '../api/effyApi';
 
 function VerifyBanner() {
   const { user, resendVerification } = useAppAuth();
@@ -29,6 +32,29 @@ function VerifyBanner() {
 
 // Routes that want the full viewport width (editor-style, no page gutter/cap).
 const FULL_BLEED = new Set(['/app/studio']);
+
+// Shown until the workspace has at least one connected channel — the product
+// runs on real integrations, so connecting is step one for a fresh account.
+function ConnectBanner() {
+  const { workspace } = useWorkspace();
+  const { pathname } = useLocation();
+  const { data: integrations = [] } = useQuery({
+    queryKey: ['integrations', workspace?.id],
+    queryFn: () => effyApi.listIntegrations(workspace.id),
+    enabled: !!workspace,
+    staleTime: 60_000,
+  });
+  const connected = integrations.filter((i) => i.state === 'connected').length;
+  if (!workspace || connected > 0 || pathname === '/app/integrations') return null;
+  return (
+    <Link to="/app/integrations"
+      className="flex items-center gap-2.5 px-5 sm:px-8 py-2.5 bg-coral-tint text-sm text-ink hover:bg-coral-soft transition">
+      <Plug className="w-4 h-4 text-coral-ink shrink-0" />
+      <span className="flex-1"><strong>Connect your channels</strong> — link Instagram, Facebook or LinkedIn to publish, sync data and unlock real analytics.</span>
+      <span className="inline-flex items-center gap-1 text-xs font-bold text-coral-ink">Connect <ArrowRight className="w-3.5 h-3.5" /></span>
+    </Link>
+  );
+}
 
 export default function AppShell() {
   const { pathname } = useLocation();
@@ -60,6 +86,7 @@ export default function AppShell() {
           railHidden={railHidden}
         />
         <VerifyBanner />
+        <ConnectBanner />
         <main className={fullBleed
           ? 'flex-1 min-w-0 w-full px-4 sm:px-6 py-5'
           : 'flex-1 min-w-0 p-5 sm:p-8 max-w-[1360px] w-full mx-auto'}>

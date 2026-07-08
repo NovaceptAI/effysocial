@@ -1,15 +1,14 @@
 import React, { createContext, useContext, useMemo, useState, useEffect } from 'react';
 import { useAppAuth } from './AppAuth';
-import { WORKSPACES as MOCK_WS } from '../data/sampleData';
 
-// Workspaces now come from the real backend bootstrap (org → workspaces).
-// Until each module has its own API, we enrich each real workspace with the
-// mock "operational" fields (channels, leads, spend, health…) keyed by
-// industry, so the not-yet-migrated modules keep rendering.
-const ENRICH = Object.fromEntries(MOCK_WS.map((w) => [w.industry, w]));
+// Workspaces come from the real backend bootstrap (org → workspaces).
+// NO invented metrics: operational fields default to honest zeros/empties and
+// only become non-zero when a module supplies real data. `channels` fills from
+// connected integrations as they come online.
 const DEFAULTS = {
-  channels: ['instagram', 'facebook'], monthlySpend: 30000, leads: 60,
-  organicHealth: 'good', paidHealth: 'good', manager: 'You', approvals: 0, alerts: 0, lastReport: '—',
+  channels: [], monthlySpend: 0, leads: 0,
+  organicHealth: 'attention', paidHealth: 'attention', manager: 'You',
+  approvals: 0, alerts: 0, lastReport: '—',
 };
 
 function initials(name = '') {
@@ -23,7 +22,7 @@ export function WorkspaceProvider({ children }) {
 
   const workspaces = useMemo(() => {
     const list = bootstrap?.workspaces || [];
-    return list.map((w) => ({ ...DEFAULTS, ...(ENRICH[w.industry] || {}), ...w }));
+    return list.map((w) => ({ ...DEFAULTS, ...w }));
   }, [bootstrap]);
 
   const [workspaceId, setWorkspaceId] = useState(null);

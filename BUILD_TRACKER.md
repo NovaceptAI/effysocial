@@ -177,4 +177,6 @@ Suite lives in `novalab-engine/tests/` · run: `PYTHONPATH=. myenv/bin/pytest te
 
 **Rule going forward: every new backend slice ships with its tests** (add cases to the tenancy matrix + a contract file per module).
 
+_De-mock (2026-07-08): DB cleaned of all demo/seed data; fake workspace metrics removed; connect-channels gate added — see [docs/READINESS.md](docs/READINESS.md)._
+
 _Last updated: **PHASE 2 COMPLETE** — all P1 screens real, 8 backend modules live (auth/tenancy/email, Campaigns, Brand Brain, AI Studio, Publish, Engage, Analytics, Effy AI), RBAC enforced, agency overview + notifications + workspace-select shipped. Right context panel partially covered by the Effy drawer. Phase 2 slices 1–9 shipped (Lead Pipeline, Forms, Ad Dashboard + adapter pattern, Landing Pages, Tracking Centre, Follow-up Automation, Lead Detail + outcomes, Link-in-bio, Analytics expansion: Ads/Leads/Revenue/Creative), 149 tests green. Next: Phase 3 — real integrations (Meta/Google ads, social publishing, messaging) through the existing adapters._
