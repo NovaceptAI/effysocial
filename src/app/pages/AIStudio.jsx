@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  Sparkles, Smartphone, Monitor, RefreshCw,
+  Sparkles, Smartphone, Monitor, RefreshCw, Image as ImageIcon,
   Check, FileText, Film, Images, Square, MessageCircle, Video, Briefcase,
   CalendarPlus, Send, Flame, Swords, X, ArrowRight, ArrowLeft, PenLine, Palette,
   SlidersHorizontal, Search,
@@ -110,6 +110,8 @@ export default function AIStudio() {
   const [angle, setAngle] = useState(params.get('angle') || '');
   const [sent, setSent] = useState(false);
   const [showScores, setShowScores] = useState(true);
+  const [image, setImage] = useState('');       // generated visual URL
+  const [imgBusy, setImgBusy] = useState(false);
 
   const { data: ctx } = useQuery({
     queryKey: ['studio-context', workspace?.id],
@@ -133,6 +135,14 @@ export default function AIStudio() {
     await effyApi.sendToApproval({ workspace: workspace.id, hook: result.hook, caption: result.caption, channel: format.platform, type: format.id.split('_')[1] || 'post' });
     setSent(true);
   };
+  const genImage = async () => {
+    if (!workspace || !format) return;
+    setImgBusy(true);
+    try {
+      const d = await effyApi.studioImage({ workspace: workspace.id, topic: topic || trend || angle, aspect: format.aspect });
+      if (d.imageUrl) setImage(d.imageUrl);
+    } finally { setImgBusy(false); }
+  };
 
   if (!format) {
     return <FormatChooser onPick={(f) => { setFormat(f); setPanel('brief'); }} />;
@@ -148,7 +158,7 @@ export default function AIStudio() {
     <div className="-mt-1">
       {/* Contextual top bar */}
       <div className="flex items-center gap-3 mb-5 flex-wrap">
-        <button onClick={() => { setFormat(null); setResult(null); }} className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-soft hover:text-ink">
+        <button onClick={() => { setFormat(null); setResult(null); setImage(''); }} className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-soft hover:text-ink">
           <ArrowLeft className="w-4 h-4" /> Formats
         </button>
         <div className="h-5 w-px bg-line" />
@@ -282,9 +292,23 @@ export default function AIStudio() {
                     <span className="grid place-items-center w-7 h-7 rounded-full text-xs" style={{ background: workspace.accent + '22' }}>{workspace.logo}</span>
                     <span className="text-xs font-bold">{workspace.name.toLowerCase().replace(/\s/g, '')}</span>
                   </div>
-                  <div className="bg-aurora" style={{ aspectRatio: format.aspect }} />
+                  <div className="relative bg-surface2" style={{ aspectRatio: format.aspect }}>
+                    {image ? (
+                      <img src={image} alt="Generated visual" className="absolute inset-0 w-full h-full object-cover" />
+                    ) : (
+                      <div className="absolute inset-0 bg-aurora" />
+                    )}
+                    {imgBusy && (
+                      <div className="absolute inset-0 grid place-items-center bg-ink/30 backdrop-blur-sm text-white text-xs font-semibold">
+                        <span className="inline-flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Painting…</span>
+                      </div>
+                    )}
+                  </div>
                   <div className="p-3 text-[0.75rem] text-ink-soft line-clamp-4 whitespace-pre-wrap leading-relaxed">{result.caption}</div>
                 </div>
+                <Button variant="secondary" className="w-full mt-4" onClick={genImage} disabled={imgBusy}>
+                  <ImageIcon className="w-4 h-4" /> {imgBusy ? 'Generating…' : image ? 'Regenerate image' : 'Generate image'}
+                </Button>
               </div>
             </div>
           ) : (
