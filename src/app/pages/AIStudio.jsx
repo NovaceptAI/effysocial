@@ -123,6 +123,7 @@ export default function AIStudio() {
     try {
       const d = await effyApi.generateStudio({ workspace: workspace.id, type: format.id, topic, language: lang, trend, angle });
       setResult({ caption: d.caption, hashtags: d.hashtags || [], scores: d.scores || [], hook: d.hook, cta: d.cta, cited: d.cited || [] });
+      setPanel(null);   // collapse the tool panel so the result gets full room
     } catch (e) {
       setResult({ caption: `Generation failed: ${e.message || 'try again'}`, hashtags: [], scores: [] });
     } finally { setBusy(false); }
@@ -259,29 +260,30 @@ export default function AIStudio() {
               <div className="flex items-center gap-2 text-ink-soft text-sm"><RefreshCw className="w-4 h-4 animate-spin" /> Drafting your {format.label.toLowerCase()}…</div>
             </div>
           ) : result ? (
-            <div className="flex-1 grid lg:grid-cols-[1fr_320px]">
-              {/* caption */}
-              <div className="p-8 min-w-0">
+            <div className="flex-1 grid lg:grid-cols-[1fr_400px]">
+              {/* caption — a comfortable writing column */}
+              <div className="p-8 lg:p-12 min-w-0 flex flex-col">
+                <span className="text-xs font-bold uppercase tracking-wide text-ink-faint mb-3">Caption</span>
                 <textarea key={result.caption} defaultValue={result.caption} rows={12}
-                  className="w-full h-full rounded-xl bg-transparent border-0 text-[0.95rem] leading-relaxed resize-none focus:ring-0 p-0" />
-                <div className="flex flex-wrap gap-1.5 mt-3">{result.hashtags.map((h) => <Badge key={h} tone="new">#{h}</Badge>)}</div>
+                  className="w-full flex-1 max-w-[620px] rounded-xl bg-transparent border-0 text-[1.02rem] leading-[1.75] resize-none focus:ring-0 px-0" />
+                <div className="flex flex-wrap gap-1.5 mt-4 max-w-[620px]">{result.hashtags.map((h) => <Badge key={h} tone="new">#{h}</Badge>)}</div>
               </div>
-              {/* live preview */}
-              <div className="border-t lg:border-t-0 lg:border-l border-line p-6 bg-surface2/30">
-                <div className="flex items-center justify-between mb-3">
+              {/* live preview — its own breathing space */}
+              <div className="border-t lg:border-t-0 lg:border-l border-line p-8 bg-surface2/30">
+                <div className="flex items-center justify-between mb-5">
                   <span className="text-xs font-bold uppercase tracking-wide text-ink-faint">Preview</span>
                   <div className="flex rounded-lg bg-surface2 p-0.5">
                     <button onClick={() => setPreview('mobile')} className={cn('p-1.5 rounded-md', preview === 'mobile' && 'bg-surface shadow-e1 text-coral-ink')}><Smartphone className="w-4 h-4" /></button>
                     <button onClick={() => setPreview('desktop')} className={cn('p-1.5 rounded-md', preview === 'desktop' && 'bg-surface shadow-e1 text-coral-ink')}><Monitor className="w-4 h-4" /></button>
                   </div>
                 </div>
-                <div className={cn('mx-auto rounded-2xl overflow-hidden bg-surface shadow-e2', preview === 'mobile' ? 'max-w-[230px]' : 'w-full')}>
-                  <div className="flex items-center gap-2 p-2.5">
-                    <span className="grid place-items-center w-6 h-6 rounded-full text-xs" style={{ background: workspace.accent + '22' }}>{workspace.logo}</span>
+                <div className={cn('mx-auto rounded-2xl overflow-hidden bg-surface shadow-e2', preview === 'mobile' ? 'max-w-[280px]' : 'w-full')}>
+                  <div className="flex items-center gap-2 p-3">
+                    <span className="grid place-items-center w-7 h-7 rounded-full text-xs" style={{ background: workspace.accent + '22' }}>{workspace.logo}</span>
                     <span className="text-xs font-bold">{workspace.name.toLowerCase().replace(/\s/g, '')}</span>
                   </div>
                   <div className="bg-aurora" style={{ aspectRatio: format.aspect }} />
-                  <div className="p-2.5 text-[0.72rem] text-ink-soft line-clamp-4 whitespace-pre-wrap">{result.caption}</div>
+                  <div className="p-3 text-[0.75rem] text-ink-soft line-clamp-4 whitespace-pre-wrap leading-relaxed">{result.caption}</div>
                 </div>
               </div>
             </div>
