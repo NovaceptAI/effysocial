@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { MailWarning, Check } from 'lucide-react';
 import NavRail from './NavRail';
 import TopBar from './TopBar';
@@ -27,7 +27,12 @@ function VerifyBanner() {
   );
 }
 
+// Routes that want the full viewport width (editor-style, no page gutter/cap).
+const FULL_BLEED = new Set(['/app/studio']);
+
 export default function AppShell() {
+  const { pathname } = useLocation();
+  const fullBleed = FULL_BLEED.has(pathname);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
@@ -55,7 +60,9 @@ export default function AppShell() {
           railHidden={railHidden}
         />
         <VerifyBanner />
-        <main className="flex-1 min-w-0 p-5 sm:p-8 max-w-[1360px] w-full mx-auto">
+        <main className={fullBleed
+          ? 'flex-1 min-w-0 w-full px-4 sm:px-6 py-5'
+          : 'flex-1 min-w-0 p-5 sm:p-8 max-w-[1360px] w-full mx-auto'}>
           <Outlet />
         </main>
       </div>
