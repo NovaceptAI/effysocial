@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, MailCheck } from 'lucide-react';
 import { useAppAuth } from '../app/context/AppAuth';
 import FluidBackground from '../components/FluidBackground';
 
 export default function Login() {
-  const { login, register } = useAppAuth();
+  const { login, register, resendPublic } = useAppAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [verify, setVerify] = useState(null); // { email, devLink? } → "check inbox" screen
+  const [resent, setResent] = useState(false);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -18,6 +20,7 @@ export default function Login() {
     const r = await login(email, password);
     setBusy(false);
     if (r.ok) navigate('/app');
+    else if (r.needsVerification) setVerify({ email: r.email });
     else setError(r.message);
   };
 
@@ -28,7 +31,13 @@ export default function Login() {
     const r = await register({ email, password, name: email.split('@')[0] });
     setBusy(false);
     if (r.ok) navigate('/onboarding');
+    else if (r.needsVerification) setVerify({ email: r.email, devLink: r.devLink });
     else setError(r.message);
+  };
+
+  const resend = async () => {
+    await resendPublic(verify.email);
+    setResent(true);
   };
 
   return (
@@ -48,6 +57,24 @@ export default function Login() {
 
       {/* form */}
       <div className="flex items-center justify-center p-6">
+        {verify ? (
+          <div className="w-full max-w-sm text-center">
+            <div className="grid place-items-center w-14 h-14 rounded-2xl bg-coral-tint text-coral-ink mx-auto mb-4"><MailCheck className="w-7 h-7" /></div>
+            <h1 className="text-2xl font-extrabold tracking-tight">Check your inbox</h1>
+            <p className="text-ink-soft text-sm mt-2 mb-6">We sent a verification link to <strong>{verify.email}</strong>. Click it to activate your account and sign in.</p>
+            {verify.devLink && (
+              <a href={verify.devLink} className="block mb-4 text-sm rounded-lg bg-warning-soft text-warning px-3.5 py-2.5 break-all">
+                Dev mode (no email provider yet) — <span className="font-bold underline">verify now →</span>
+              </a>
+            )}
+            {resent
+              ? <p className="text-sm text-success font-semibold">Verification email re-sent.</p>
+              : <button onClick={resend} className="text-sm font-bold text-coral-ink">Didn't get it? Resend email</button>}
+            <p className="text-center text-sm text-ink-soft mt-6">
+              <button onClick={() => { setVerify(null); setResent(false); }} className="text-coral-ink font-bold">← Back to login</button>
+            </p>
+          </div>
+        ) : (
         <div className="w-full max-w-sm">
           <Link to="/" className="lg:hidden flex items-center gap-2 font-extrabold text-lg mb-8">
             <span className="grid place-items-center w-8 h-8 rounded-[9px] bg-coral text-white">✦</span> EffySocial
@@ -88,8 +115,8 @@ export default function Login() {
           <p className="text-center text-sm text-ink-soft mt-6">
             New to EffySocial? <button type="button" onClick={getStarted} className="text-coral-ink font-bold">Get started free</button>
           </p>
-          <p className="text-center text-xs text-ink-faint mt-3">Demo login: demo@effybiz.in / effysocial</p>
         </div>
+        )}
       </div>
     </div>
   );

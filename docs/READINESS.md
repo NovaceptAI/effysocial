@@ -63,7 +63,7 @@ CLOUDFLARE (images) · POLLINATIONS_API_KEY · AWS/S3 · SECRET_KEY · DATABASE_
 ### ❌ Missing — blocks real user-facing behaviour
 | Credential | Unlocks | How to get |
 |---|---|---|
-| **RESEND_API_KEY** _or_ **EFFY_SMTP_HOST/PORT/USER/PASS** | Real verification/reset emails (today: dev-link fallback) | resend.com key (5-min) or any SMTP (e.g. AWS SES/Zoho/Gmail app-password) |
+| **RESEND_API_KEY** (recommended) _or_ SMTP | Real verification/reset emails. **Email gate is LIVE**: bad/disposable/nonexistent-domain emails rejected at signup; unverified users blocked from login (`EFFY_REQUIRE_VERIFIED_EMAIL=true`). Until a provider is set, verification uses a dev-link. | resend.com → instant API key, send from onboarding@resend.dev immediately; add DNS later for your domain |
 | **EFFY_EMAIL_SENDER** | From-address for those emails | e.g. `EffySocial <noreply@effybiz.in>` (domain must be verified with the provider) |
 | **GOOGLE_ADS_CLIENT_ID/SECRET** | Google OAuth (Ads, GA4, Business Profile) | Google Cloud Console OAuth client |
 | **GOOGLE_ADS_DEVELOPER_TOKEN** | Google Ads data | apply in Google Ads account (basic-access review) |

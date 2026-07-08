@@ -38,12 +38,14 @@ export function AppAuthProvider({ children }) {
   const login = useCallback(async (email, password) => {
     const { ok, data } = await post('/auth/login', { email, password });
     if (ok && data.user) { setUser(data.user); setBootstrap(data); return { ok: true }; }
+    if (data.needs_verification) return { ok: false, needsVerification: true, email: data.email };
     return { ok: false, message: data.message || 'Login failed.' };
   }, []);
 
   const register = useCallback(async (payload) => {
     const { ok, data } = await post('/auth/register', payload);
     if (ok && data.user) { setUser(data.user); setBootstrap(data); return { ok: true }; }
+    if (ok && data.needs_verification) return { ok: false, needsVerification: true, email: data.email, devLink: data.dev_link };
     return { ok: false, message: data.message || 'Sign up failed.' };
   }, []);
 
@@ -59,15 +61,20 @@ export function AppAuthProvider({ children }) {
     return ok;
   }, []);
 
-  const verifyEmail = useCallback((token) => post('/auth/verify', { token }), []);
+  const verifyEmail = useCallback(async (token) => {
+    const { ok, data } = await post('/auth/verify', { token });
+    if (ok && data.user) { setUser(data.user); setBootstrap(data); }  // auto sign-in on verify
+    return { ok, data };
+  }, []);
   const resendVerification = useCallback(() => post('/auth/resend-verification'), []);
+  const resendPublic = useCallback((email) => post('/auth/resend-public', { email }), []);
   const forgotPassword = useCallback((email) => post('/auth/forgot', { email }), []);
   const resetPassword = useCallback((token, password) => post('/auth/reset', { token, password }), []);
 
   return (
     <Ctx.Provider value={{
       user, bootstrap, loading, login, register, logout, refresh,
-      verifyEmail, resendVerification, forgotPassword, resetPassword,
+      verifyEmail, resendVerification, resendPublic, forgotPassword, resetPassword,
     }}>
       {children}
     </Ctx.Provider>
