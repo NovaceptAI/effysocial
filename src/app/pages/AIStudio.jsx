@@ -283,45 +283,48 @@ export default function AIStudio() {
               <div className="flex items-center gap-2 text-ink-soft text-sm"><RefreshCw className="w-4 h-4 animate-spin" /> Drafting your {format.label.toLowerCase()}…</div>
             </div>
           ) : result ? (
-            <div className="flex-1 grid lg:grid-cols-[1fr_400px]">
-              {/* caption — a comfortable writing column */}
-              <div className="p-8 lg:p-12 min-w-0 flex flex-col">
-                <span className="text-xs font-bold uppercase tracking-wide text-ink-faint mb-3">Caption</span>
-                <textarea ref={captionRef} key={result.caption} defaultValue={result.caption} rows={12}
-                  className="w-full flex-1 max-w-[620px] rounded-xl bg-transparent border-0 text-[1.02rem] leading-[1.75] resize-none focus:ring-0 px-0" />
-                <div className="flex flex-wrap gap-1.5 mt-4 max-w-[620px]">{result.hashtags.map((h) => <Badge key={h} tone="new">#{h}</Badge>)}</div>
+            <div className="flex-1 grid lg:grid-cols-[1fr_380px]">
+              {/* HERO — the visual, big and centred */}
+              <div className="p-6 lg:p-10 grid place-items-center bg-surface2/20 min-w-0">
+                <div className="w-full flex flex-col items-center">
+                  <div className="flex items-center justify-end w-full max-w-[440px] mb-4">
+                    <div className="flex rounded-lg bg-surface2 p-0.5">
+                      <button onClick={() => setPreview('mobile')} className={cn('p-1.5 rounded-md', preview === 'mobile' && 'bg-surface shadow-e1 text-coral-ink')}><Smartphone className="w-4 h-4" /></button>
+                      <button onClick={() => setPreview('desktop')} className={cn('p-1.5 rounded-md', preview === 'desktop' && 'bg-surface shadow-e1 text-coral-ink')}><Monitor className="w-4 h-4" /></button>
+                    </div>
+                  </div>
+                  <div className={cn('rounded-2xl overflow-hidden bg-surface shadow-e3 w-full', preview === 'mobile' ? 'max-w-[380px]' : 'max-w-[560px]')}>
+                    <div className="flex items-center gap-2 p-3.5">
+                      <span className="grid place-items-center w-7 h-7 rounded-full text-xs" style={{ background: workspace.accent + '22' }}>{workspace.logo}</span>
+                      <span className="text-sm font-bold">{workspace.name.toLowerCase().replace(/\s/g, '')}</span>
+                    </div>
+                    <div className="relative bg-surface2" style={{ aspectRatio: format.aspect }}>
+                      {image
+                        ? <img src={image} alt="Generated visual" className="absolute inset-0 w-full h-full object-cover" />
+                        : <div className="absolute inset-0 bg-aurora" />}
+                      {imgBusy && (
+                        <div className="absolute inset-0 grid place-items-center bg-ink/30 backdrop-blur-sm text-white text-xs font-semibold">
+                          <span className="inline-flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Painting…</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-3.5 text-[0.8rem] text-ink-soft line-clamp-3 whitespace-pre-wrap leading-relaxed">{result.caption}</div>
+                  </div>
+                  <Button variant="secondary" className="mt-5" onClick={genImage} disabled={imgBusy}>
+                    <ImageIcon className="w-4 h-4" /> {imgBusy ? 'Generating…' : image ? 'Regenerate image' : 'Generate image'}
+                  </Button>
+                </div>
               </div>
-              {/* live preview — its own breathing space */}
-              <div className="border-t lg:border-t-0 lg:border-l border-line p-8 bg-surface2/30">
-                <div className="flex items-center justify-between mb-5">
-                  <span className="text-xs font-bold uppercase tracking-wide text-ink-faint">Preview</span>
-                  <div className="flex rounded-lg bg-surface2 p-0.5">
-                    <button onClick={() => setPreview('mobile')} className={cn('p-1.5 rounded-md', preview === 'mobile' && 'bg-surface shadow-e1 text-coral-ink')}><Smartphone className="w-4 h-4" /></button>
-                    <button onClick={() => setPreview('desktop')} className={cn('p-1.5 rounded-md', preview === 'desktop' && 'bg-surface shadow-e1 text-coral-ink')}><Monitor className="w-4 h-4" /></button>
-                  </div>
-                </div>
-                <div className={cn('mx-auto rounded-2xl overflow-hidden bg-surface shadow-e2', preview === 'mobile' ? 'max-w-[280px]' : 'w-full')}>
-                  <div className="flex items-center gap-2 p-3">
-                    <span className="grid place-items-center w-7 h-7 rounded-full text-xs" style={{ background: workspace.accent + '22' }}>{workspace.logo}</span>
-                    <span className="text-xs font-bold">{workspace.name.toLowerCase().replace(/\s/g, '')}</span>
-                  </div>
-                  <div className="relative bg-surface2" style={{ aspectRatio: format.aspect }}>
-                    {image ? (
-                      <img src={image} alt="Generated visual" className="absolute inset-0 w-full h-full object-cover" />
-                    ) : (
-                      <div className="absolute inset-0 bg-aurora" />
-                    )}
-                    {imgBusy && (
-                      <div className="absolute inset-0 grid place-items-center bg-ink/30 backdrop-blur-sm text-white text-xs font-semibold">
-                        <span className="inline-flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Painting…</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-3 text-[0.75rem] text-ink-soft line-clamp-4 whitespace-pre-wrap leading-relaxed">{result.caption}</div>
-                </div>
-                <Button variant="secondary" className="w-full mt-4" onClick={genImage} disabled={imgBusy}>
-                  <ImageIcon className="w-4 h-4" /> {imgBusy ? 'Generating…' : image ? 'Regenerate image' : 'Generate image'}
-                </Button>
+              {/* Caption editor — compact, focused column */}
+              <div className="border-t lg:border-t-0 lg:border-l border-line p-6 flex flex-col min-w-0">
+                <span className="text-xs font-bold uppercase tracking-wide text-ink-faint mb-2.5">Caption</span>
+                <textarea ref={captionRef} key={result.caption} defaultValue={result.caption}
+                  className="w-full flex-1 min-h-[240px] rounded-xl bg-surface2 px-3.5 py-3 text-sm leading-[1.7] resize-none" />
+                <div className="flex flex-wrap gap-1.5 mt-3">{result.hashtags.map((h) => <Badge key={h} tone="new">#{h}</Badge>)}</div>
+                <button onClick={() => setPanel(panel === 'refine' ? null : 'refine')}
+                  className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-coral-ink self-start">
+                  <SlidersHorizontal className="w-3.5 h-3.5" /> Refine copy
+                </button>
               </div>
             </div>
           ) : (
