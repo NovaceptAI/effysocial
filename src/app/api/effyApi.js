@@ -35,6 +35,8 @@ export const effyApi = {
   studioContext: (workspaceId) => http(`/studio/context?workspace=${encodeURIComponent(workspaceId)}`),
   studioImage: (payload) =>
     http('/studio/image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
+  studioRefine: (payload) =>
+    http('/studio/refine', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
   sendToApproval: (payload) =>
     http('/studio/send-to-approval', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
 

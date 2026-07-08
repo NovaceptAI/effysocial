@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -112,6 +112,8 @@ export default function AIStudio() {
   const [showScores, setShowScores] = useState(true);
   const [image, setImage] = useState('');       // generated visual URL
   const [imgBusy, setImgBusy] = useState(false);
+  const [refining, setRefining] = useState('');  // which tool is running
+  const captionRef = useRef(null);
 
   const { data: ctx } = useQuery({
     queryKey: ['studio-context', workspace?.id],
@@ -134,6 +136,15 @@ export default function AIStudio() {
     if (!result) return;
     await effyApi.sendToApproval({ workspace: workspace.id, hook: result.hook, caption: result.caption, channel: format.platform, type: format.id.split('_')[1] || 'post' });
     setSent(true);
+  };
+  const refine = async (tool) => {
+    const current = captionRef.current?.value ?? result?.caption;
+    if (!current) return;
+    setRefining(tool);
+    try {
+      const d = await effyApi.studioRefine({ workspace: workspace.id, type: format.id, tool, caption: current, language: lang });
+      setResult((r) => ({ ...r, caption: d.caption ?? r.caption, hashtags: d.hashtags ?? r.hashtags, scores: d.scores ?? r.scores, hook: d.hook ?? r.hook }));
+    } finally { setRefining(''); }
   };
   const genImage = async () => {
     if (!workspace || !format) return;
@@ -251,11 +262,13 @@ export default function AIStudio() {
             {panel === 'refine' && (
               <>
                 <h3 className="font-bold text-ink text-sm mb-1 flex items-center gap-1.5"><SlidersHorizontal className="w-4 h-4 text-coral-ink" /> Refine copy</h3>
-                <p className="text-xs text-ink-faint mb-3">{result ? 'Adjust the current draft.' : 'Generate a draft first.'}</p>
+                <p className="text-xs text-ink-faint mb-3">{result ? 'Transforms your current caption.' : 'Generate a draft first.'}</p>
                 <div className="flex flex-wrap gap-1.5">
                   {COPY_TOOLS.map((tool) => (
-                    <button key={tool} disabled={!result} onClick={generate}
-                      className="text-xs font-semibold px-3 py-1.5 rounded-full bg-surface2 text-ink-soft hover:bg-coral-tint hover:text-coral-ink disabled:opacity-40 transition">{tool}</button>
+                    <button key={tool} disabled={!result || !!refining} onClick={() => refine(tool.toLowerCase())}
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-surface2 text-ink-soft hover:bg-coral-tint hover:text-coral-ink disabled:opacity-40 transition">
+                      {refining === tool.toLowerCase() && <RefreshCw className="w-3 h-3 animate-spin" />}{tool}
+                    </button>
                   ))}
                 </div>
               </>
@@ -274,7 +287,7 @@ export default function AIStudio() {
               {/* caption — a comfortable writing column */}
               <div className="p-8 lg:p-12 min-w-0 flex flex-col">
                 <span className="text-xs font-bold uppercase tracking-wide text-ink-faint mb-3">Caption</span>
-                <textarea key={result.caption} defaultValue={result.caption} rows={12}
+                <textarea ref={captionRef} key={result.caption} defaultValue={result.caption} rows={12}
                   className="w-full flex-1 max-w-[620px] rounded-xl bg-transparent border-0 text-[1.02rem] leading-[1.75] resize-none focus:ring-0 px-0" />
                 <div className="flex flex-wrap gap-1.5 mt-4 max-w-[620px]">{result.hashtags.map((h) => <Badge key={h} tone="new">#{h}</Badge>)}</div>
               </div>
