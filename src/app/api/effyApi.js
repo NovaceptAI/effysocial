@@ -90,6 +90,9 @@ export const effyApi = {
     http(`/leads/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.lead),
   convertLead: (conversationId) => http(`/conversations/${conversationId}/convert-lead`, { method: 'POST' }),
 
+  // Team
+  listTeam: () => http('/team').then((d) => d.members),
+
   // Integrations (Phase 3)
   listIntegrations: (workspaceId) => http(`/integrations?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.integrations),
   connectIntegration: (provider, workspaceId) =>

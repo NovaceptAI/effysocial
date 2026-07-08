@@ -74,6 +74,21 @@ export default function AdsDashboard() {
   if (isLoading || !data) {
     return (<><PageHeader title="Advertising" /><Card className="p-10 flex items-center justify-center gap-2 text-ink-soft"><Loader2 className="w-4 h-4 animate-spin" /> Loading ad performance…</Card></>);
   }
+  // No real ad account connected → honest connect state (no sample data).
+  if (data.provider !== 'meta' && data.provider !== 'google') {
+    return (
+      <div>
+        <PageHeader title="Advertising" subtitle="Cross-platform paid performance — campaigns, ad sets and ads." />
+        <div className="text-center py-20 px-6 bg-surface rounded-2xl shadow-e1 flex flex-col items-center gap-2.5">
+          <div className="grid place-items-center w-16 h-16 rounded-2xl bg-coral-tint text-3xl mb-1.5">🎯</div>
+          <h4 className="font-display text-xl font-semibold tracking-tight text-ink">Connect an ad account</h4>
+          <p className="text-sm text-ink-soft max-w-sm leading-relaxed">Link Meta Ads or Google Ads to see live spend, CPL and ROAS with campaign → ad set → ad drill-down.</p>
+          <a href="/app/integrations" className="mt-3"><Button><Plug className="w-4 h-4" /> Connect ad accounts</Button></a>
+        </div>
+      </div>
+    );
+  }
+
   const t = data.totals;
 
   return (
@@ -81,9 +96,6 @@ export default function AdsDashboard() {
       <PageHeader
         title="Advertising"
         subtitle="Cross-platform paid performance — campaigns, ad sets and ads."
-        actions={data.provider === 'mock' && (
-          <Badge tone="warning"><Plug className="w-3 h-3" /> Sample data — connect Meta / Google ad accounts (Phase 3)</Badge>
-        )}
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">

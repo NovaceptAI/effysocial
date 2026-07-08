@@ -1,246 +1,151 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Globe, Upload, Sparkles, FileText, PenLine, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Brain, Sparkles, Check, Loader2, Globe, ShieldCheck } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
-import { SECTIONS } from '../data/brandBrain';
 import { effyApi } from '../api/effyApi';
-import { Card, PageHeader, Button, Badge, Pacing, EmptyState } from '../../ui';
-import { cn } from '../../lib/cn';
+import { Card, PageHeader, Button, Badge, Pacing } from '../../ui';
 
-const STATUS = {
-  good: { dot: 'bg-success', label: null },
-  review: { dot: 'bg-warning', label: 'Needs review' },
-  empty: { dot: 'bg-line', label: 'Empty' },
-};
-const SRC_ICON = { website: Globe, document: FileText, manual: PenLine };
+const csv = (s) => s.split(/[,\n]/).map((x) => x.trim()).filter(Boolean);
+const lines = (s) => s.split('\n').map((x) => x.trim()).filter(Boolean).map((l) => {
+  const [title, ...rest] = l.split(/[-—:]/);
+  return { title: title.trim(), desc: rest.join('-').trim() };
+});
 
-function SourceChips({ sources }) {
-  if (!sources?.length) return null;
-  return (
-    <div className="flex flex-wrap items-center gap-1.5 mt-3">
-      <span className="text-xs text-ink-faint">Sources:</span>
-      {sources.map((s) => <span key={s} className="text-[0.7rem] font-semibold bg-surface2 border border-line rounded-full px-2 py-0.5 text-ink-soft">{s}</span>)}
+// Setup questionnaire — everything saved becomes a REAL brand fact that grounds
+// every AI generation. (Auto-extraction from website/socials + AI persona with
+// admin approval is the next slice; this form is the foundation it feeds.)
+function Questionnaire({ workspace, onDone }) {
+  const [f, setF] = useState({ summary: '', tone: '', approved: '', prohibited: '', products: '', offers: '', personas: '' });
+  const [busy, setBusy] = useState(false);
+  const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
+
+  const save = async () => {
+    setBusy(true);
+    try {
+      const facts = [];
+      if (f.summary.trim()) facts.push({ section: 'summary', data: f.summary.trim() });
+      if (f.tone.trim()) facts.push({ section: 'tone', data: csv(f.tone) });
+      if (f.approved.trim()) facts.push({ section: 'approved', data: csv(f.approved) });
+      if (f.prohibited.trim()) facts.push({ section: 'prohibited', data: csv(f.prohibited) });
+      if (f.products.trim()) facts.push({ section: 'products', data: lines(f.products) });
+      if (f.offers.trim()) facts.push({ section: 'offers', data: lines(f.offers) });
+      if (f.personas.trim()) facts.push({ section: 'personas', data: lines(f.personas).map((p) => ({ name: p.title, motivation: p.desc })) });
+      for (const fact of facts) {
+        await effyApi.saveBrandFact({ workspace: workspace.id, section: fact.section, data: fact.data, status: 'good', sources: ['Questionnaire'] });
+      }
+      onDone();
+    } finally { setBusy(false); }
+  };
+
+  const Field = ({ label, hint, k, rows = 2, placeholder }) => (
+    <div>
+      <label className="block text-sm font-semibold text-ink mb-1">{label}</label>
+      {hint && <p className="text-xs text-ink-faint mb-1.5">{hint}</p>}
+      <textarea rows={rows} value={f[k]} onChange={set(k)} placeholder={placeholder}
+        className="w-full rounded-xl bg-surface2 px-3.5 py-2.5 text-sm" />
     </div>
+  );
+
+  return (
+    <Card className="p-6 max-w-2xl">
+      <div className="flex items-center gap-2.5 mb-1">
+        <span className="grid place-items-center w-9 h-9 rounded-xl bg-aurora text-white"><Brain className="w-5 h-5" /></span>
+        <h2 className="font-display text-xl font-semibold tracking-tight">Tell Effy about your brand</h2>
+      </div>
+      <p className="text-sm text-ink-soft mb-6">Everything you enter grounds every AI generation — captions, images, landing copy and replies. You can refine it anytime.</p>
+      <div className="space-y-4">
+        <Field label="What does your business do?" hint="One or two sentences — who you serve and what makes you different." k="summary" rows={3}
+          placeholder="e.g. We're a family dental clinic in Pune known for gentle, transparent care…" />
+        <Field label="Brand tone" hint="Comma-separated words." k="tone" placeholder="warm, professional, reassuring" />
+        <Field label="Words to use" hint="Phrases you like in your marketing (comma-separated)." k="approved" placeholder="trusted, transparent, book now" />
+        <Field label="Words to avoid" hint="Never say these (comma-separated)." k="prohibited" placeholder="cheapest, guaranteed, #1" />
+        <Field label="Products / services" hint="One per line: Name — short description." k="products" rows={3}
+          placeholder={"Root canal — single-sitting RCT\nTeeth whitening — in-clinic & take-home"} />
+        <Field label="Current offers" hint="One per line (optional)." k="offers" placeholder="Free first consultation — for new patients" />
+        <Field label="Target customers" hint="One per line: Who — what they want (optional)." k="personas"
+          placeholder="Young parents — safe, painless care for kids" />
+      </div>
+      <Button variant="spark" className="mt-6 w-full" onClick={save} disabled={busy}>
+        {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : <><Sparkles className="w-4 h-4" /> Build my Brand Brain</>}
+      </Button>
+      <p className="text-xs text-ink-faint mt-3 flex items-center gap-1.5"><Globe className="w-3.5 h-3.5" /> Next up: auto-extraction from your website &amp; social pages, with an AI brand persona you approve.</p>
+    </Card>
   );
 }
 
-function SectionBody({ section, content }) {
-  const { kind } = section;
-  const d = content.data;
-
-  if (kind === 'paragraph') return <p className="text-sm text-ink-soft leading-relaxed">{d}</p>;
-
-  if (kind === 'chips') {
-    const tone = section.id === 'prohibited' ? 'error' : section.id === 'approved' ? 'success' : 'default';
-    return (
-      <div className="flex flex-wrap gap-2">
-        {d.map((w) => <Badge key={w} tone={tone}>{w}</Badge>)}
-        <button className="text-xs font-semibold text-coral-ink border border-dashed border-line rounded-full px-2.5 py-1 hover:border-coral">+ add</button>
-      </div>
-    );
-  }
-
-  if (kind === 'list') {
-    return (
-      <div className="space-y-2.5">
-        {d.map((it) => (
-          <div key={it.title} className="p-3 rounded-lg border border-line">
-            <div className="font-semibold text-ink text-sm">{it.title}</div>
-            <div className="text-sm text-ink-soft mt-0.5">{it.desc}</div>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (kind === 'personas') {
-    return (
-      <div className="grid sm:grid-cols-2 gap-3">
-        {d.map((p) => (
-          <div key={p.name} className="p-4 rounded-lg border border-line">
-            <div className="flex items-center justify-between"><span className="font-bold text-ink">{p.name}</span><Badge>{p.age}</Badge></div>
-            <p className="text-sm text-ink-soft mt-1.5">{p.motivation}</p>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (kind === 'faqs') {
-    return (
-      <div className="space-y-2.5">
-        {d.map((f) => (
-          <div key={f.q} className="p-3 rounded-lg border border-line">
-            <div className="font-semibold text-ink text-sm">{f.q}</div>
-            <div className="text-sm text-ink-soft mt-1">{f.a}</div>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (kind === 'visual') {
-    return (
-      <div className="space-y-4">
-        <div className="flex flex-wrap gap-3">
-          {d.colors.map((c) => (
-            <div key={c.name} className="text-center">
-              <div className="w-16 h-16 rounded-xl border border-line" style={{ background: c.hex }} />
-              <div className="text-xs font-semibold mt-1">{c.name}</div>
-              <div className="text-[0.7rem] text-ink-faint">{c.hex}</div>
-            </div>
-          ))}
-        </div>
-        <div className="flex gap-4">
-          {d.fonts.map((f) => <div key={f.role} className="text-sm"><span className="text-ink-faint">{f.role}: </span><span className="font-bold">{f.name}</span></div>)}
-        </div>
-      </div>
-    );
-  }
-
-  if (kind === 'sources') {
-    return (
-      <div className="space-y-2">
-        {d.map((s) => {
-          const Icon = SRC_ICON[s.type] || FileText;
-          return (
-            <div key={s.name} className="flex items-center gap-3 p-3 rounded-lg border border-line">
-              <span className="grid place-items-center w-9 h-9 rounded-lg bg-surface2 text-ink-soft"><Icon className="w-[18px] h-[18px]" /></span>
-              <span className="flex-1 min-w-0">
-                <span className="block text-sm font-semibold text-ink truncate">{s.name}</span>
-                <span className="block text-xs text-ink-faint capitalize">{s.type} · updated {s.date}</span>
-              </span>
-              <Badge tone={s.freshness === 'fresh' ? 'success' : 'warning'}>{s.freshness}</Badge>
-              <div className="w-24 hidden sm:block">
-                <div className="text-[0.7rem] text-ink-faint mb-0.5">confidence {s.confidence}%</div>
-                <Pacing value={s.confidence} max={100} tone={s.confidence > 80 ? 'success' : 'warning'} />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    );
-  }
-  return null;
-}
+const CHIP_SECTIONS = [
+  ['tone', 'Tone', 'default'], ['approved', 'Words to use', 'success'], ['prohibited', 'Words to avoid', 'error'],
+];
+const LIST_SECTIONS = [['products', 'Products / services'], ['offers', 'Offers'], ['personas', 'Target customers']];
 
 export default function BrandBrain() {
   const { workspace } = useWorkspace();
-  const [active, setActive] = useState('summary');
-  const [testOpen, setTestOpen] = useState(false);
-  const [prompt, setPrompt] = useState('');
-  const [output, setOutput] = useState(null);
-  const [testing, setTesting] = useState(false);
-
-  const { data: brain, isLoading, isError } = useQuery({
+  const qc = useQueryClient();
+  const { data: brain, isLoading } = useQuery({
     queryKey: ['brand', workspace?.id],
     queryFn: () => effyApi.getBrand(workspace.id),
     enabled: !!workspace,
   });
+  const refetch = () => qc.invalidateQueries({ queryKey: ['brand', workspace?.id] });
 
-  const runTest = async () => {
-    if (!prompt.trim()) return;
-    setTesting(true); setOutput(null);
-    try {
-      const { output: text, cited } = await effyApi.testBrandVoice(workspace.id, prompt);
-      setOutput({ text, cited });
-    } catch (e) {
-      setOutput({ text: e.message || 'Generation failed.', error: true });
-    } finally {
-      setTesting(false);
-    }
-  };
+  if (isLoading || !brain) return <div className="p-10 text-sm text-ink-soft">Loading Brand Brain…</div>;
 
-  if (isLoading) {
-    return (<><PageHeader title="Brand Brain" /><Card className="p-10 flex items-center justify-center gap-2 text-ink-soft"><Loader2 className="w-4 h-4 animate-spin" /> Loading Brand Brain…</Card></>);
+  if (!brain.completeness) {
+    return (
+      <div>
+        <PageHeader title="Brand Brain" subtitle="The knowledge that makes every AI output sound like you." />
+        <Questionnaire workspace={workspace} onDone={refetch} />
+      </div>
+    );
   }
-  if (isError || !brain) {
-    return (<><PageHeader title="Brand Brain" /><EmptyState icon="⚠️" title="Couldn't load Brand Brain" body="Please refresh." /></>);
-  }
-
-  const section = SECTIONS.find((s) => s.id === active);
-  const content = brain[active];
 
   return (
     <div>
       <PageHeader
         title="Brand Brain"
-        subtitle={`${workspace.name}'s living knowledge centre — every AI output draws from here`}
-        actions={
-          <>
-            <Button variant="secondary"><Globe className="w-4 h-4" /> Import website</Button>
-            <Button variant="secondary"><Upload className="w-4 h-4" /> Upload</Button>
-            <Button variant="spark" onClick={() => setTestOpen((v) => !v)}><Sparkles className="w-4 h-4" /> Test brand voice</Button>
-          </>
-        }
+        subtitle="The knowledge grounding every AI generation."
+        actions={<Badge tone="success"><ShieldCheck className="w-3 h-3" /> {brain.completeness}% complete</Badge>}
       />
+      <div className="max-w-xl mb-6"><Pacing value={brain.completeness} max={100} tone="success" /></div>
 
-      {/* Health strip */}
-      <Card className="p-4 mb-5 flex flex-wrap items-center gap-6">
-        <div className="flex-1 min-w-[180px]">
-          <div className="flex items-center justify-between text-sm mb-1"><span className="font-semibold text-ink">Completeness</span><span className="tabular-nums text-ink-soft">{brain.completeness}%</span></div>
-          <Pacing value={brain.completeness} max={100} />
+      <div className="grid lg:grid-cols-2 gap-4 items-start">
+        <Card className="p-5">
+          <h3 className="font-bold text-ink mb-2">About the brand</h3>
+          <p className="text-sm text-ink-soft leading-relaxed">{brain.summary?.data || <span className="text-ink-faint">Not set yet.</span>}</p>
+          <div className="mt-4 space-y-3">
+            {CHIP_SECTIONS.map(([key, label, tone]) => (
+              <div key={key}>
+                <div className="text-xs font-semibold text-ink-soft mb-1.5">{label}</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {(brain[key]?.data || []).length
+                    ? brain[key].data.map((t) => <Badge key={t} tone={tone}>{t}</Badge>)
+                    : <span className="text-xs text-ink-faint">—</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+        <div className="space-y-4">
+          {LIST_SECTIONS.map(([key, label]) => (
+            <Card key={key} className="p-5">
+              <h3 className="font-bold text-ink mb-2">{label}</h3>
+              {(brain[key]?.data || []).length ? (
+                <ul className="space-y-2">
+                  {brain[key].data.map((it, i) => (
+                    <li key={i} className="text-sm">
+                      <span className="font-semibold text-ink">{it.title || it.name}</span>
+                      {(it.desc || it.motivation) && <span className="text-ink-soft"> — {it.desc || it.motivation}</span>}
+                    </li>
+                  ))}
+                </ul>
+              ) : <p className="text-xs text-ink-faint">Not set yet.</p>}
+            </Card>
+          ))}
+          <Card className="p-5 bg-coral-tint/60">
+            <h3 className="font-bold text-ink mb-1 flex items-center gap-2"><Check className="w-4 h-4 text-coral-ink" /> Grounding is live</h3>
+            <p className="text-sm text-ink-soft">AI Studio, landing copy and Effy replies now use these facts. Coming next: auto-extraction from your website &amp; socials with an approval step.</p>
+          </Card>
         </div>
-        <div className="flex items-center gap-2 text-sm"><AlertCircle className="w-4 h-4 text-warning" /><span className="text-ink-soft">{brain.needsReview} items need review</span></div>
-        <div className="flex items-center gap-2 text-sm"><CheckCircle2 className="w-4 h-4 text-success" /><span className="text-ink-soft">Updated {brain.lastUpdated}</span></div>
-      </Card>
-
-      {/* Test voice panel */}
-      {testOpen && (
-        <Card className="p-5 mb-5 bg-coral-soft/40 border-coral-soft">
-          <h3 className="font-bold text-ink mb-2 flex items-center gap-2"><Sparkles className="w-4 h-4 text-coral-ink" /> Test brand voice</h3>
-          <p className="text-sm text-ink-soft mb-3">Type a prompt to see how EffySocial writes for {workspace.name} using this Brand Brain.</p>
-          <div className="flex gap-2">
-            <input value={prompt} onChange={(e) => setPrompt(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && runTest()}
-              className="flex-1 rounded-sm border border-line px-3 py-2 text-sm bg-surface" placeholder="e.g. Write a monsoon offer caption for Instagram" />
-            <Button onClick={runTest} disabled={testing}>{testing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Generate'}</Button>
-          </div>
-          <div className="mt-3 p-3 rounded-lg bg-surface border border-line text-sm text-ink-soft min-h-[52px]">
-            {output ? (
-              <>
-                <p className={cn('whitespace-pre-wrap', output.error && 'text-error')}>{output.text}</p>
-                {output.cited && <p className="text-xs text-ink-faint mt-2">Grounded in Brand Brain: {output.cited.join(', ')}</p>}
-              </>
-            ) : (
-              <em>Sample output will appear here, citing which Brand Brain pieces (tone, approved words) shaped it.</em>
-            )}
-          </div>
-        </Card>
-      )}
-
-      {/* Two-column: section nav + content */}
-      <div className="grid grid-cols-1 lg:grid-cols-[230px_1fr] gap-5">
-        <Card className="p-2 h-max lg:sticky lg:top-20">
-          <ul className="space-y-0.5">
-            {SECTIONS.map((s) => {
-              const st = STATUS[brain[s.id]?.status || 'empty'];
-              return (
-                <li key={s.id}>
-                  <button
-                    onClick={() => setActive(s.id)}
-                    className={cn('w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-sm font-medium transition text-left',
-                      active === s.id ? 'bg-coral-soft text-coral-ink' : 'text-ink-soft hover:bg-surface2')}
-                  >
-                    <span className={cn('w-2 h-2 rounded-full shrink-0', st.dot)} />
-                    <span className="flex-1 truncate">{s.label}</span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-extrabold text-ink">{section.label}</h2>
-            <div className="flex items-center gap-2">
-              {STATUS[content.status].label && <Badge tone="warning">{STATUS[content.status].label}</Badge>}
-              <Button size="sm" variant="ghost"><PenLine className="w-3.5 h-3.5" /> Edit</Button>
-            </div>
-          </div>
-          <SectionBody section={section} content={content} />
-          <SourceChips sources={content.sources} />
-        </Card>
       </div>
     </div>
   );

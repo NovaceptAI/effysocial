@@ -67,9 +67,10 @@ function FormatChooser({ onPick }) {
           <button key={f.id} onClick={() => onPick(f)}
             className="group text-left rounded-2xl p-4 bg-surface shadow-e1 hover:shadow-e3 hover:-translate-y-0.5 transition-all">
             <div className="grid place-items-center h-36 rounded-xl bg-surface2 mb-3 overflow-hidden">
-              <div className="rounded-lg bg-aurora shadow-e2 grid place-items-center text-white"
+              <div className="relative rounded-lg shadow-e2 overflow-hidden"
                 style={{ aspectRatio: f.aspect, height: f.aspect.startsWith('9') ? '86%' : '62%' }}>
-                <f.icon className="w-6 h-6 opacity-90" />
+                <img src={`/formats/${f.id}.jpg`} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+                <span className="absolute bottom-1 right-1 grid place-items-center w-5 h-5 rounded-md bg-ink/45 text-white backdrop-blur-sm"><f.icon className="w-3 h-3" /></span>
               </div>
             </div>
             <div className="font-bold text-sm text-ink">{f.label}</div>

@@ -1,57 +1,22 @@
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
+import { Plug, ArrowRight } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
-import { effyApi } from '../api/effyApi';
-import { Card, PageHeader, Button, Badge } from '../../ui';
-import { ChannelDot } from '../components/parts';
-import { cn } from '../../lib/cn';
+import { PageHeader, EmptyState, Button } from '../../ui';
 
+// Competitor tracking needs connected channels / user-added competitors —
+// the earlier sample rows are gone. Honest empty state until that lands.
 export default function Competitors() {
   const { workspace } = useWorkspace();
-  const { data: rows = [] } = useQuery({
-    queryKey: ['competitors', workspace?.id],
-    queryFn: () => effyApi.strategyCompetitors(workspace.id),
-    enabled: !!workspace,
-  });
-
   return (
     <div>
-      <PageHeader title="Competitors" subtitle="Benchmark posting, engagement and share of voice" actions={<Button variant="secondary">+ Track competitor</Button>} />
-
-      {/* share of voice */}
-      <Card className="p-5 mb-4">
-        <h3 className="font-bold text-ink mb-3">Estimated share of voice</h3>
-        <div className="flex h-5 rounded-full overflow-hidden">
-          {rows.map((r, i) => (
-            <div key={r.name} className={cn('grid place-items-center text-[0.65rem] font-bold text-white', r.you ? 'bg-coral' : '')}
-              style={{ width: `${r.sov}%`, background: r.you ? undefined : ['#475569', '#94a3b8'][i] }}>
-              {r.sov}%
-            </div>
-          ))}
-        </div>
-        <div className="flex flex-wrap gap-3 mt-2 text-xs text-ink-soft">
-          {rows.map((r) => <span key={r.name} className="flex items-center gap-1.5"><span className={cn('w-2.5 h-2.5 rounded-sm', r.you ? 'bg-coral' : 'bg-ink-faint')} /> {r.name}</span>)}
-        </div>
-      </Card>
-
-      <Card className="overflow-hidden">
-        <table className="w-full text-sm">
-          <thead><tr className="text-left text-ink-faint border-b border-line">{['Competitor', 'Frequency', 'Platforms', 'Engagement', 'Top post', 'Current offer'].map((h) => <th key={h} className="font-semibold px-4 py-3">{h}</th>)}</tr></thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.name} className={cn('border-b border-line/70 last:border-0', r.you && 'bg-coral-soft/30')}>
-                <td className="px-4 py-3 font-semibold text-ink">{r.name}{r.you && <Badge tone="coral" className="ml-2">You</Badge>}</td>
-                <td className="px-4 py-3 text-ink-soft">{r.freq}</td>
-                <td className="px-4 py-3"><span className="flex gap-1">{r.platforms.map((p) => <ChannelDot key={p} channel={p} className="w-2.5 h-2.5" />)}</span></td>
-                <td className="px-4 py-3 tabular-nums font-semibold">{r.engagement}%</td>
-                <td className="px-4 py-3 text-ink-soft">{r.topPost}</td>
-                <td className="px-4 py-3 text-ink-soft">{r.offers}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Card>
-      <p className="text-xs text-ink-faint mt-3">Based on public activity only — no private competitor data is implied.</p>
+      <PageHeader title="Competitors" subtitle={`Benchmark posting, engagement and share of voice for ${workspace.name}`} />
+      <EmptyState
+        icon="⚔️"
+        title="No competitors tracked yet"
+        body="Competitor benchmarking — posting frequency, engagement and share of voice — activates once channels are connected and competitors are added. Coming with channel sync."
+        action={<Link to="/app/integrations"><Button><Plug className="w-4 h-4" /> Connect channels <ArrowRight className="w-3.5 h-3.5" /></Button></Link>}
+      />
     </div>
   );
 }

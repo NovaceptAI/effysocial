@@ -97,8 +97,8 @@ export default function Tracking() {
         </table>
       </Card>
 
-      <div className="grid lg:grid-cols-3 gap-4 mt-4">
-        <Card>
+      <div className="grid lg:grid-cols-3 gap-4 mt-4 items-start">
+        <Card className="p-5 h-max">
           <h3 className="font-extrabold tracking-tight mb-3 flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-coral" /> UTM coverage</h3>
           {utm.submissions === 0 ? (
             <p className="text-sm text-ink-soft">No form submissions yet — coverage appears once leads start coming in.</p>
@@ -118,13 +118,13 @@ export default function Tracking() {
           )}
         </Card>
 
-        <Card>
+        <Card className="p-5 h-max">
           <h3 className="font-extrabold tracking-tight mb-3 flex items-center gap-2"><Globe2 className="w-4 h-4 text-coral" /> Domain verification</h3>
           <Badge tone={domain.status === 'verified' ? 'success' : 'default'}>{domain.status}</Badge>
           <p className="text-sm text-ink-soft mt-3">{domain.detail}</p>
         </Card>
 
-        <Card>
+        <Card className="p-5 h-max">
           <h3 className="font-extrabold tracking-tight mb-3 flex items-center gap-2"><BookOpen className="w-4 h-4 text-coral" /> Setup guide</h3>
           <ol className="space-y-2 text-sm text-ink-soft list-decimal list-inside">
             {guide.map((g, i) => <li key={i}>{g}</li>)}

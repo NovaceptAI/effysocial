@@ -43,13 +43,15 @@ Every `effy_*` content table is at 0 and ready for user-entered rows.
 |---|---|---|
 | **Overview** | overviewMetrics, trendSeries, UPCOMING_CONTENT, ATTENTION_LEADS, ALERTS | derive all from real posts/leads/campaigns + recommendations; empty states for fresh accounts |
 | **Engage: Inbox/Comments/Reviews data** | (API real, but tables now empty) | need channel sync (Meta/Google APIs) to fill — gated on integrations |
-| **Team** | TEAM, ROLES | list real memberships + invite flow (NEXT — dedicated pass) |
-| **Billing** | plan/usage stubs | wire to PRICING plans + usage metering |
+_(all cleared — see below)_ | | |
 
-**De-mocked to honest states (2026-07-08):** Overview (real), CampaignWorkspace funnel (real KPIs),
-MarketingPlan · SocialListening · Ideas · MediaLibrary · Templates · Reports (honest empty states,
-no fabricated data), AI Studio brand panel (real studioContext). Only **Team** still shows mock —
-next.
+**De-mock COMPLETE (2026-07-08):** Overview, CampaignWorkspace funnel (real KPIs), MarketingPlan,
+SocialListening, Ideas, MediaLibrary, Templates, Reports, Competitors (empty states) · Trends
+honestly labelled · Ads dashboard + Ads/Creative/Organic analytics gated behind real connections ·
+**Brand Brain**: template mock removed — setup questionnaire saves real facts that ground all AI ·
+**Team**: real members from effy_memberships · **Billing**: real org plan, no fake invoices ·
+nav badges/phase placeholders removed · AI Studio chooser uses real generated preview images.
+**Zero fabricated data renders anywhere in the app.**
 | Harmless constants (not mock data) | BrandBrain SECTIONS, Calendar TODAY, Scheduled CHANNELS, Ideas IDEA_STAGES, AIStudio brandBrainFor(fallback) | keep |
 
 ## 4. Credentials — what's needed for fully-real data

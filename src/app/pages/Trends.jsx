@@ -19,7 +19,7 @@ export default function Trends() {
 
   return (
     <div>
-      <PageHeader title="Trends" subtitle={`What's working in ${workspace.industry.toLowerCase()} right now`} />
+      <PageHeader title="Trends" subtitle="AI-suggested themes for your industry — content gaps are computed from your real posts." />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="lg:col-span-2 p-5">

@@ -22,6 +22,24 @@ export default function OrganicAnalytics() {
     return (<><PageHeader title="Organic Analytics" /><Card className="p-10 flex items-center justify-center gap-2 text-ink-soft"><Loader2 className="w-4 h-4 animate-spin" /> Loading analytics…</Card></>);
   }
 
+  // No published posts and no live channel data → honest empty state, never sample charts.
+  if (!a.topPosts?.length) {
+    return (
+      <div>
+        <PageHeader title="Organic Analytics" subtitle="Reach, engagement and growth — and what's actually working." />
+        <div className="text-center py-20 px-6 bg-surface rounded-2xl shadow-e1 flex flex-col items-center gap-2.5">
+          <div className="grid place-items-center w-16 h-16 rounded-2xl bg-coral-tint text-3xl mb-1.5">📊</div>
+          <h4 className="font-display text-xl font-semibold tracking-tight text-ink">No organic data yet</h4>
+          <p className="text-sm text-ink-soft max-w-sm leading-relaxed">Analytics build from your published posts and connected channels. Publish your first post — or connect a channel to sync history.</p>
+          <div className="mt-3 flex gap-2">
+            <a href="/app/studio"><Button>Create a post</Button></a>
+            <a href="/app/integrations"><Button variant="secondary">Connect channels</Button></a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const insights = [
     { icon: Trophy, label: 'Best post', value: a.insights.bestPost },
     { icon: LayoutGrid, label: 'Best format', value: a.insights.bestFormat },
@@ -38,10 +56,10 @@ export default function OrganicAnalytics() {
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
-        <MetricCard label="Followers" value={num(a.kpis.followers)} delta={`${a.kpis.growth}%`} deltaDir="up" hint="vs last 30d" />
-        <MetricCard label="Reach" value={num(a.kpis.reach)} delta="14%" deltaDir="up" hint="vs last 30d" />
-        <MetricCard label="Engagement rate" value={`${a.kpis.engagementRate}%`} delta="0.6" deltaDir="up" hint="vs last 30d" />
-        <MetricCard label="Profile visits" value={num(a.kpis.profileVisits)} delta="9%" deltaDir="up" hint={`${num(a.kpis.linkClicks)} link clicks`} />
+        <MetricCard label="Followers" value={num(a.kpis.followers)} hint="from connected channels" />
+        <MetricCard label="Reach" value={num(a.kpis.reach)} hint="last 30 days" />
+        <MetricCard label="Engagement rate" value={`${a.kpis.engagementRate}%`} hint="from post metrics" />
+        <MetricCard label="Profile visits" value={num(a.kpis.profileVisits)} hint={`${num(a.kpis.linkClicks)} link clicks`} />
       </div>
 
       {/* what's working */}
