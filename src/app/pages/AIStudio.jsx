@@ -308,7 +308,7 @@ export default function AIStudio() {
                         </div>
                       )}
                     </div>
-                    <div className="p-3.5 text-[0.8rem] text-ink-soft line-clamp-3 whitespace-pre-wrap leading-relaxed">{result.caption}</div>
+                    <div className="p-3.5 max-h-32 overflow-y-auto text-[0.8rem] text-ink-soft whitespace-pre-wrap leading-relaxed">{result.caption}</div>
                   </div>
                   <Button variant="secondary" className="mt-5" onClick={genImage} disabled={imgBusy}>
                     <ImageIcon className="w-4 h-4" /> {imgBusy ? 'Generating…' : image ? 'Regenerate image' : 'Generate image'}
