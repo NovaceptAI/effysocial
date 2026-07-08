@@ -3,9 +3,20 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Sparkles, FileText, Target, Globe, FileInput, ChevronRight, Loader2 } from 'lucide-react';
 import { inr, num } from '../context/WorkspaceContext';
-import { campaignFunnel } from '../data/sampleData';
 import { effyApi } from '../api/effyApi';
 import { Card, PageHeader, Button, StatusBadge, Badge, Tabs, Pacing, MetricCard, EmptyState } from '../../ui';
+
+// Funnel steps derived from the campaign's REAL kpis (zeros until data flows in).
+const campaignFunnel = (c) => {
+  const k = c.kpis || {};
+  return [
+    { stage: 'Impressions', value: k.impressions || 0, color: 'var(--dv-6)' },
+    { stage: 'Clicks', value: k.clicks || 0, color: 'var(--dv-5)' },
+    { stage: 'Leads', value: k.leads || 0, color: 'var(--dv-3)' },
+    { stage: 'Qualified', value: k.qualified || 0, color: 'var(--dv-2)' },
+    { stage: 'Customers', value: k.customers || 0, color: 'var(--dv-1)' },
+  ];
+};
 
 const TABS = [
   { id: 'overview', label: 'Overview' }, { id: 'plan', label: 'Plan' },

@@ -8,7 +8,6 @@ import {
   SlidersHorizontal, Search,
 } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
-import { brandBrainFor } from '../data/brandBrain';
 import { effyApi } from '../api/effyApi';
 import { Button, Badge, Pacing } from '../../ui';
 import { cn } from '../../lib/cn';
@@ -94,7 +93,6 @@ export default function AIStudio() {
   const { workspace } = useWorkspace();
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const brain = brandBrainFor(workspace);
 
   // Deep-linked from a playbook? Skip the chooser and open the composer.
   const seeded = params.get('trend') || params.get('angle') || params.get('topic');
@@ -254,9 +252,9 @@ export default function AIStudio() {
                 <h3 className="font-bold text-ink text-sm mb-1 flex items-center gap-1.5"><Palette className="w-4 h-4 text-coral-ink" /> Brand context</h3>
                 <p className="text-xs text-ink-faint mb-3">From Brand Brain — shapes every generation.</p>
                 <div className="text-xs font-semibold text-ink-soft mb-1.5">Tone</div>
-                <div className="flex flex-wrap gap-1.5 mb-4">{brain.tone.data.slice(0, 6).map((t) => <Badge key={t}>{t}</Badge>)}</div>
+                <div className="flex flex-wrap gap-1.5 mb-4">{(ctx?.brand?.tone || []).slice(0, 6).map((t) => <Badge key={t}>{t}</Badge>)}</div>
                 <div className="text-xs font-semibold text-ink-soft mb-1.5">Approved words</div>
-                <div className="flex flex-wrap gap-1.5">{brain.approved.data.slice(0, 6).map((t) => <Badge key={t} tone="success">{t}</Badge>)}</div>
+                <div className="flex flex-wrap gap-1.5">{(ctx?.brand?.approved || []).slice(0, 6).map((t) => <Badge key={t} tone="success">{t}</Badge>)}</div>
               </>
             )}
             {panel === 'refine' && (

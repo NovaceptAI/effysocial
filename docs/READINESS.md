@@ -43,15 +43,13 @@ Every `effy_*` content table is at 0 and ready for user-entered rows.
 |---|---|---|
 | **Overview** | overviewMetrics, trendSeries, UPCOMING_CONTENT, ATTENTION_LEADS, ALERTS | derive all from real posts/leads/campaigns + recommendations; empty states for fresh accounts |
 | **Engage: Inbox/Comments/Reviews data** | (API real, but tables now empty) | need channel sync (Meta/Google APIs) to fill — gated on integrations |
-| **CampaignWorkspace funnel** | campaignFunnel | compute from campaign KPIs + linked children |
-| **Reports** | savedReports, templates, metrics | persist reports; build from real analytics |
-| **Ideas** | ideasFor | effy_ideas table + CRUD (small) |
-| **MarketingPlan** | marketingPlan | effy_plans table + editor |
-| **MediaLibrary** | mediaFor | persist generated/uploaded assets (S3 exists) |
-| **Templates** | templatesFor | static gallery is acceptable v1; brand-lock later |
-| **SocialListening** | listening | needs external listening provider — Phase later |
-| **Team** | TEAM, ROLES | list real memberships + invite flow (backend partial) |
+| **Team** | TEAM, ROLES | list real memberships + invite flow (NEXT — dedicated pass) |
 | **Billing** | plan/usage stubs | wire to PRICING plans + usage metering |
+
+**De-mocked to honest states (2026-07-08):** Overview (real), CampaignWorkspace funnel (real KPIs),
+MarketingPlan · SocialListening · Ideas · MediaLibrary · Templates · Reports (honest empty states,
+no fabricated data), AI Studio brand panel (real studioContext). Only **Team** still shows mock —
+next.
 | Harmless constants (not mock data) | BrandBrain SECTIONS, Calendar TODAY, Scheduled CHANNELS, Ideas IDEA_STAGES, AIStudio brandBrainFor(fallback) | keep |
 
 ## 4. Credentials — what's needed for fully-real data
