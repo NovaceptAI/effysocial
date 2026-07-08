@@ -63,7 +63,7 @@ CLOUDFLARE (images) · POLLINATIONS_API_KEY · AWS/S3 · SECRET_KEY · DATABASE_
 ### ❌ Missing — blocks real user-facing behaviour
 | Credential | Unlocks | How to get |
 |---|---|---|
-| **RESEND_API_KEY** (recommended) _or_ SMTP | Real verification/reset emails. **Email gate is LIVE**: bad/disposable/nonexistent-domain emails rejected at signup; unverified users blocked from login (`EFFY_REQUIRE_VERIFIED_EMAIL=true`). Until a provider is set, verification uses a dev-link. | resend.com → instant API key, send from onboarding@resend.dev immediately; add DNS later for your domain |
+| ✅ **RESEND_API_KEY** — SET & delivering | Real verification/reset emails now send (tested, delivered). Email gate LIVE: bad/disposable/nonexistent-domain rejected at signup; unverified users blocked from login. | **Done.** ⚠️ Using Resend TEST sender (`onboarding@resend.dev`) → can only email the Resend account owner (novaceptai@gmail.com). **To email real customers: verify `effybiz.in` at resend.com/domains (add SPF/DKIM DNS), then set `EFFY_EMAIL_SENDER=EffySocial <noreply@effybiz.in>`.** Until then, external signups fall back to the dev-link. |
 | **EFFY_EMAIL_SENDER** | From-address for those emails | e.g. `EffySocial <noreply@effybiz.in>` (domain must be verified with the provider) |
 | **GOOGLE_ADS_CLIENT_ID/SECRET** | Google OAuth (Ads, GA4, Business Profile) | Google Cloud Console OAuth client |
 | **GOOGLE_ADS_DEVELOPER_TOKEN** | Google Ads data | apply in Google Ads account (basic-access review) |
