@@ -5,8 +5,9 @@ import {
   Sparkles, Smartphone, Monitor, RefreshCw, Image as ImageIcon,
   Check, FileText, Film, Images, Square, MessageCircle, Video, Briefcase,
   CalendarPlus, Send, Flame, Swords, X, ArrowRight, ArrowLeft, PenLine, Palette,
-  SlidersHorizontal, Search,
+  SlidersHorizontal, Search, Clapperboard,
 } from 'lucide-react';
+import Storyboard from '../components/Storyboard';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
 import { Button, Badge, Pacing } from '../../ui';
@@ -21,6 +22,7 @@ const FORMATS = [
   { id: 'li_post', label: 'LinkedIn Post', platform: 'linkedin', icon: Briefcase, aspect: '1 / 1', size: '1200 × 1200', group: 'LinkedIn' },
   { id: 'x_post', label: 'X Post', platform: 'twitter', icon: Square, aspect: '16 / 9', size: '1600 × 900', group: 'X' },
   { id: 'yt_short', label: 'YouTube Short', platform: 'youtube', icon: Video, aspect: '9 / 16', size: '1080 × 1920', group: 'YouTube', video: true },
+  { id: 'yt_story', label: 'YouTube Story', platform: 'youtube', icon: Clapperboard, aspect: '16 / 9', size: 'Multi-scene story', group: 'YouTube', storyboard: true, thumb: 'yt_short' },
   { id: 'wa_promo', label: 'WhatsApp', platform: 'whatsapp', icon: MessageCircle, aspect: '1 / 1', size: '1080 × 1080', group: 'WhatsApp' },
 ];
 const FILTERS = ['Popular', 'Instagram', 'Facebook', 'LinkedIn', 'YouTube', 'WhatsApp'];
@@ -69,7 +71,7 @@ function FormatChooser({ onPick }) {
             <div className="grid place-items-center h-36 rounded-xl bg-surface2 mb-3 overflow-hidden">
               <div className="relative rounded-lg shadow-e2 overflow-hidden"
                 style={{ aspectRatio: f.aspect, height: f.aspect.startsWith('9') ? '86%' : '62%' }}>
-                <img src={`/formats/${f.id}.jpg`} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+                <img src={`/formats/${f.thumb || f.id}.jpg`} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
                 <span className="absolute bottom-1 right-1 grid place-items-center w-5 h-5 rounded-md bg-ink/45 text-white backdrop-blur-sm"><f.icon className="w-3 h-3" /></span>
               </div>
             </div>
@@ -177,6 +179,11 @@ export default function AIStudio() {
 
   if (!format) {
     return <FormatChooser onPick={(f) => { setFormat(f); setPanel('brief'); }} />;
+  }
+
+  // Storyboard formats get a dedicated multi-scene experience.
+  if (format.storyboard) {
+    return <Storyboard format={format} onBack={() => setFormat(null)} initialBrief={topic} />;
   }
 
   const chip = (label, val, clear, tone) => (

@@ -41,6 +41,12 @@ export const effyApi = {
     http('/studio/video/start', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
   studioVideoStatus: (payload) =>
     http('/studio/video/status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
+  storyPlan: (payload) =>
+    http('/studio/story/plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
+  storyScene: (payload) =>
+    http('/studio/story/scene', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
+  storyStitch: (payload) =>
+    http('/studio/story/stitch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
   sendToApproval: (payload) =>
     http('/studio/send-to-approval', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
 
