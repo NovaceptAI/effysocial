@@ -65,6 +65,7 @@ CLOUDFLARE (images) · POLLINATIONS_API_KEY · AWS/S3 · SECRET_KEY · DATABASE_
 |---|---|---|
 | ✅ **RESEND_API_KEY** — SET & delivering | Real verification/reset emails now send (tested, delivered). Email gate LIVE: bad/disposable/nonexistent-domain rejected at signup; unverified users blocked from login. | **Done.** ⚠️ Using Resend TEST sender (`onboarding@resend.dev`) → can only email the Resend account owner (novaceptai@gmail.com). **To email real customers: verify `effybiz.in` at resend.com/domains (add SPF/DKIM DNS), then set `EFFY_EMAIL_SENDER=EffySocial <noreply@effybiz.in>`.** Until then, external signups fall back to the dev-link. |
 | **EFFY_EMAIL_SENDER** | From-address for those emails | e.g. `EffySocial <noreply@effybiz.in>` (domain must be verified with the provider) |
+| ⚙️ **GEMINI_API_KEY** — SET (Veo video) | AI **video generation** in AI Studio (Reels/Shorts) via Google Veo. Key is present (same AIza key as YouTube). | **Two console steps remain:** (1) enable **"Generative Language API"** for the project; (2) turn on **billing** (Veo is a paid model). Until then the "Generate video" button returns a clear "enable the API / billing" message — no crash. |
 | **GOOGLE_ADS_CLIENT_ID/SECRET** | Google OAuth (Ads, GA4, Business Profile) | Google Cloud Console OAuth client |
 | **GOOGLE_ADS_DEVELOPER_TOKEN** | Google Ads data | apply in Google Ads account (basic-access review) |
 | **WHATSAPP_WABA_ID** | WhatsApp Cloud API messaging | WABA in Meta Business Manager |

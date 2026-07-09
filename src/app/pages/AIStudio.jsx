@@ -15,12 +15,12 @@ import { cn } from '../../lib/cn';
 // Format catalogue — Canva-style cards with a real aspect thumbnail.
 const FORMATS = [
   { id: 'ig_post', label: 'Instagram Post', platform: 'instagram', icon: Square, aspect: '4 / 5', size: '1080 × 1350', group: 'Instagram' },
-  { id: 'ig_reel', label: 'Instagram Reel', platform: 'instagram', icon: Film, aspect: '9 / 16', size: '1080 × 1920', group: 'Instagram' },
+  { id: 'ig_reel', label: 'Instagram Reel', platform: 'instagram', icon: Film, aspect: '9 / 16', size: '1080 × 1920', group: 'Instagram', video: true },
   { id: 'ig_carousel', label: 'Carousel', platform: 'instagram', icon: Images, aspect: '1 / 1', size: '1080 × 1080', group: 'Instagram' },
   { id: 'fb_post', label: 'Facebook Post', platform: 'facebook', icon: Square, aspect: '1 / 1', size: '1200 × 1200', group: 'Facebook' },
   { id: 'li_post', label: 'LinkedIn Post', platform: 'linkedin', icon: Briefcase, aspect: '1 / 1', size: '1200 × 1200', group: 'LinkedIn' },
   { id: 'x_post', label: 'X Post', platform: 'twitter', icon: Square, aspect: '16 / 9', size: '1600 × 900', group: 'X' },
-  { id: 'yt_short', label: 'YouTube Short', platform: 'youtube', icon: Video, aspect: '9 / 16', size: '1080 × 1920', group: 'YouTube' },
+  { id: 'yt_short', label: 'YouTube Short', platform: 'youtube', icon: Video, aspect: '9 / 16', size: '1080 × 1920', group: 'YouTube', video: true },
   { id: 'wa_promo', label: 'WhatsApp', platform: 'whatsapp', icon: MessageCircle, aspect: '1 / 1', size: '1080 × 1080', group: 'WhatsApp' },
 ];
 const FILTERS = ['Popular', 'Instagram', 'Facebook', 'LinkedIn', 'YouTube', 'WhatsApp'];
@@ -111,6 +111,9 @@ export default function AIStudio() {
   const [showScores, setShowScores] = useState(true);
   const [image, setImage] = useState('');       // generated visual URL
   const [imgBusy, setImgBusy] = useState(false);
+  const [video, setVideo] = useState('');       // generated video URL (Veo)
+  const [vidBusy, setVidBusy] = useState(false);
+  const [vidMsg, setVidMsg] = useState('');     // progress/error line for video
   const [refining, setRefining] = useState('');  // which tool is running
   const captionRef = useRef(null);
 
@@ -153,6 +156,23 @@ export default function AIStudio() {
       if (d.imageUrl) setImage(d.imageUrl);
     } finally { setImgBusy(false); }
   };
+  // Veo video — long-running: start, then poll every 8s (Veo takes ~1–3 min).
+  const genVideo = async () => {
+    if (!workspace || !format) return;
+    setVidBusy(true); setVideo(''); setVidMsg('Starting render…');
+    try {
+      const { op } = await effyApi.studioVideoStart({ workspace: workspace.id, topic: topic || trend || angle, trend, aspect: format.aspect });
+      setVidMsg('Rendering video — this usually takes 1–3 minutes…');
+      for (let i = 0; i < 60; i += 1) {
+        await new Promise((r) => setTimeout(r, 8000));
+        const st = await effyApi.studioVideoStatus({ workspace: workspace.id, op });
+        if (st.status === 'ready') { setVideo(st.videoUrl); setVidMsg(''); return; }
+      }
+      setVidMsg('Still rendering — try again in a moment.');
+    } catch (e) {
+      setVidMsg(e.message || 'Video generation failed.');
+    } finally { setVidBusy(false); }
+  };
 
   if (!format) {
     return <FormatChooser onPick={(f) => { setFormat(f); setPanel('brief'); }} />;
@@ -168,7 +188,7 @@ export default function AIStudio() {
     <div className="-mt-1">
       {/* Contextual top bar */}
       <div className="flex items-center gap-3 mb-5 flex-wrap">
-        <button onClick={() => { setFormat(null); setResult(null); setImage(''); }} className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-soft hover:text-ink">
+        <button onClick={() => { setFormat(null); setResult(null); setImage(''); setVideo(''); setVidMsg(''); }} className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-soft hover:text-ink">
           <ArrowLeft className="w-4 h-4" /> Formats
         </button>
         <div className="h-5 w-px bg-line" />
@@ -298,20 +318,30 @@ export default function AIStudio() {
                       <span className="text-sm font-bold">{workspace.name.toLowerCase().replace(/\s/g, '')}</span>
                     </div>
                     <div className="relative bg-surface2" style={{ aspectRatio: format.aspect }}>
-                      {image
-                        ? <img src={image} alt="Generated visual" className="absolute inset-0 w-full h-full object-cover" />
-                        : <div className="absolute inset-0 bg-aurora" />}
-                      {imgBusy && (
-                        <div className="absolute inset-0 grid place-items-center bg-ink/30 backdrop-blur-sm text-white text-xs font-semibold">
-                          <span className="inline-flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Painting…</span>
+                      {video
+                        ? <video src={video} controls autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover" />
+                        : image
+                          ? <img src={image} alt="Generated visual" className="absolute inset-0 w-full h-full object-cover" />
+                          : <div className="absolute inset-0 bg-aurora" />}
+                      {(imgBusy || vidBusy) && (
+                        <div className="absolute inset-0 grid place-items-center bg-ink/40 backdrop-blur-sm text-white text-xs font-semibold px-4 text-center">
+                          <span className="inline-flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> {vidBusy ? (vidMsg || 'Rendering video…') : 'Painting…'}</span>
                         </div>
                       )}
                     </div>
                     <div className="p-3.5 max-h-32 overflow-y-auto text-[0.8rem] text-ink-soft whitespace-pre-wrap leading-relaxed">{result.caption}</div>
                   </div>
-                  <Button variant="secondary" className="mt-5" onClick={genImage} disabled={imgBusy}>
-                    <ImageIcon className="w-4 h-4" /> {imgBusy ? 'Generating…' : image ? 'Regenerate image' : 'Generate image'}
-                  </Button>
+                  <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
+                    <Button variant="secondary" onClick={genImage} disabled={imgBusy || vidBusy}>
+                      <ImageIcon className="w-4 h-4" /> {imgBusy ? 'Generating…' : image ? 'Regenerate image' : 'Generate image'}
+                    </Button>
+                    {format.video && (
+                      <Button variant="secondary" onClick={genVideo} disabled={vidBusy || imgBusy}>
+                        <Film className="w-4 h-4" /> {vidBusy ? 'Rendering…' : video ? 'Regenerate video' : 'Generate video'}
+                      </Button>
+                    )}
+                  </div>
+                  {vidMsg && !vidBusy && <p className="mt-2 text-xs text-ink-faint text-center max-w-[380px]">{vidMsg}</p>}
                 </div>
               </div>
               {/* Caption editor — compact, focused column */}
