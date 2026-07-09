@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Clapperboard, Sparkles, RefreshCw, Film, Play, Check, Send,
-  Monitor, Smartphone, Wand2, ImageIcon, Download,
+  Monitor, Smartphone, Wand2, ImageIcon, Download, Plus, X,
 } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
@@ -61,6 +61,12 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
     setRenderingAll(false);
   };
 
+  const addScene = () => setScenes((prev) => [
+    ...prev,
+    { title: `Scene ${prev.length + 1}`, prompt: '', caption: '', imageUrl: '', videoUrl: '', name: '', rendering: false },
+  ]);
+  const removeScene = (idx) => setScenes((prev) => prev.filter((_, i) => i !== idx));
+
   const stitch = async () => {
     const names = scenes.filter((s) => s.name).map((s) => s.name);
     if (names.length < 2) return;
@@ -106,16 +112,17 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
           placeholder="e.g. a day in the life at our clinic — from welcome to happy patient walking out"
           className="w-full rounded-xl bg-surface2 px-3.5 py-3 text-sm leading-relaxed resize-none mb-3" />
         <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-xs font-semibold text-ink-soft">Scenes</span>
+          <span className="text-xs font-semibold text-ink-soft">How many scenes to draft?</span>
           <div className="flex rounded-lg bg-surface2 p-0.5">
             {COUNTS.map((c) => (
               <button key={c} onClick={() => setCount(c)}
-                className={cn('w-8 h-7 rounded-md text-sm font-bold', count === c ? 'bg-surface shadow-e1 text-coral-ink' : 'text-ink-soft')}>{c}</button>
+                className={cn('px-3 h-7 rounded-md text-sm font-bold', count === c ? 'bg-surface shadow-e1 text-coral-ink' : 'text-ink-soft')}>{c}</button>
             ))}
           </div>
+          <span className="text-xs text-ink-faint">You can add or remove frames after.</span>
           <div className="flex-1" />
           <Button variant="spark" onClick={plan} disabled={planning || !brief.trim()}>
-            <Sparkles className="w-4 h-4" /> {planning ? 'Planning…' : scenes.length ? 'Re-plan storyboard' : 'Plan storyboard'}
+            <Sparkles className="w-4 h-4" /> {planning ? 'Planning…' : scenes.length ? 'Re-plan storyboard' : `Plan ${count} scenes`}
           </Button>
         </div>
       </div>
@@ -147,6 +154,8 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
                       ? <img src={s.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
                       : <div className="absolute inset-0 grid place-items-center text-ink-faint"><ImageIcon className="w-6 h-6" /></div>}
                   <span className="absolute top-2 left-2 grid place-items-center min-w-[22px] h-[22px] px-1.5 rounded-md bg-ink/55 text-white text-xs font-bold backdrop-blur-sm">{i + 1}</span>
+                  <button onClick={() => removeScene(i)} title="Remove frame"
+                    className="absolute top-2 right-2 grid place-items-center w-[22px] h-[22px] rounded-md bg-ink/55 text-white hover:bg-error backdrop-blur-sm transition"><X className="w-3.5 h-3.5" /></button>
                   {s.videoUrl && <span className="absolute bottom-2 right-2 grid place-items-center w-6 h-6 rounded-full bg-ink/55 text-white backdrop-blur-sm"><Play className="w-3 h-3" /></span>}
                   {s.rendering && (
                     <div className="absolute inset-0 grid place-items-center bg-ink/40 backdrop-blur-sm text-white text-xs font-semibold">
@@ -158,6 +167,7 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
                   placeholder="On-screen caption"
                   className="mt-2.5 w-full rounded-lg bg-surface2 px-2.5 py-1.5 text-xs font-semibold text-ink" />
                 <textarea value={s.prompt} onChange={(e) => patch(i, { prompt: e.target.value })} rows={2}
+                  placeholder="Describe the visual for this frame…"
                   className="mt-1.5 w-full rounded-lg bg-surface2 px-2.5 py-1.5 text-[0.7rem] text-ink-soft leading-snug resize-none" />
                 <Button variant="secondary" size="sm" className="mt-2" onClick={() => renderScene(i)} disabled={s.rendering || renderingAll}>
                   {s.videoUrl ? <RefreshCw className="w-3.5 h-3.5" /> : <Film className="w-3.5 h-3.5" />}
@@ -166,6 +176,14 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
                 {s.error && <p className="mt-1.5 text-[0.7rem] text-error">{s.error}</p>}
               </div>
             ))}
+            {/* Add a frame */}
+            <button onClick={addScene}
+              className="min-h-[220px] rounded-2xl border-2 border-dashed border-line grid place-items-center text-ink-soft hover:text-coral-ink hover:border-coral/40 hover:bg-coral-tint/30 transition">
+              <span className="flex flex-col items-center gap-1.5 text-sm font-semibold">
+                <span className="grid place-items-center w-10 h-10 rounded-xl bg-surface2"><Plus className="w-5 h-5" /></span>
+                Add frame
+              </span>
+            </button>
           </div>
         </>
       )}
