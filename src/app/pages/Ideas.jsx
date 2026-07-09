@@ -58,7 +58,7 @@ export default function Ideas() {
     <div>
       <PageHeader
         title="Ideas"
-        subtitle="Your content backlog — capture ideas from trends and mentions, shape them, then send the best to AI Studio."
+        subtitle="Capture ideas, shape them, and send the best to Studio."
         actions={<Button variant="secondary" onClick={() => navigate('/app/trends')}><Flame className="w-4 h-4" /> Browse trends</Button>}
       />
 
@@ -80,15 +80,6 @@ export default function Ideas() {
       {isLoading ? (
         <div className="grid md:grid-cols-3 gap-4">
           {[0, 1, 2].map((i) => <div key={i} className="h-64 rounded-2xl bg-surface2 animate-pulse" />)}
-        </div>
-      ) : ideas.length === 0 ? (
-        <div className="rounded-2xl bg-surface shadow-e1 p-10 text-center">
-          <div className="grid place-items-center w-14 h-14 rounded-2xl bg-coral-tint text-coral-ink mx-auto mb-4"><Lightbulb className="w-6 h-6" /></div>
-          <h3 className="font-display text-xl font-semibold tracking-tight mb-1.5">Start your idea backlog</h3>
-          <p className="text-sm text-ink-soft leading-relaxed max-w-md mx-auto mb-5">
-            Add an idea above, or save one straight from Trends. Ideas move Captured → Developing → Ready, then one click sends them to Studio to draft.
-          </p>
-          <Button variant="secondary" onClick={() => navigate('/app/trends')}><Flame className="w-4 h-4" /> See what's trending</Button>
         </div>
       ) : (
         <div className="grid md:grid-cols-3 gap-4 items-start">

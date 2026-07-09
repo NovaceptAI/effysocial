@@ -60,7 +60,7 @@ export default function MediaLibrary() {
     <div>
       <PageHeader
         title="Media Library"
-        subtitle="Every visual you generate in Studio and storyboards lands here — plus your uploads. Reuse, download or remove."
+        subtitle="Generated visuals and your uploads — reuse, download or remove."
         actions={
           <>
             <input ref={fileRef} type="file" accept="image/*,video/*" multiple hidden onChange={onPick} />
@@ -86,12 +86,8 @@ export default function MediaLibrary() {
           {[0, 1, 2, 3].map((i) => <div key={i} className="aspect-square rounded-2xl bg-surface2 animate-pulse" />)}
         </div>
       ) : media.length === 0 ? (
-        <div className="rounded-2xl bg-surface shadow-e1 p-10 text-center">
-          <div className="grid place-items-center w-14 h-14 rounded-2xl bg-coral-tint text-coral-ink mx-auto mb-4"><ImageIcon className="w-6 h-6" /></div>
-          <h3 className="font-display text-xl font-semibold tracking-tight mb-1.5">Your media library is empty</h3>
-          <p className="text-sm text-ink-soft leading-relaxed max-w-md mx-auto mb-5">
-            Generate a visual in AI Studio or a storyboard and it appears here automatically — or upload your own logos and product shots.
-          </p>
+        <div className="py-16 text-center">
+          <p className="text-sm text-ink-faint mb-4">Nothing here yet. Generate a visual in Studio, or upload your own.</p>
           <div className="flex flex-wrap justify-center gap-2">
             <Button onClick={() => navigate('/app/studio')}><Wand2 className="w-4 h-4" /> Create in Studio</Button>
             <Button variant="secondary" onClick={() => fileRef.current?.click()}><Upload className="w-4 h-4" /> Upload</Button>
