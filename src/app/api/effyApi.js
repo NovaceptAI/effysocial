@@ -60,6 +60,8 @@ export const effyApi = {
     return http('/library/upload', { method: 'POST', body: fd }).then((d) => d.media);
   },
   deleteMedia: (id) => http(`/library/${id}`, { method: 'DELETE' }),
+  animateMedia: (payload) =>
+    http('/studio/animate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
 
   // Ideas — content backlog
   listIdeas: (workspaceId) => http(`/ideas?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.ideas),

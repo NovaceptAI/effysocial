@@ -10,6 +10,12 @@ import { cn } from '../../lib/cn';
 
 const COUNTS = [3, 4, 5, 6];
 const CLIPS = [6, 8, 10];
+const MOTIONS = [
+  { key: 'push_in', label: 'Push in' },
+  { key: 'pull_out', label: 'Pull out' },
+  { key: 'pan_right', label: 'Pan right' },
+  { key: 'pan_left', label: 'Pan left' },
+];
 const EXAMPLES = [
   { title: 'Day in the life', body: 'A warm day at our clinic — from a friendly welcome to a happy patient leaving with a bright smile.' },
   { title: 'Product launch', body: 'Unbox the new product, hero beauty shots, then a delighted customer reaction.' },
@@ -44,7 +50,7 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
     try {
       const topic = subject.trim() ? `${brief} (recurring main subject: ${subject.trim()})` : brief;
       const d = await effyApi.storyPlan({ workspace: workspace.id, topic, scenes: count });
-      setScenes((d.scenes || []).map((s) => ({ ...s, imageUrl: '', videoUrl: '', name: '', rendering: false })));
+      setScenes((d.scenes || []).map((s) => ({ ...s, imageUrl: '', videoUrl: '', name: '', rendering: false, motion: 'push_in' })));
     } finally { setPlanning(false); }
   };
 
@@ -53,7 +59,7 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
     if (!sc) return;
     patch(idx, { rendering: true, error: '' });
     try {
-      const d = await effyApi.storyScene({ workspace: workspace.id, prompt: scenePrompt(sc.prompt), aspect, seconds: clip });
+      const d = await effyApi.storyScene({ workspace: workspace.id, prompt: scenePrompt(sc.prompt), aspect, seconds: clip, motion: sc.motion || 'push_in' });
       patch(idx, { rendering: false, imageUrl: d.imageUrl || '', videoUrl: d.videoUrl || '', name: d.name || '' });
     } catch (e) {
       patch(idx, { rendering: false, error: e.message || 'Failed' });
@@ -71,7 +77,7 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
 
   const addScene = () => setScenes((prev) => [
     ...prev,
-    { title: `Scene ${prev.length + 1}`, prompt: '', caption: '', imageUrl: '', videoUrl: '', name: '', rendering: false },
+    { title: `Scene ${prev.length + 1}`, prompt: '', caption: '', imageUrl: '', videoUrl: '', name: '', rendering: false, motion: 'push_in' },
   ]);
   const removeScene = (idx) => setScenes((prev) => prev.filter((_, i) => i !== idx));
 
@@ -213,6 +219,13 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
                     <textarea value={s.prompt} onChange={(e) => patch(i, { prompt: e.target.value })} rows={2}
                       placeholder="Describe the visual for this shot…"
                       className="w-full rounded-lg bg-surface2 px-2.5 py-1.5 text-[0.7rem] text-ink-soft leading-snug resize-none" />
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[0.65rem] font-bold uppercase tracking-wide text-ink-faint">Motion</span>
+                      <select value={s.motion || 'push_in'} onChange={(e) => patch(i, { motion: e.target.value })}
+                        className="flex-1 rounded-lg bg-surface2 px-2 py-1 text-[0.7rem] font-semibold text-ink">
+                        {MOTIONS.map((mo) => <option key={mo.key} value={mo.key}>{mo.label}</option>)}
+                      </select>
+                    </div>
                     {s.error && <p className="text-[0.7rem] text-error">{s.error}</p>}
                   </div>
                 </div>

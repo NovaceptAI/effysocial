@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Wand2, Upload, Trash2, Download, Play, ImageIcon, RefreshCw,
+  Film, ZoomIn, ZoomOut, MoveRight, MoveLeft, X,
 } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
@@ -15,12 +16,19 @@ const TABS = [
   { key: 'video', label: 'Videos' },
 ];
 const SOURCE_TONE = { studio: 'coral', storyboard: 'info', upload: 'default' };
+const MOTIONS = [
+  { key: 'push_in', label: 'Push in', icon: ZoomIn },
+  { key: 'pull_out', label: 'Pull out', icon: ZoomOut },
+  { key: 'pan_right', label: 'Pan right', icon: MoveRight },
+  { key: 'pan_left', label: 'Pan left', icon: MoveLeft },
+];
 
 export default function MediaLibrary() {
   const { workspace } = useWorkspace();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [tab, setTab] = useState('');
+  const [moveFor, setMoveFor] = useState(null);   // media id whose motion menu is open
   const fileRef = useRef(null);
 
   const key = ['media', workspace?.id, tab];
@@ -36,6 +44,10 @@ export default function MediaLibrary() {
   const remove = useMutation({
     mutationFn: (id) => effyApi.deleteMedia(id),
     onSuccess: invalidate,
+  });
+  const animate = useMutation({
+    mutationFn: ({ m, motion }) => effyApi.animateMedia({ workspace: workspace.id, name: m.name, motion, aspect: m.aspect || '' }),
+    onSuccess: () => { setMoveFor(null); invalidate(); },
   });
 
   const onPick = (e) => {
@@ -97,8 +109,35 @@ export default function MediaLibrary() {
                 <span className="absolute top-2 left-2 grid place-items-center w-6 h-6 rounded-md bg-ink/55 text-white backdrop-blur-sm">
                   {m.kind === 'video' ? <Play className="w-3 h-3" /> : <ImageIcon className="w-3 h-3" />}
                 </span>
+                {/* motion picker overlay ("Make it move") */}
+                {moveFor === m.id && (
+                  <div className="absolute inset-0 z-10 grid place-items-center bg-ink/70 backdrop-blur-sm p-3">
+                    {animate.isPending ? (
+                      <span className="inline-flex items-center gap-1.5 text-white text-xs font-semibold"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Animating…</span>
+                    ) : (
+                      <div className="w-full">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-white text-xs font-bold">Make it move</span>
+                          <button onClick={() => setMoveFor(null)} className="text-white/70 hover:text-white"><X className="w-3.5 h-3.5" /></button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {MOTIONS.map((mo) => (
+                            <button key={mo.key} onClick={() => animate.mutate({ m, motion: mo.key })}
+                              className="inline-flex items-center gap-1.5 rounded-lg bg-white/90 text-ink text-xs font-semibold px-2 py-1.5 hover:bg-white">
+                              <mo.icon className="w-3.5 h-3.5" /> {mo.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
                 {/* hover actions */}
                 <div className="absolute inset-x-0 bottom-0 p-2 flex items-center gap-1.5 bg-gradient-to-t from-ink/80 to-transparent translate-y-full group-hover:translate-y-0 transition-transform">
+                  {m.kind === 'image' && (
+                    <button onClick={() => setMoveFor(m.id)} title="Make it move"
+                      className="grid place-items-center w-8 h-8 rounded-lg bg-white/90 text-coral-ink hover:bg-white"><Film className="w-3.5 h-3.5" /></button>
+                  )}
                   <button onClick={() => reuse(m)} title="Reuse in Studio"
                     className="flex-1 inline-flex items-center justify-center gap-1 rounded-lg bg-white/90 text-ink text-xs font-bold py-1.5 hover:bg-white">
                     <Wand2 className="w-3.5 h-3.5" /> Reuse
