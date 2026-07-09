@@ -105,6 +105,11 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
         </div>
       </div>
 
+      <p className="text-sm text-ink-soft mb-4 max-w-2xl leading-relaxed">
+        Describe your story and we'll break it into scenes — a frame and a short clip each — then stitch
+        them into one preview your client can watch end-to-end.
+      </p>
+
       {/* brief */}
       <div className="bg-surface rounded-2xl shadow-e1 p-5 mb-5">
         <label className="block text-xs font-bold uppercase tracking-wide text-ink-faint mb-2">What's the story?</label>
@@ -209,12 +214,9 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
       )}
 
       {scenes.length === 0 && !planning && (
-        <div className="text-center py-16">
-          <div className="grid place-items-center w-14 h-14 rounded-2xl bg-coral-tint text-coral-ink mx-auto mb-4"><Clapperboard className="w-6 h-6" /></div>
-          <h3 className="font-display text-xl font-semibold tracking-tight mb-1.5">Storyboard a longer video</h3>
-          <p className="text-sm text-ink-soft leading-relaxed max-w-sm mx-auto">
-            Describe the story and we'll break it into {count} scenes — a frame and a short clip each — then stitch them into one preview your client can watch end-to-end.
-          </p>
+        <div className="text-center py-14 text-ink-faint">
+          <div className="grid place-items-center w-12 h-12 rounded-2xl bg-coral-tint text-coral-ink mx-auto mb-3"><Clapperboard className="w-5 h-5" /></div>
+          <p className="text-sm">Your frames will appear here once you plan the story.</p>
         </div>
       )}
     </div>
