@@ -97,21 +97,23 @@ export default function AIStudio() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
 
-  // Deep-linked from a playbook? Skip the chooser and open the composer.
-  const seeded = params.get('trend') || params.get('angle') || params.get('topic');
+  // Deep-linked from a playbook or Media Library? Skip the chooser, open composer.
+  const reusedImage = params.get('image') || '';
+  const seeded = params.get('trend') || params.get('angle') || params.get('topic') || reusedImage;
   const [format, setFormat] = useState(seeded ? FORMATS[0] : null);
 
   const [panel, setPanel] = useState('brief');   // open tool panel (or null)
   const [topic, setTopic] = useState(params.get('topic') || '');
   const [lang, setLang] = useState('English');
   const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState(null);
+  // A reused image opens straight into the preview with an empty draft to fill.
+  const [result, setResult] = useState(reusedImage ? { caption: '', hashtags: [], scores: [], hook: '', cta: '', cited: [] } : null);
   const [preview, setPreview] = useState('mobile');
   const [trend, setTrend] = useState(params.get('trend') || '');
   const [angle, setAngle] = useState(params.get('angle') || '');
   const [sent, setSent] = useState(false);
   const [showScores, setShowScores] = useState(true);
-  const [image, setImage] = useState('');       // generated visual URL
+  const [image, setImage] = useState(reusedImage);       // generated/reused visual URL
   const [imgBusy, setImgBusy] = useState(false);
   const [video, setVideo] = useState('');       // generated video URL (Veo)
   const [vidBusy, setVidBusy] = useState(false);

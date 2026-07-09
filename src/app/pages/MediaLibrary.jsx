@@ -1,21 +1,123 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Wand2, ArrowRight } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  Wand2, Upload, Trash2, Download, Play, ImageIcon, RefreshCw,
+} from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
-import { PageHeader, EmptyState, Button } from '../../ui';
+import { effyApi } from '../api/effyApi';
+import { PageHeader, Button, Badge } from '../../ui';
+import { cn } from '../../lib/cn';
 
-// A persisted asset library (S3-backed) is a future slice — no mock data.
+const TABS = [
+  { key: '', label: 'All' },
+  { key: 'image', label: 'Images' },
+  { key: 'video', label: 'Videos' },
+];
+const SOURCE_TONE = { studio: 'coral', storyboard: 'info', upload: 'default' };
+
 export default function MediaLibrary() {
   const { workspace } = useWorkspace();
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const [tab, setTab] = useState('');
+  const fileRef = useRef(null);
+
+  const key = ['media', workspace?.id, tab];
+  const { data: media = [], isLoading } = useQuery({
+    queryKey: key, queryFn: () => effyApi.listMedia(workspace.id, tab), enabled: !!workspace,
+  });
+  const invalidate = () => qc.invalidateQueries({ queryKey: ['media', workspace?.id] });
+
+  const upload = useMutation({
+    mutationFn: (file) => effyApi.uploadMedia(workspace.id, file),
+    onSuccess: invalidate,
+  });
+  const remove = useMutation({
+    mutationFn: (id) => effyApi.deleteMedia(id),
+    onSuccess: invalidate,
+  });
+
+  const onPick = (e) => {
+    Array.from(e.target.files || []).forEach((f) => upload.mutate(f));
+    e.target.value = '';
+  };
+  const reuse = (m) => navigate(`/app/studio?image=${encodeURIComponent(m.url)}`);
+
   return (
     <div>
-      <PageHeader title="Media Library" subtitle={`Brand assets and generated visuals for ${workspace.name}`} />
-      <EmptyState
-        icon="🖼️"
-        title="Your media library is empty"
-        body="Visuals you generate in AI Studio — and assets you upload — will be organised here with tags, usage and rights tracking. Generate your first image to get started."
-        action={<Link to="/app/studio"><Button><Wand2 className="w-4 h-4" /> Create in AI Studio <ArrowRight className="w-3.5 h-3.5" /></Button></Link>}
+      <PageHeader
+        title="Media Library"
+        subtitle="Every visual you generate in Studio and storyboards lands here — plus your uploads. Reuse, download or remove."
+        actions={
+          <>
+            <input ref={fileRef} type="file" accept="image/*,video/*" multiple hidden onChange={onPick} />
+            <Button onClick={() => fileRef.current?.click()} disabled={upload.isPending}>
+              {upload.isPending ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />} Upload
+            </Button>
+          </>
+        }
       />
+
+      <div className="flex gap-2 mb-5">
+        {TABS.map((t) => (
+          <button key={t.key} onClick={() => setTab(t.key)}
+            className={cn('px-4 py-1.5 rounded-full text-sm font-semibold transition',
+              tab === t.key ? 'bg-ink text-white' : 'bg-surface2 text-ink-soft hover:text-ink')}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {isLoading ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {[0, 1, 2, 3].map((i) => <div key={i} className="aspect-square rounded-2xl bg-surface2 animate-pulse" />)}
+        </div>
+      ) : media.length === 0 ? (
+        <div className="rounded-2xl bg-surface shadow-e1 p-10 text-center">
+          <div className="grid place-items-center w-14 h-14 rounded-2xl bg-coral-tint text-coral-ink mx-auto mb-4"><ImageIcon className="w-6 h-6" /></div>
+          <h3 className="font-display text-xl font-semibold tracking-tight mb-1.5">Your media library is empty</h3>
+          <p className="text-sm text-ink-soft leading-relaxed max-w-md mx-auto mb-5">
+            Generate a visual in AI Studio or a storyboard and it appears here automatically — or upload your own logos and product shots.
+          </p>
+          <div className="flex flex-wrap justify-center gap-2">
+            <Button onClick={() => navigate('/app/studio')}><Wand2 className="w-4 h-4" /> Create in Studio</Button>
+            <Button variant="secondary" onClick={() => fileRef.current?.click()}><Upload className="w-4 h-4" /> Upload</Button>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {media.map((m) => (
+            <div key={m.id} className="group relative rounded-2xl overflow-hidden bg-surface shadow-e1 hover:shadow-e3 transition-all">
+              <div className="relative bg-ink/90" style={{ aspectRatio: m.aspect ? m.aspect.replace(':', ' / ') : '1 / 1' }}>
+                {m.kind === 'video'
+                  ? <video src={m.url} muted loop playsInline className="absolute inset-0 w-full h-full object-cover"
+                      onMouseEnter={(e) => e.currentTarget.play()} onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }} />
+                  : <img src={m.url} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />}
+                <span className="absolute top-2 left-2 grid place-items-center w-6 h-6 rounded-md bg-ink/55 text-white backdrop-blur-sm">
+                  {m.kind === 'video' ? <Play className="w-3 h-3" /> : <ImageIcon className="w-3 h-3" />}
+                </span>
+                {/* hover actions */}
+                <div className="absolute inset-x-0 bottom-0 p-2 flex items-center gap-1.5 bg-gradient-to-t from-ink/80 to-transparent translate-y-full group-hover:translate-y-0 transition-transform">
+                  <button onClick={() => reuse(m)} title="Reuse in Studio"
+                    className="flex-1 inline-flex items-center justify-center gap-1 rounded-lg bg-white/90 text-ink text-xs font-bold py-1.5 hover:bg-white">
+                    <Wand2 className="w-3.5 h-3.5" /> Reuse
+                  </button>
+                  <a href={m.url} download title="Download" className="grid place-items-center w-8 h-8 rounded-lg bg-white/90 text-ink hover:bg-white"><Download className="w-3.5 h-3.5" /></a>
+                  <button onClick={() => remove.mutate(m.id)} title="Delete" className="grid place-items-center w-8 h-8 rounded-lg bg-white/90 text-error hover:bg-white"><Trash2 className="w-3.5 h-3.5" /></button>
+                </div>
+              </div>
+              <div className="p-2.5">
+                <p className="text-xs text-ink-soft truncate">{m.prompt || (m.kind === 'video' ? 'Video' : 'Image')}</p>
+                <div className="flex items-center justify-between mt-1">
+                  <Badge tone={SOURCE_TONE[m.source] || 'default'}>{m.source}</Badge>
+                  <span className="text-[0.65rem] text-ink-faint">{m.created}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

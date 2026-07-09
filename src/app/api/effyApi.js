@@ -50,6 +50,17 @@ export const effyApi = {
   sendToApproval: (payload) =>
     http('/studio/send-to-approval', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
 
+  // Media Library — asset catalogue
+  listMedia: (workspaceId, type) =>
+    http(`/library?workspace=${encodeURIComponent(workspaceId)}${type ? `&type=${type}` : ''}`).then((d) => d.media),
+  uploadMedia: (workspaceId, file) => {
+    const fd = new FormData();
+    fd.append('workspace', workspaceId);
+    fd.append('file', file);
+    return http('/library/upload', { method: 'POST', body: fd }).then((d) => d.media);
+  },
+  deleteMedia: (id) => http(`/library/${id}`, { method: 'DELETE' }),
+
   // Ideas — content backlog
   listIdeas: (workspaceId) => http(`/ideas?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.ideas),
   createIdea: (payload) =>
