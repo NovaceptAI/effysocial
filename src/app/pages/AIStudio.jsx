@@ -303,58 +303,64 @@ export default function AIStudio() {
               <div className="flex items-center gap-2 text-ink-soft text-sm"><RefreshCw className="w-4 h-4 animate-spin" /> Drafting your {format.label.toLowerCase()}…</div>
             </div>
           ) : result ? (
-            <div className="flex-1 grid lg:grid-cols-[1fr_380px]">
-              {/* HERO — the visual, big and centred */}
-              <div className="p-6 lg:p-10 grid place-items-center bg-surface2/20 min-w-0">
-                <div className="w-full flex flex-col items-center">
-                  <div className="flex items-center justify-end w-full max-w-[440px] mb-4">
-                    <div className="flex rounded-lg bg-surface2 p-0.5">
-                      <button onClick={() => setPreview('mobile')} className={cn('p-1.5 rounded-md', preview === 'mobile' && 'bg-surface shadow-e1 text-coral-ink')}><Smartphone className="w-4 h-4" /></button>
-                      <button onClick={() => setPreview('desktop')} className={cn('p-1.5 rounded-md', preview === 'desktop' && 'bg-surface shadow-e1 text-coral-ink')}><Monitor className="w-4 h-4" /></button>
-                    </div>
+            <div className="flex-1 overflow-y-auto p-6 lg:p-8">
+              <div className={cn('mx-auto w-full flex flex-col items-center', preview === 'mobile' ? 'max-w-[380px]' : 'max-w-[480px]')}>
+                {/* preview device toggle */}
+                <div className="flex items-center justify-end w-full mb-3">
+                  <div className="flex rounded-lg bg-surface2 p-0.5">
+                    <button onClick={() => setPreview('mobile')} className={cn('p-1.5 rounded-md', preview === 'mobile' && 'bg-surface shadow-e1 text-coral-ink')}><Smartphone className="w-4 h-4" /></button>
+                    <button onClick={() => setPreview('desktop')} className={cn('p-1.5 rounded-md', preview === 'desktop' && 'bg-surface shadow-e1 text-coral-ink')}><Monitor className="w-4 h-4" /></button>
                   </div>
-                  <div className={cn('rounded-2xl overflow-hidden bg-surface shadow-e3 w-full', preview === 'mobile' ? 'max-w-[380px]' : 'max-w-[560px]')}>
-                    <div className="flex items-center gap-2 p-3.5">
-                      <span className="grid place-items-center w-7 h-7 rounded-full text-xs" style={{ background: workspace.accent + '22' }}>{workspace.logo}</span>
-                      <span className="text-sm font-bold">{workspace.name.toLowerCase().replace(/\s/g, '')}</span>
-                    </div>
-                    <div className="relative bg-surface2" style={{ aspectRatio: format.aspect }}>
-                      {video
-                        ? <video src={video} controls autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover" />
-                        : image
-                          ? <img src={image} alt="Generated visual" className="absolute inset-0 w-full h-full object-cover" />
-                          : <div className="absolute inset-0 bg-aurora" />}
-                      {(imgBusy || vidBusy) && (
-                        <div className="absolute inset-0 grid place-items-center bg-ink/40 backdrop-blur-sm text-white text-xs font-semibold px-4 text-center">
-                          <span className="inline-flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> {vidBusy ? (vidMsg || 'Rendering video…') : 'Painting…'}</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-3.5 max-h-32 overflow-y-auto text-[0.8rem] text-ink-soft whitespace-pre-wrap leading-relaxed">{result.caption}</div>
+                </div>
+
+                {/* MEDIA — the hero (visual only) */}
+                <div className="rounded-2xl overflow-hidden bg-surface shadow-e3 w-full">
+                  <div className="flex items-center gap-2 p-3.5">
+                    <span className="grid place-items-center w-7 h-7 rounded-full text-xs" style={{ background: workspace.accent + '22' }}>{workspace.logo}</span>
+                    <span className="text-sm font-bold">{workspace.name.toLowerCase().replace(/\s/g, '')}</span>
                   </div>
-                  <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
-                    <Button variant="secondary" onClick={genImage} disabled={imgBusy || vidBusy}>
-                      <ImageIcon className="w-4 h-4" /> {imgBusy ? 'Generating…' : image ? 'Regenerate image' : 'Generate image'}
-                    </Button>
-                    {format.video && (
-                      <Button variant="secondary" onClick={genVideo} disabled={vidBusy || imgBusy}>
-                        <Film className="w-4 h-4" /> {vidBusy ? 'Rendering…' : video ? 'Regenerate video' : 'Generate video'}
-                      </Button>
+                  <div className="relative bg-surface2" style={{ aspectRatio: format.aspect }}>
+                    {video
+                      ? <video src={video} controls autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover" />
+                      : image
+                        ? <img src={image} alt="Generated visual" className="absolute inset-0 w-full h-full object-cover" />
+                        : <div className="absolute inset-0 bg-aurora" />}
+                    {(imgBusy || vidBusy) && (
+                      <div className="absolute inset-0 grid place-items-center bg-ink/40 backdrop-blur-sm text-white text-xs font-semibold px-4 text-center">
+                        <span className="inline-flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> {vidBusy ? (vidMsg || 'Rendering video…') : 'Painting…'}</span>
+                      </div>
                     )}
                   </div>
-                  {vidMsg && !vidBusy && <p className="mt-2 text-xs text-ink-faint text-center max-w-[380px]">{vidMsg}</p>}
                 </div>
-              </div>
-              {/* Caption editor — compact, focused column */}
-              <div className="border-t lg:border-t-0 lg:border-l border-line p-6 flex flex-col min-w-0">
-                <span className="text-xs font-bold uppercase tracking-wide text-ink-faint mb-2.5">Caption</span>
-                <textarea ref={captionRef} key={result.caption} defaultValue={result.caption}
-                  className="w-full flex-1 min-h-[240px] rounded-xl bg-surface2 px-3.5 py-3 text-sm leading-[1.7] resize-none" />
-                <div className="flex flex-wrap gap-1.5 mt-3">{result.hashtags.map((h) => <Badge key={h} tone="new">#{h}</Badge>)}</div>
-                <button onClick={() => setPanel(panel === 'refine' ? null : 'refine')}
-                  className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-coral-ink self-start">
-                  <SlidersHorizontal className="w-3.5 h-3.5" /> Refine copy
-                </button>
+
+                {/* generate media */}
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-2.5">
+                  <Button variant="secondary" onClick={genImage} disabled={imgBusy || vidBusy}>
+                    <ImageIcon className="w-4 h-4" /> {imgBusy ? 'Generating…' : image ? 'Regenerate image' : 'Generate image'}
+                  </Button>
+                  {format.video && (
+                    <Button variant="secondary" onClick={genVideo} disabled={vidBusy || imgBusy}>
+                      <Film className="w-4 h-4" /> {vidBusy ? 'Rendering…' : video ? 'Regenerate video' : 'Generate video'}
+                    </Button>
+                  )}
+                </div>
+                {vidMsg && !vidBusy && <p className="mt-2 text-xs text-ink-faint text-center">{vidMsg}</p>}
+
+                {/* CAPTION — compact, directly below the media */}
+                <div className="w-full mt-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold uppercase tracking-wide text-ink-faint">Caption</span>
+                    <button onClick={() => setPanel(panel === 'refine' ? null : 'refine')}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-coral-ink">
+                      <SlidersHorizontal className="w-3.5 h-3.5" /> Refine
+                    </button>
+                  </div>
+                  <textarea ref={captionRef} key={result.caption} defaultValue={result.caption} rows={5}
+                    className="w-full rounded-xl bg-surface2 px-3.5 py-3 text-sm leading-relaxed resize-y max-h-72" />
+                  {result.hashtags.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2.5">{result.hashtags.map((h) => <Badge key={h} tone="new">#{h}</Badge>)}</div>
+                  )}
+                </div>
               </div>
             </div>
           ) : (
