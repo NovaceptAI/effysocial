@@ -85,8 +85,8 @@ export default function TopBar({ onOpenPalette, onOpenAssistant, onOpenNav, onTo
       <button onClick={onOpenNav} className="md:hidden grid place-items-center w-9 h-9 rounded-lg hover:bg-surface2 transition text-ink-soft shrink-0" title="Menu">
         <Menu className="w-5 h-5" />
       </button>
-      {/* Desktop: collapse / expand the nav rail for a full-width view */}
-      <button onClick={onToggleRail} className="hidden md:grid place-items-center w-9 h-9 rounded-lg hover:bg-surface2 transition text-ink-soft shrink-0" title={railHidden ? 'Show menu' : 'Hide menu'}>
+      {/* Desktop: collapse / expand the nav rail. */}
+      <button onClick={onToggleRail} className="hidden md:grid place-items-center w-9 h-9 rounded-lg hover:bg-surface2 transition text-ink-soft shrink-0" title={railHidden ? 'Expand menu' : 'Minimize menu'}>
         {railHidden ? <PanelLeftOpen className="w-[18px] h-[18px]" /> : <PanelLeftClose className="w-[18px] h-[18px]" />}
       </button>
 

@@ -63,16 +63,19 @@ export default function AppShell() {
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   const [railHidden, setRailHidden] = useState(() => {
-    try { return localStorage.getItem('effy.rail.hidden') === '1'; } catch { return false; }
+    try {
+      const saved = localStorage.getItem('effy.rail.collapsed');
+      return saved == null ? true : saved === '1';
+    } catch { return true; }
   });
   const toggleRail = () => setRailHidden((v) => {
     const next = !v;
-    try { localStorage.setItem('effy.rail.hidden', next ? '1' : '0'); } catch { /* noop */ }
+    try { localStorage.setItem('effy.rail.collapsed', next ? '1' : '0'); } catch { /* noop */ }
     return next;
   });
   return (
     <div className="app-root flex min-h-dvh bg-canvas text-ink">
-      <NavRail mobileOpen={navOpen} onNavigate={() => setNavOpen(false)} desktopHidden={railHidden} />
+      <NavRail mobileOpen={navOpen} onNavigate={() => setNavOpen(false)} desktopCollapsed={railHidden} />
       {/* Mobile drawer backdrop */}
       {navOpen && (
         <div className="fixed inset-0 z-40 bg-ink/40 backdrop-blur-sm md:hidden" onClick={() => setNavOpen(false)} />

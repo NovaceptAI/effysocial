@@ -1,17 +1,16 @@
 import React, { useState, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
-  ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid,
-} from 'recharts';
-import { Sparkles, ArrowRight, Flame, Wand2, Plug, CalendarPlus } from 'lucide-react';
+  ArrowRight, BarChart3, Brain, FileInput, Flame, MessageSquareWarning, Plug, ShieldCheck,
+  TrendingUp, Wand2,
+} from 'lucide-react';
 import { useWorkspace, inr, num } from '../context/WorkspaceContext';
 import { usePosts } from '../api/hooks';
 import { effyApi } from '../api/effyApi';
 import { Card, MetricCard, PageHeader, Badge, Button } from '../../ui';
 
 const HEAT = { hot: 'text-error', warm: 'text-warning', cold: 'text-ink-faint' };
-const HDOT = { good: 'bg-success', attention: 'bg-warning', poor: 'bg-error' };
 
 // Agency overview (spec §7.2) — org-wide rollup across all client workspaces.
 function AgencyOverview({ onSwitchView }) {
@@ -58,28 +57,25 @@ function AgencyOverview({ onSwitchView }) {
   );
 }
 
-// Last-8-week buckets from real row `created` dates (ISO yyyy-mm-dd).
-function weeklySeries(leads) {
-  const weeks = [];
-  const now = new Date();
-  for (let i = 7; i >= 0; i--) {
-    const start = new Date(now); start.setDate(now.getDate() - now.getDay() - i * 7);
-    const end = new Date(start); end.setDate(start.getDate() + 7);
-    const label = start.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
-    const count = leads.filter((l) => {
-      const d = new Date(l.created);
-      return d >= start && d < end;
-    }).length;
-    weeks.push({ week: label, leads: count });
-  }
-  return weeks;
-}
-
 const UPCOMING_STATUSES = ['draft', 'internal_review', 'client_review', 'approved', 'scheduled'];
 const STATUS_TONE = { scheduled: 'info', approved: 'success', internal_review: 'warning', client_review: 'warning', draft: 'default' };
 
+function ActionRow({ to, icon: Icon, title }) {
+  return (
+    <Link to={to} className="flex items-center gap-3 rounded-xl p-2.5 transition hover:bg-surface2">
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-coral-tint text-coral-ink">
+        <Icon className="h-[18px] w-[18px]" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="text-sm font-bold text-ink">{title}</span>
+      </span>
+      <ArrowRight className="h-4 w-4 shrink-0 text-ink-faint" />
+    </Link>
+  );
+}
+
 export default function Overview() {
-  const { workspace, org, user } = useWorkspace();
+  const { workspace, org } = useWorkspace();
   const isAgency = org?.type === 'agency';
   const [view, setView] = useState(isAgency ? 'agency' : 'client');
 
@@ -88,30 +84,34 @@ export default function Overview() {
   const { data: leads = [] } = useQuery({
     queryKey: ['leads', workspace?.id], queryFn: () => effyApi.listLeads(workspace.id), enabled: !!workspace,
   });
-  const { data: campaigns = [] } = useQuery({
-    queryKey: ['campaigns', workspace?.id], queryFn: () => effyApi.listCampaigns(workspace.id), enabled: !!workspace,
-  });
   const { data: recs = [] } = useQuery({
     queryKey: ['recs', workspace?.id], queryFn: () => effyApi.assistantRecommendations(workspace.id), enabled: !!workspace,
   });
+  const { data: brand } = useQuery({
+    queryKey: ['brand', workspace?.id], queryFn: () => effyApi.getBrand(workspace.id), enabled: !!workspace,
+  });
 
-  const m = useMemo(() => {
-    const spend = campaigns.reduce((s, c) => s + (c.spent || 0), 0);
-    const revenue = campaigns.reduce((s, c) => s + (c.kpis?.revenue || 0), 0);
-    const qualified = leads.filter((l) => ['qualified', 'appointment', 'proposal', 'won'].includes(l.stage)).length;
-    return {
-      revenue, spend, leads: leads.length, qualified,
-      roas: spend > 0 ? (revenue / spend).toFixed(1) : null,
-      cpl: leads.length > 0 && spend > 0 ? Math.round(spend / leads.length) : null,
-    };
-  }, [campaigns, leads]);
-
-  const series = useMemo(() => weeklySeries(leads), [leads]);
-  const hasActivity = leads.length > 0 || posts.length > 0 || campaigns.length > 0;
+  const brandReady = (brand?.completeness || 0) > 0;
   const attention = leads.filter((l) => ['new', 'contacted'].includes(l.stage)).slice(0, 4);
   const upcoming = posts.filter((p) => UPCOMING_STATUSES.includes(p.status)).slice(0, 4);
   const alerts = recs.filter((r) => r.severity === 'error' || r.severity === 'warning').slice(0, 3);
-  const firstName = (user?.name || '').split(' ')[0] || 'there';
+  const setupActions = useMemo(() => [
+    !brandReady && {
+      to: '/app/brand',
+      icon: Brain,
+      title: 'Add brand basics',
+    },
+    {
+      to: '/app/forms',
+      icon: FileInput,
+      title: 'Create a lead form',
+    },
+    {
+      to: '/app/integrations',
+      icon: Plug,
+      title: 'Connect channels',
+    },
+  ].filter(Boolean), [brandReady]);
 
   if (isAgency && view === 'agency') return <AgencyOverview onSwitchView={() => setView('client')} />;
 
@@ -120,65 +120,83 @@ export default function Overview() {
       {isAgency && (
         <button onClick={() => setView('agency')} className="mb-3 text-sm font-bold text-coral-ink">← Agency overview</button>
       )}
-      <PageHeader
-        title={`Good morning, ${firstName}`}
-        subtitle={`${workspace.name} — organic, paid, leads and revenue, connected.`}
-      />
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-4 mb-4">
+        <Card className="md:col-span-2 xl:col-span-4 overflow-hidden bg-card-sheen border border-line/70">
+          <div className="min-h-[160px] p-5 flex flex-col justify-between gap-5">
+            <div>
+              <h2 className="font-display text-[1.4rem] sm:text-[1.65rem] leading-[1.05] font-semibold tracking-tight text-ink">
+                Create your first post
+              </h2>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2.5">
+              <Link to="/app/studio">
+                <Button variant="spark" size="lg"><Wand2 className="w-4 h-4" /> Start AI Studio</Button>
+              </Link>
+            </div>
+          </div>
+        </Card>
 
-      {/* Truthful summary strip */}
-      <Card className="p-4 mb-5 bg-coral-tint/70 flex items-start gap-3">
-        <span className="grid place-items-center w-9 h-9 rounded-xl bg-aurora text-white shrink-0"><Sparkles className="w-5 h-5" /></span>
-        <p className="text-sm text-ink leading-relaxed">
-          {hasActivity ? (
-            <>You have <strong>{num(leads.length)} lead{leads.length === 1 ? '' : 's'}</strong> ({num(m.qualified)} qualified), {num(posts.length)} content item{posts.length === 1 ? '' : 's'} in the pipeline and {num(campaigns.length)} campaign{campaigns.length === 1 ? '' : 's'}. {alerts.length ? `${alerts.length} alert${alerts.length === 1 ? '' : 's'} need${alerts.length === 1 ? 's' : ''} your attention below.` : 'No alerts — all clear.'}</>
-          ) : (
-            <><strong>Welcome to EffySocial.</strong> Start by <Link to="/app/integrations" className="text-coral-ink font-bold">connecting a channel</Link>, then create your first post in <Link to="/app/studio" className="text-coral-ink font-bold">AI Studio</Link> or launch a campaign from <Link to="/app/playbooks" className="text-coral-ink font-bold">Playbooks</Link>.</>
-          )}
-        </p>
-      </Card>
+        <Card className="xl:col-span-4 p-5 border border-line/70">
+          <div className="mb-3">
+            <h3 className="font-bold text-ink">Next best actions</h3>
+          </div>
+          <div className="space-y-1">
+            {setupActions.map((action) => <ActionRow key={action.title} {...action} />)}
+          </div>
+        </Card>
 
-      {/* Metric grid — real numbers, no invented deltas */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <MetricCard label="Attributed revenue" value={inr(m.revenue)} hint={m.revenue ? 'from campaigns' : 'no revenue tracked yet'} />
-        <MetricCard label="Ad spend" value={inr(m.spend)} hint={m.spend ? 'across campaigns' : 'no spend yet'} />
-        <MetricCard label="Leads" value={num(m.leads)} hint={`${num(m.qualified)} qualified`} />
-        <MetricCard label="ROAS" value={m.roas ? `${m.roas}×` : '—'} hint={m.cpl ? `CPL ${inr(m.cpl, { compact: false })}` : 'needs spend + revenue'} />
+        <Link to="/app/trends" className="block xl:col-span-2">
+          <Card className="p-5 h-full min-h-[160px] bg-coral-tint/60 border border-line/70 transition hover:shadow-e3">
+            <div className="h-full flex flex-col justify-between gap-3">
+              <h3 className="font-bold text-ink">Trends</h3>
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-surface text-coral-ink">
+                <TrendingUp className="w-5 h-5" />
+              </span>
+            </div>
+          </Card>
+        </Link>
+
+        <Link to="/app/analytics/organic" className="block xl:col-span-2">
+          <Card className="p-5 h-full min-h-[160px] border border-line/70 transition hover:shadow-e3">
+            <div className="h-full flex flex-col justify-between gap-3">
+              <h3 className="font-bold text-ink">Organic</h3>
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-coral-tint text-coral-ink">
+                <BarChart3 className="w-5 h-5" />
+              </span>
+            </div>
+          </Card>
+        </Link>
       </div>
 
-      {/* Chart + attention leads */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-        <Card className="lg:col-span-2 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-ink">Leads per week</h3>
-            <Badge tone="default">Last 8 weeks</Badge>
+      <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-12 gap-4">
+        <Card className="p-5 border border-line/70 xl:col-span-5">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h3 className="font-bold text-ink">Content pipeline</h3>
+            </div>
+            <Link to="/app/calendar" className="text-xs font-bold text-coral-ink">Open calendar →</Link>
           </div>
-          {leads.length ? (
-            <ResponsiveContainer width="100%" height={260}>
-              <AreaChart data={series} margin={{ left: -16, right: 8, top: 4 }}>
-                <defs>
-                  <linearGradient id="gLeads" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#14b8a6" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#14b8a6" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid stroke="#ece2d6" vertical={false} />
-                <XAxis dataKey="week" tick={{ fontSize: 12, fill: '#a89d93' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 12, fill: '#a89d93' }} axisLine={false} tickLine={false} allowDecimals={false} />
-                <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #ece2d6', fontSize: 13 }} />
-                <Area type="monotone" dataKey="leads" stroke="#14b8a6" strokeWidth={2.5} fill="url(#gLeads)" />
-              </AreaChart>
-            </ResponsiveContainer>
+          {upcoming.length ? (
+            <ul className="divide-y divide-line">
+              {upcoming.map((c) => (
+                <li key={c.id} className="flex items-center gap-3 py-3">
+                  <span className="grid place-items-center w-9 h-9 rounded-lg bg-surface2 text-base capitalize">{(c.channel || 'i')[0]}</span>
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-sm font-semibold text-ink truncate">{c.title}</span>
+                    <span className="block text-xs text-ink-faint">{c.date || 'unscheduled'}{c.time ? ` · ${c.time}` : ''}</span>
+                  </span>
+                  <Badge tone={STATUS_TONE[c.status] || 'default'}>{c.status.replace('_', ' ')}</Badge>
+                </li>
+              ))}
+            </ul>
           ) : (
-            <div className="h-[260px] grid place-items-center text-center">
-              <div>
-                <p className="text-sm text-ink-soft mb-3">No leads yet — they'll chart here as they arrive.</p>
-                <Link to="/app/forms"><Button size="sm" variant="secondary">Create a lead form <ArrowRight className="w-3.5 h-3.5" /></Button></Link>
-              </div>
+            <div className="py-8 text-center">
+              <Link to="/app/studio"><Button size="sm"><Wand2 className="w-3.5 h-3.5" /> Open AI Studio</Button></Link>
             </div>
           )}
         </Card>
 
-        <Card className="p-5">
+        <Card className="p-5 border border-line/70 xl:col-span-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-bold text-ink">Leads needing action</h3>
             <Link to="/app/pipeline" className="text-xs font-bold text-coral-ink">View all →</Link>
@@ -199,46 +217,20 @@ export default function Overview() {
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-ink-faint">No leads waiting. New form submissions and converted conversations land here.</p>
+            <p className="text-sm leading-relaxed text-ink-faint">No leads yet.</p>
           )}
         </Card>
-      </div>
 
-      {/* Upcoming content + alerts */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card className="lg:col-span-2 p-5">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-bold text-ink">Upcoming content</h3>
-            <Link to="/app/calendar" className="text-xs font-bold text-coral-ink">Open calendar →</Link>
+        <Card className="p-5 border border-line/70 xl:col-span-3">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="font-bold text-ink">Critical alerts</h3>
+            {alerts.length ? <Badge tone="warning">{alerts.length} active</Badge> : <Badge tone="success"><ShieldCheck className="w-3 h-3" /> Watching</Badge>}
           </div>
-          {upcoming.length ? (
-            <ul className="divide-y divide-line">
-              {upcoming.map((c) => (
-                <li key={c.id} className="flex items-center gap-3 py-3">
-                  <span className="grid place-items-center w-9 h-9 rounded-lg bg-surface2 text-base capitalize">{(c.channel || 'i')[0]}</span>
-                  <span className="flex-1 min-w-0">
-                    <span className="block text-sm font-semibold text-ink truncate">{c.title}</span>
-                    <span className="block text-xs text-ink-faint">{c.date || 'unscheduled'}{c.time ? ` · ${c.time}` : ''}</span>
-                  </span>
-                  <Badge tone={STATUS_TONE[c.status] || 'default'}>{c.status.replace('_', ' ')}</Badge>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="py-8 text-center">
-              <p className="text-sm text-ink-soft mb-3">Nothing in the pipeline — create your first post.</p>
-              <Link to="/app/studio"><Button size="sm"><Wand2 className="w-3.5 h-3.5" /> Open AI Studio</Button></Link>
-            </div>
-          )}
-        </Card>
-
-        <Card className="p-5">
-          <h3 className="font-bold text-ink mb-3">Critical alerts</h3>
           {alerts.length ? (
             <ul className="space-y-2.5">
               {alerts.map((a) => (
                 <li key={a.id} className={`p-3 rounded-xl ${a.severity === 'error' ? 'bg-error-soft' : 'bg-warning-soft'}`}>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <span className={`text-sm font-bold ${a.severity === 'error' ? 'text-error' : 'text-warning'}`}>{a.title}</span>
                     <span className="text-[0.65rem] font-bold uppercase text-ink-faint">{a.agent}</span>
                   </div>
@@ -247,7 +239,10 @@ export default function Overview() {
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-ink-faint">No alerts — Effy watches budgets, publishing failures and complaints for you.</p>
+            <div className="rounded-xl bg-surface2 p-3">
+              <MessageSquareWarning className="mb-2 h-4 w-4 text-coral-ink" />
+              <p className="text-sm font-semibold text-ink">No critical alerts</p>
+            </div>
           )}
         </Card>
       </div>
