@@ -77,7 +77,7 @@ export default function NavRail({ mobileOpen = false, onNavigate, desktopCollaps
               'group flex items-center gap-3 rounded-[16px] px-3 py-3 transition-all duration-200',
               desktopCollapsed && 'md:justify-center md:px-2',
               isActive
-                ? 'bg-white text-ink shadow-[0_12px_32px_-22px_rgba(255,255,255,0.7)]'
+                ? 'bg-white text-black shadow-[0_12px_32px_-22px_rgba(255,255,255,0.7)]'
                 : 'bg-white/[0.055] text-white hover:bg-white/[0.09]',
             )}
           >
@@ -85,13 +85,13 @@ export default function NavRail({ mobileOpen = false, onNavigate, desktopCollaps
               <>
                 <span className={cn(
                   'grid h-10 w-10 shrink-0 place-items-center rounded-[13px] transition',
-                  isActive ? 'bg-surface2 text-ink' : 'bg-white/10 text-coral-light group-hover:bg-white/15',
+                  isActive ? 'bg-surface2 text-black' : 'bg-white/10 text-coral-light group-hover:bg-white/15',
                 )}>
                   <home.icon className="h-[19px] w-[19px]" strokeWidth={2} />
                 </span>
                 <span className={cn('min-w-0 flex-1', desktopCollapsed && 'md:hidden')}>
                   <span className="block text-sm font-bold leading-tight">Home</span>
-                  <span className={cn('block truncate text-[0.72rem] leading-5', isActive ? 'text-ink-soft' : 'text-rail-muted')}>
+                  <span className={cn('block truncate text-[0.72rem] leading-5', isActive ? 'text-black' : 'text-rail-muted')}>
                     {workspace?.name || 'Overview and priorities'}
                   </span>
                 </span>
@@ -113,7 +113,7 @@ export default function NavRail({ mobileOpen = false, onNavigate, desktopCollaps
             className={({ isActive }) => cn(
               'group mx-auto flex h-11 w-11 items-center justify-center rounded-[14px] transition-all duration-200',
               isActive
-                ? 'bg-white text-ink shadow-[0_10px_24px_-18px_rgba(255,255,255,0.85)]'
+                ? 'bg-white text-black shadow-[0_10px_24px_-18px_rgba(255,255,255,0.85)]'
                 : 'text-rail-ink/70 hover:bg-white/[0.07] hover:text-white',
             )}
           >
@@ -159,7 +159,7 @@ export default function NavRail({ mobileOpen = false, onNavigate, desktopCollaps
                         className={({ isActive }) => cn(
                           'group relative flex items-center gap-2.5 rounded-[13px] px-2.5 py-2.5 text-sm font-semibold transition-all duration-200',
                           isActive
-                            ? 'bg-white text-ink shadow-[0_10px_24px_-18px_rgba(255,255,255,0.85)]'
+                            ? 'bg-white text-black shadow-[0_10px_24px_-18px_rgba(255,255,255,0.85)]'
                             : 'text-rail-ink/78 hover:bg-white/[0.055] hover:text-white',
                         )}
                       >
@@ -167,7 +167,7 @@ export default function NavRail({ mobileOpen = false, onNavigate, desktopCollaps
                           <>
                             <span className={cn(
                               'grid h-8 w-8 shrink-0 place-items-center rounded-[11px] transition',
-                              isActive ? 'bg-surface2 text-ink' : 'bg-white/[0.055] text-rail-muted group-hover:bg-white/10 group-hover:text-coral-light',
+                              isActive ? 'bg-surface2 text-black' : 'bg-white/[0.055] text-rail-muted group-hover:bg-white/10 group-hover:text-coral-light',
                             )}>
                               <item.icon className="w-[17px] h-[17px]" strokeWidth={2} />
                             </span>
@@ -178,7 +178,7 @@ export default function NavRail({ mobileOpen = false, onNavigate, desktopCollaps
                               </span>
                             )}
                             {item.phase > 1 && (
-                              <span className={cn('text-[0.6rem] font-bold uppercase', isActive ? 'text-ink-faint' : 'text-rail-muted')}>P{item.phase}</span>
+                              <span className={cn('text-[0.6rem] font-bold uppercase', isActive ? 'text-black' : 'text-rail-muted')}>P{item.phase}</span>
                             )}
                           </>
                         )}
