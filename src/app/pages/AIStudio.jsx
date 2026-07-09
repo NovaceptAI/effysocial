@@ -162,11 +162,12 @@ export default function AIStudio() {
     setVidBusy(true); setVideo(''); setVidMsg('Starting render…');
     try {
       const { op } = await effyApi.studioVideoStart({ workspace: workspace.id, topic: topic || trend || angle, trend, aspect: format.aspect });
-      setVidMsg('Rendering video — this usually takes 1–3 minutes…');
+      setVidMsg('Rendering video…');
       for (let i = 0; i < 60; i += 1) {
-        await new Promise((r) => setTimeout(r, 8000));
         const st = await effyApi.studioVideoStatus({ workspace: workspace.id, op });
         if (st.status === 'ready') { setVideo(st.videoUrl); setVidMsg(''); return; }
+        setVidMsg('Rendering video — this can take up to a few minutes…');
+        await new Promise((r) => setTimeout(r, 8000));
       }
       setVidMsg('Still rendering — try again in a moment.');
     } catch (e) {
