@@ -1,6 +1,7 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Flame, Hash, Clapperboard, AlertTriangle, CalendarDays, Plus } from 'lucide-react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { Flame, Hash, Clapperboard, AlertTriangle, CalendarDays, Plus, Check } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
 import { Card, PageHeader, Button, Badge } from '../../ui';
@@ -11,11 +12,19 @@ const EMPTY = { trending: [], hashtags: [], formats: [], gaps: [], seasonal: [] 
 
 export default function Trends() {
   const { workspace } = useWorkspace();
+  const navigate = useNavigate();
+  const [saved, setSaved] = useState({});   // topic → true once saved as idea
   const { data: t = EMPTY } = useQuery({
     queryKey: ['trends', workspace?.id],
     queryFn: () => effyApi.strategyTrends(workspace.id),
     enabled: !!workspace,
   });
+
+  const saveIdea = useMutation({
+    mutationFn: (x) => effyApi.createIdea({ workspace: workspace.id, title: x.topic, notes: x.why || '', source: 'trend', heat: x.heat || '' }),
+    onSuccess: (_d, x) => setSaved((s) => ({ ...s, [x.topic]: true })),
+  });
+  const createPost = (x) => navigate(`/app/studio?topic=${encodeURIComponent(x.topic)}&trend=${encodeURIComponent(x.topic)}`);
 
   return (
     <div>
@@ -33,8 +42,10 @@ export default function Trends() {
                   <div className="text-xs text-ink-faint">{x.why}</div>
                 </div>
                 <div className="flex gap-1.5 shrink-0">
-                  <Button size="sm" variant="ghost"><Plus className="w-3.5 h-3.5" /> Idea</Button>
-                  <Button size="sm" variant="secondary">Create post</Button>
+                  <Button size="sm" variant="ghost" disabled={saved[x.topic] || saveIdea.isPending} onClick={() => saveIdea.mutate(x)}>
+                    {saved[x.topic] ? <><Check className="w-3.5 h-3.5" /> Saved</> : <><Plus className="w-3.5 h-3.5" /> Idea</>}
+                  </Button>
+                  <Button size="sm" variant="secondary" onClick={() => createPost(x)}>Create post</Button>
                 </div>
               </div>
             ))}

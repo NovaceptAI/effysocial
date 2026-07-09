@@ -50,6 +50,14 @@ export const effyApi = {
   sendToApproval: (payload) =>
     http('/studio/send-to-approval', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
 
+  // Ideas — content backlog
+  listIdeas: (workspaceId) => http(`/ideas?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.ideas),
+  createIdea: (payload) =>
+    http('/ideas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.idea),
+  updateIdea: (id, payload) =>
+    http(`/ideas/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.idea),
+  deleteIdea: (id) => http(`/ideas/${id}`, { method: 'DELETE' }),
+
   // Strategy intelligence (real trends + competitors)
   strategyTrends: (workspaceId) => http(`/strategy/trends?workspace=${encodeURIComponent(workspaceId)}`),
   strategyCompetitors: (workspaceId) => http(`/strategy/competitors?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.competitors),
