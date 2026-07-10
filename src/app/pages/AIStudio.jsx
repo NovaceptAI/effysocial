@@ -5,7 +5,7 @@ import {
   Sparkles, Smartphone, Monitor, RefreshCw, Image as ImageIcon,
   Check, FileText, Film, Images, Square, MessageCircle, Video, Briefcase,
   CalendarPlus, Send, Flame, Swords, X, ArrowRight, ArrowLeft, PenLine, Palette,
-  SlidersHorizontal, Search, Clapperboard,
+  SlidersHorizontal, Search, Clapperboard, Mic,
 } from 'lucide-react';
 import Storyboard from '../components/Storyboard';
 import { useWorkspace } from '../context/WorkspaceContext';
@@ -118,6 +118,9 @@ export default function AIStudio() {
   const [video, setVideo] = useState('');       // generated video URL (Veo)
   const [vidBusy, setVidBusy] = useState(false);
   const [vidMsg, setVidMsg] = useState('');     // progress/error line for video
+  const [voiceOn, setVoiceOn] = useState(false);
+  const [voice, setVoice] = useState('');
+  const [music, setMusic] = useState('');
   const [refining, setRefining] = useState('');  // which tool is running
   const captionRef = useRef(null);
 
@@ -126,6 +129,9 @@ export default function AIStudio() {
     queryFn: () => effyApi.studioContext(workspace.id),
     enabled: !!workspace,
   });
+  const { data: audioOpts } = useQuery({ queryKey: ['studio-voices'], queryFn: () => effyApi.studioVoices() });
+  const voices = audioOpts?.voices || [];
+  const musicOpts = audioOpts?.music || [{ key: '', name: 'None' }];
 
   const generate = async () => {
     if (!workspace || !format) return;
@@ -165,7 +171,10 @@ export default function AIStudio() {
     if (!workspace || !format) return;
     setVidBusy(true); setVideo(''); setVidMsg('Starting render…');
     try {
-      const { op } = await effyApi.studioVideoStart({ workspace: workspace.id, topic: topic || trend || angle, trend, aspect: format.aspect });
+      const { op } = await effyApi.studioVideoStart({
+        workspace: workspace.id, topic: topic || trend || angle, trend, aspect: format.aspect,
+        voiceover: voiceOn, voice, music, language: lang, script: result?.caption || topic || trend || angle,
+      });
       setVidMsg('Rendering video…');
       for (let i = 0; i < 60; i += 1) {
         const st = await effyApi.studioVideoStatus({ workspace: workspace.id, op });
@@ -354,6 +363,28 @@ export default function AIStudio() {
                   )}
                 </div>
                 {vidMsg && !vidBusy && <p className="mt-2 text-xs text-ink-faint text-center">{vidMsg}</p>}
+                {format.video && (
+                  <div className="mt-3 w-full rounded-xl bg-surface2/60 p-3">
+                    <div className="flex items-center justify-between">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-ink"><Mic className="w-3.5 h-3.5 text-coral-ink" /> Voiceover</span>
+                      <button onClick={() => setVoiceOn((v) => !v)}
+                        className={cn('relative h-6 w-11 rounded-full transition', voiceOn ? 'bg-coral' : 'bg-surface')}>
+                        <span className={cn('absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all', voiceOn ? 'left-[22px]' : 'left-0.5')} />
+                      </button>
+                    </div>
+                    {voiceOn && (
+                      <div className="mt-2.5 flex flex-wrap gap-2">
+                        <select value={voice} onChange={(e) => setVoice(e.target.value)} className="flex-1 rounded-lg bg-surface px-2 py-1.5 text-xs font-semibold">
+                          <option value="">Auto voice</option>
+                          {voices.map((v) => <option key={v.key} value={v.key}>{v.name} · {v.lang}</option>)}
+                        </select>
+                        <select value={music} onChange={(e) => setMusic(e.target.value)} className="flex-1 rounded-lg bg-surface px-2 py-1.5 text-xs font-semibold">
+                          {musicOpts.map((m) => <option key={m.key} value={m.key}>{m.name === 'None' ? 'No music' : `♪ ${m.name}`}</option>)}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* CAPTION — compact, directly below the media */}
                 <div className="w-full mt-6">

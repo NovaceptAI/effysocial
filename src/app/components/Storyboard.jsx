@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   ArrowLeft, Clapperboard, Sparkles, RefreshCw, Film, Play, Check, Send,
-  Monitor, Smartphone, Wand2, ImageIcon, Download, Plus, X, User,
+  Monitor, Smartphone, Wand2, ImageIcon, Download, Plus, X, User, Mic,
 } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
@@ -32,11 +33,18 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
   const [clip, setClip] = useState(8);
   const [aspect, setAspect] = useState(format.aspect || '16 / 9');
   const [scenes, setScenes] = useState([]);
+  const [voiceOn, setVoiceOn] = useState(false);
+  const [voice, setVoice] = useState('');
+  const [music, setMusic] = useState('');
   const [planning, setPlanning] = useState(false);
   const [renderingAll, setRenderingAll] = useState(false);
   const [story, setStory] = useState(null);
   const [stitching, setStitching] = useState(false);
   const [sent, setSent] = useState(false);
+
+  const { data: audioOpts } = useQuery({ queryKey: ['studio-voices'], queryFn: () => effyApi.studioVoices() });
+  const voices = audioOpts?.voices || [];
+  const musicOpts = audioOpts?.music || [{ key: '', name: 'None' }];
 
   const scenesRef = useRef(scenes);
   useEffect(() => { scenesRef.current = scenes; }, [scenes]);
@@ -59,7 +67,10 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
     if (!sc) return;
     patch(idx, { rendering: true, error: '' });
     try {
-      const d = await effyApi.storyScene({ workspace: workspace.id, prompt: scenePrompt(sc.prompt), aspect, seconds: clip, motion: sc.motion || 'push_in' });
+      const d = await effyApi.storyScene({
+        workspace: workspace.id, prompt: scenePrompt(sc.prompt), aspect, seconds: clip, motion: sc.motion || 'push_in',
+        voiceover: voiceOn, voice, caption: sc.caption || sc.title,
+      });
       patch(idx, { rendering: false, imageUrl: d.imageUrl || '', videoUrl: d.videoUrl || '', name: d.name || '' });
     } catch (e) {
       patch(idx, { rendering: false, error: e.message || 'Failed' });
@@ -86,7 +97,7 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
     if (names.length < 2) return;
     setStitching(true);
     try {
-      const d = await effyApi.storyStitch({ workspace: workspace.id, names });
+      const d = await effyApi.storyStitch({ workspace: workspace.id, names, audio: voiceOn, music });
       setStory({ videoUrl: d.videoUrl });
     } finally { setStitching(false); }
   };
@@ -139,6 +150,34 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
             <Setting label="Clip length">
               <Segmented options={CLIPS} value={clip} onChange={setClip} suffix="s" />
             </Setting>
+          </div>
+
+          {/* Audio: voiceover commentary + music bed */}
+          <div className="mt-4 pt-4 border-t border-hair space-y-2.5">
+            <Setting label={<span className="inline-flex items-center gap-1.5"><Mic className="w-3.5 h-3.5" /> Voiceover</span>}>
+              <button onClick={() => setVoiceOn((v) => !v)}
+                className={cn('relative h-6 w-11 rounded-full transition', voiceOn ? 'bg-coral' : 'bg-surface2')}>
+                <span className={cn('absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all', voiceOn ? 'left-[22px]' : 'left-0.5')} />
+              </button>
+            </Setting>
+            {voiceOn && (
+              <>
+                <Setting label="Voice">
+                  <select value={voice} onChange={(e) => setVoice(e.target.value)}
+                    className="rounded-lg bg-surface2 px-2 py-1 text-xs font-semibold text-ink max-w-[9rem]">
+                    <option value="">Auto</option>
+                    {voices.map((v) => <option key={v.key} value={v.key}>{v.name} · {v.lang}</option>)}
+                  </select>
+                </Setting>
+                <Setting label="Music">
+                  <select value={music} onChange={(e) => setMusic(e.target.value)}
+                    className="rounded-lg bg-surface2 px-2 py-1 text-xs font-semibold text-ink max-w-[9rem]">
+                    {musicOpts.map((m) => <option key={m.key} value={m.key}>{m.name}</option>)}
+                  </select>
+                </Setting>
+                <p className="text-[0.7rem] text-ink-faint leading-snug">Each scene is narrated from its caption; clip length fits the voice.</p>
+              </>
+            )}
           </div>
         </div>
 
