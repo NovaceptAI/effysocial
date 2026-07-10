@@ -114,7 +114,7 @@ export default function NavRail({ mobileOpen = false, onNavigate, desktopCollaps
               'group mx-auto flex h-11 w-11 items-center justify-center rounded-[14px] transition-all duration-200',
               isActive
                 ? 'bg-white text-black shadow-[0_10px_24px_-18px_rgba(255,255,255,0.85)]'
-                : 'text-rail-ink/70 hover:bg-white/[0.07] hover:text-white',
+                : 'text-rail-ink hover:bg-white/[0.07] hover:text-white',
             )}
           >
             <item.icon className="w-[19px] h-[19px]" strokeWidth={2} />
@@ -135,7 +135,7 @@ export default function NavRail({ mobileOpen = false, onNavigate, desktopCollaps
                   'w-full flex items-center gap-2 rounded-[14px] px-3 py-2.5 text-left transition',
                   groupActive || open[grp.group]
                     ? 'bg-white/[0.07] text-white'
-                    : 'text-rail-muted hover:bg-white/[0.045] hover:text-rail-ink',
+                    : 'text-rail-ink hover:bg-white/[0.045] hover:text-white',
                 )}
               >
                 <span className="flex-1">
@@ -160,7 +160,7 @@ export default function NavRail({ mobileOpen = false, onNavigate, desktopCollaps
                           'group relative flex items-center gap-2.5 rounded-[13px] px-2.5 py-2.5 text-sm font-semibold transition-all duration-200',
                           isActive
                             ? 'bg-white text-black shadow-[0_10px_24px_-18px_rgba(255,255,255,0.85)]'
-                            : 'text-rail-ink/78 hover:bg-white/[0.055] hover:text-white',
+                            : 'text-rail-ink hover:bg-white/[0.055] hover:text-white',
                         )}
                       >
                         {({ isActive }) => (
