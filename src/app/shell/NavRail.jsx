@@ -90,7 +90,7 @@ export default function NavRail({ mobileOpen = false, onNavigate, desktopCollaps
                   <home.icon className="h-[19px] w-[19px]" strokeWidth={2} />
                 </span>
                 <span className={cn('min-w-0 flex-1', desktopCollapsed && 'md:hidden')}>
-                  <span className="block text-sm font-bold leading-tight">Home</span>
+                  <span className="block text-sm font-bold leading-tight" style={isActive ? { color: '#000' } : undefined}>Home</span>
                   <span className={cn('block truncate text-[0.72rem] leading-5', isActive ? 'text-black' : 'text-rail-muted')}>
                     {workspace?.name || 'Overview and priorities'}
                   </span>
@@ -171,7 +171,7 @@ export default function NavRail({ mobileOpen = false, onNavigate, desktopCollaps
                             )}>
                               <item.icon className="w-[17px] h-[17px]" strokeWidth={2} />
                             </span>
-                            <span className="flex-1 truncate">{item.label}</span>
+                            <span className="flex-1 truncate" style={isActive ? { color: '#000' } : undefined}>{item.label}</span>
                             {item.badge && (
                               <span className="text-[0.65rem] font-bold bg-coral-light/90 text-white rounded-full px-1.5 min-w-[18px] text-center">
                                 {item.badge}
