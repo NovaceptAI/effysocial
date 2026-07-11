@@ -14,10 +14,24 @@ const lines = (s) => s.split('\n').map((x) => x.trim()).filter(Boolean).map((l) 
 // Setup questionnaire — everything saved becomes a REAL brand fact that grounds
 // every AI generation. (Auto-extraction from website/socials + AI persona with
 // admin approval is the next slice; this form is the foundation it feeds.)
+// Defined at module scope (NOT inside Questionnaire) so its identity is stable
+// across re-renders — otherwise React remounts the textarea on every keystroke
+// and focus is lost (pressing space then scrolls the page instead of typing).
+function Field({ label, hint, rows = 2, placeholder, value, onChange }) {
+  return (
+    <div>
+      <label className="block text-sm font-semibold text-ink mb-1">{label}</label>
+      {hint && <p className="text-xs text-ink-faint mb-1.5">{hint}</p>}
+      <textarea rows={rows} value={value} onChange={onChange} placeholder={placeholder}
+        className="w-full rounded-xl bg-surface2 px-3.5 py-2.5 text-sm" />
+    </div>
+  );
+}
+
 function Questionnaire({ workspace, onDone }) {
   const [f, setF] = useState({ summary: '', tone: '', approved: '', prohibited: '', products: '', offers: '', personas: '' });
   const [busy, setBusy] = useState(false);
-  const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
+  const set = (k) => (e) => setF((prev) => ({ ...prev, [k]: e.target.value }));
 
   const save = async () => {
     setBusy(true);
@@ -37,15 +51,6 @@ function Questionnaire({ workspace, onDone }) {
     } finally { setBusy(false); }
   };
 
-  const Field = ({ label, hint, k, rows = 2, placeholder }) => (
-    <div>
-      <label className="block text-sm font-semibold text-ink mb-1">{label}</label>
-      {hint && <p className="text-xs text-ink-faint mb-1.5">{hint}</p>}
-      <textarea rows={rows} value={f[k]} onChange={set(k)} placeholder={placeholder}
-        className="w-full rounded-xl bg-surface2 px-3.5 py-2.5 text-sm" />
-    </div>
-  );
-
   return (
     <Card className="p-6 max-w-2xl">
       <div className="flex items-center gap-2.5 mb-1">
@@ -54,15 +59,17 @@ function Questionnaire({ workspace, onDone }) {
       </div>
       <p className="text-sm text-ink-soft mb-6">Everything you enter grounds every AI generation — captions, images, landing copy and replies. You can refine it anytime.</p>
       <div className="space-y-4">
-        <Field label="What does your business do?" hint="One or two sentences — who you serve and what makes you different." k="summary" rows={3}
+        <Field label="What does your business do?" hint="One or two sentences — who you serve and what makes you different." rows={3}
+          value={f.summary} onChange={set('summary')}
           placeholder="e.g. We're a family dental clinic in Pune known for gentle, transparent care…" />
-        <Field label="Brand tone" hint="Comma-separated words." k="tone" placeholder="warm, professional, reassuring" />
-        <Field label="Words to use" hint="Phrases you like in your marketing (comma-separated)." k="approved" placeholder="trusted, transparent, book now" />
-        <Field label="Words to avoid" hint="Never say these (comma-separated)." k="prohibited" placeholder="cheapest, guaranteed, #1" />
-        <Field label="Products / services" hint="One per line: Name — short description." k="products" rows={3}
+        <Field label="Brand tone" hint="Comma-separated words." value={f.tone} onChange={set('tone')} placeholder="warm, professional, reassuring" />
+        <Field label="Words to use" hint="Phrases you like in your marketing (comma-separated)." value={f.approved} onChange={set('approved')} placeholder="trusted, transparent, book now" />
+        <Field label="Words to avoid" hint="Never say these (comma-separated)." value={f.prohibited} onChange={set('prohibited')} placeholder="cheapest, guaranteed, #1" />
+        <Field label="Products / services" hint="One per line: Name — short description." rows={3}
+          value={f.products} onChange={set('products')}
           placeholder={"Root canal — single-sitting RCT\nTeeth whitening — in-clinic & take-home"} />
-        <Field label="Current offers" hint="One per line (optional)." k="offers" placeholder="Free first consultation — for new patients" />
-        <Field label="Target customers" hint="One per line: Who — what they want (optional)." k="personas"
+        <Field label="Current offers" hint="One per line (optional)." value={f.offers} onChange={set('offers')} placeholder="Free first consultation — for new patients" />
+        <Field label="Target customers" hint="One per line: Who — what they want (optional)." value={f.personas} onChange={set('personas')}
           placeholder="Young parents — safe, painless care for kids" />
       </div>
       <Button variant="spark" className="mt-6 w-full" onClick={save} disabled={busy}>
