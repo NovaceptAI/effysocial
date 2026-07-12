@@ -113,8 +113,8 @@ export default function CampaignWorkspace() {
         <div className="space-y-5">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <MetricCard label="Leads" value={num(k.leads)} hint={`${num(k.qualified)} qualified`} />
-            <MetricCard label="Revenue" value={inr(k.revenue)} hint={`${k.customers} customers`} />
-            <MetricCard label="CPL" value={k.cpl ? inr(k.cpl, { compact: false }) : '—'} hint={`CTR ${k.ctr}%`} />
+            <MetricCard label="Revenue" value={inr(k.revenue)} hint={`${num(k.customers)} customers`} />
+            <MetricCard label="CPL" value={k.cpl ? inr(k.cpl, { compact: false }) : '—'} hint={k.ctr != null ? `CTR ${k.ctr}%` : 'CTR —'} />
             <MetricCard label="ROAS" value={k.roas ? `${k.roas}×` : '—'} hint="blended" />
           </div>
 
@@ -131,14 +131,6 @@ export default function CampaignWorkspace() {
                 <div className="flex justify-between text-sm mt-2 tabular-nums">
                   <span className="text-ink-soft">{inr(c.spent)} spent</span>
                   <span className="text-ink-faint">of {inr(c.budget)}</span>
-                </div>
-              </Card>
-              <Card className="p-5 bg-coral-soft/50 border-coral-soft">
-                <div className="flex items-center gap-2 mb-2"><Sparkles className="w-4 h-4 text-coral-ink" /><h3 className="font-bold text-ink">Effy recommends</h3></div>
-                <p className="text-sm text-ink-soft leading-relaxed">CPL is trending above target. Shift 15% budget from the awareness ad set to the high-intent retargeting set to protect cost per qualified lead.</p>
-                <div className="flex gap-2 mt-3">
-                  <Button size="sm">Preview change</Button>
-                  <Button size="sm" variant="ghost">Dismiss</Button>
                 </div>
               </Card>
             </div>
