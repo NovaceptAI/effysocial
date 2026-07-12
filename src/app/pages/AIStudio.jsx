@@ -97,9 +97,10 @@ export default function AIStudio() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
 
-  // Deep-linked from a playbook or Media Library? Skip the chooser, open composer.
+  // Deep-linked from a playbook, workflow or Media Library? Skip the chooser.
   const reusedImage = params.get('image') || '';
-  const seeded = params.get('trend') || params.get('angle') || params.get('topic') || reusedImage;
+  const campaignId = params.get('campaign') ? Number(params.get('campaign')) : null;
+  const seeded = params.get('trend') || params.get('angle') || params.get('topic') || reusedImage || campaignId;
   const [format, setFormat] = useState(seeded ? FORMATS[0] : null);
 
   const [panel, setPanel] = useState('brief');   // open tool panel (or null)
@@ -146,7 +147,7 @@ export default function AIStudio() {
   };
   const sendToApproval = async () => {
     if (!result) return;
-    await effyApi.sendToApproval({ workspace: workspace.id, hook: result.hook, caption: result.caption, channel: format.platform, type: format.id.split('_')[1] || 'post' });
+    await effyApi.sendToApproval({ workspace: workspace.id, hook: result.hook, caption: result.caption, channel: format.platform, type: format.id.split('_')[1] || 'post', campaignId });
     setSent(true);
   };
   const refine = async (tool) => {

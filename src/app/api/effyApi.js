@@ -51,6 +51,14 @@ export const effyApi = {
   sendToApproval: (payload) =>
     http('/studio/send-to-approval', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
 
+  // Workflows — persistent guided campaign workflows
+  listWorkflows: (workspaceId) => http(`/workflows?workspace=${encodeURIComponent(workspaceId)}`),
+  createWorkflow: (payload) =>
+    http('/workflows', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.workflow),
+  getWorkflow: (id) => http(`/workflows/${id}`).then((d) => d.workflow),
+  updateWorkflow: (id, payload) =>
+    http(`/workflows/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.workflow),
+
   // Media Library — asset catalogue
   listMedia: (workspaceId, type) =>
     http(`/library?workspace=${encodeURIComponent(workspaceId)}${type ? `&type=${type}` : ''}`).then((d) => d.media),
