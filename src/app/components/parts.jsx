@@ -1,5 +1,5 @@
 import React from 'react';
-import { CHANNELS, POST_STATUS } from '../data/sampleData';
+import { CHANNELS, POST_STATUS } from '../constants';
 import { Badge } from '../../ui';
 
 const LETTER = { instagram: 'Ig', facebook: 'f', linkedin: 'in', youtube: 'Yt', twitter: 'X' };

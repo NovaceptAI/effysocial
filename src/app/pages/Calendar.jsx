@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Sparkles, Plus } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
-import { TODAY } from '../data/sampleData';
 import { usePosts } from '../api/hooks';
 import { Card, PageHeader, Button, Tabs } from '../../ui';
 import { ChannelDot, PostStatus } from '../components/parts';
@@ -11,6 +10,9 @@ const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
 const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const pad = (n) => String(n).padStart(2, '0');
 const ymd = (y, m, d) => `${y}-${pad(m + 1)}-${pad(d)}`;
+// Real current date (local) — was a hardcoded sample date before.
+const now = new Date();
+const TODAY = ymd(now.getFullYear(), now.getMonth(), now.getDate());
 
 const STATUS_BAR = {
   published: 'bg-success', scheduled: 'bg-info', approved: 'bg-success',
@@ -30,7 +32,7 @@ function monthGrid(y, m) {
 export default function Calendar() {
   const { workspace } = useWorkspace();
   const { data: posts = [] } = usePosts(workspace);
-  const [cursor, setCursor] = useState({ y: 2026, m: 5 }); // June 2026
+  const [cursor, setCursor] = useState({ y: now.getFullYear(), m: now.getMonth() });
   const [view, setView] = useState('month');
 
   const byDate = useMemo(() => {

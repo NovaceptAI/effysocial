@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useWorkspace } from '../context/WorkspaceContext';
-import { CHANNELS } from '../data/sampleData';
+import { CHANNELS } from '../constants';
 import { usePosts } from '../api/hooks';
 import { Card, PageHeader, EmptyState } from '../../ui';
 import { ChannelIcon, PostStatus } from '../components/parts';
