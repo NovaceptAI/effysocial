@@ -71,7 +71,26 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
         workspace: workspace.id, prompt: scenePrompt(sc.prompt), aspect, seconds: clip, motion: sc.motion || 'push_in',
         voiceover: voiceOn, voice, caption: sc.caption || sc.title,
       });
-      patch(idx, { rendering: false, imageUrl: d.imageUrl || '', videoUrl: d.videoUrl || '', name: d.name || '' });
+      if (d.op) {
+        // Real Veo (image-to-video) — show the seed frame, poll until the clip lands.
+        patch(idx, { imageUrl: d.imageUrl || '' });
+        for (let i = 0; i < 40; i += 1) {
+          // eslint-disable-next-line no-await-in-loop
+          await new Promise((r) => setTimeout(r, 8000));
+          // eslint-disable-next-line no-await-in-loop
+          const st = await effyApi.storySceneStatus({
+            workspace: workspace.id, op: d.op,
+            voiceover: voiceOn, voice, caption: sc.caption || sc.title,
+          });
+          if (st.status === 'ready') {
+            patch(idx, { rendering: false, videoUrl: st.videoUrl, name: st.name, hasAudio: true });
+            return;
+          }
+        }
+        patch(idx, { rendering: false, error: 'Still rendering — try again shortly.' });
+        return;
+      }
+      patch(idx, { rendering: false, imageUrl: d.imageUrl || '', videoUrl: d.videoUrl || '', name: d.name || '', hasAudio: voiceOn });
     } catch (e) {
       patch(idx, { rendering: false, error: e.message || 'Failed' });
     }
@@ -97,7 +116,8 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
     if (names.length < 2) return;
     setStitching(true);
     try {
-      const d = await effyApi.storyStitch({ workspace: workspace.id, names, audio: voiceOn, music });
+      const withAudio = voiceOn || scenes.some((s) => s.hasAudio);
+      const d = await effyApi.storyStitch({ workspace: workspace.id, names, audio: withAudio, music });
       setStory({ videoUrl: d.videoUrl });
     } finally { setStitching(false); }
   };
