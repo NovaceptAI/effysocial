@@ -53,6 +53,9 @@ export const effyApi = {
   sendToApproval: (payload) =>
     http('/studio/send-to-approval', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
 
+  // Admin (platform owner only)
+  adminUsage: () => http('/admin/usage'),
+
   // Workflows — persistent guided campaign workflows
   listWorkflows: (workspaceId) => http(`/workflows?workspace=${encodeURIComponent(workspaceId)}`),
   createWorkflow: (payload) =>

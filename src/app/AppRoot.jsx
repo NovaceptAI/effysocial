@@ -38,6 +38,7 @@ import Forms from './pages/Forms';
 import Playbooks from './pages/Playbooks';
 import Workflows from './pages/Workflows';
 import WorkflowRunner from './pages/WorkflowRunner';
+import Admin from './pages/Admin';
 import CampaignLaunch from './pages/CampaignLaunch';
 import LandingPages from './pages/LandingPages';
 import Tracking from './pages/Tracking';
@@ -110,6 +111,7 @@ export default function AppRoot() {
             <Route path="playbooks" element={<Playbooks />} />
             <Route path="workflows" element={<Workflows />} />
             <Route path="workflows/:id" element={<WorkflowRunner />} />
+            <Route path="admin" element={<Admin />} />
             <Route path="launch" element={<CampaignLaunch />} />
             <Route path="landing" element={<LandingPages />} />
             <Route path="tracking" element={<Tracking />} />

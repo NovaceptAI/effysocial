@@ -3,6 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
 import { NAV } from '../nav';
 import { useWorkspace } from '../context/WorkspaceContext';
+import { useAppAuth } from '../context/AppAuth';
 import { cn } from '../../lib/cn';
 
 // Nav items that only make sense for agency orgs (multi-client management).
@@ -25,11 +26,12 @@ const loadOpen = () => {
 
 export default function NavRail({ mobileOpen = false, onNavigate, desktopCollapsed = false }) {
   const { org, workspace } = useWorkspace();
+  const { user: authUser } = useAppAuth();
   const { pathname } = useLocation();
   const isAgency = org?.type === 'agency';
   const home = NAV.find((grp) => grp.group === 'Overview')?.items[0];
   const groups = NAV.filter((grp) => grp.group !== 'Overview');
-  const flatItems = groups.flatMap((grp) => grp.items.filter((item) => isAgency || !AGENCY_ONLY.has(item.to)));
+  const flatItems = groups.flatMap((grp) => grp.items.filter((item) => (isAgency || !AGENCY_ONLY.has(item.to)) && (!item.adminOnly || authUser?.is_admin)));
   // Default: the most common daily areas open; deeper admin/revenue areas collapsed.
   const [open, setOpen] = useState(() => {
     const saved = loadOpen();
@@ -124,7 +126,7 @@ export default function NavRail({ mobileOpen = false, onNavigate, desktopCollaps
 
       <div className={cn('flex-1 overflow-y-auto px-3 pb-4 space-y-3', desktopCollapsed && 'md:hidden')}>
         {groups.map((grp) => {
-          const visibleItems = grp.items.filter((item) => isAgency || !AGENCY_ONLY.has(item.to));
+          const visibleItems = grp.items.filter((item) => (isAgency || !AGENCY_ONLY.has(item.to)) && (!item.adminOnly || authUser?.is_admin));
           if (!visibleItems.length) return null;
           const groupActive = visibleItems.some((item) => pathname === item.to || pathname.startsWith(`${item.to}/`));
           return (

@@ -6,7 +6,7 @@ import {
   Target, Palette, UsersRound, Wallet, Zap,
   Globe, FileInput, GitBranch, Repeat2, Crosshair, AtSign,
   BarChart3, LineChart, PieChart, IndianRupee, ImagePlay, FileBarChart,
-  Building2, Users, Plug, CreditCard, Settings, Rocket , Workflow } from 'lucide-react';
+  Building2, Users, Plug, CreditCard, Settings, Rocket , Workflow, ShieldCheck } from 'lucide-react';
 
 // phase: 1 available now, 2/3/4 = labelled "soon" but navigable to a placeholder.
 export const NAV = [
@@ -66,6 +66,7 @@ export const NAV = [
     { label: 'Integrations', to: '/app/integrations', icon: Plug, phase: 1 },
     { label: 'Billing', to: '/app/billing', icon: CreditCard, phase: 1 },
     { label: 'Settings', to: '/app/settings', icon: Settings, phase: 1 },
+    { label: 'Admin', to: '/app/admin', icon: ShieldCheck, phase: 1, adminOnly: true },
   ]},
 ];
 
