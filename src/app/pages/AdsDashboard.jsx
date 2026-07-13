@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { ChevronRight, TrendingUp, TrendingDown, Loader2, Plug } from 'lucide-react';
@@ -49,7 +50,16 @@ function CampaignRow({ c }) {
             <tr key={ad.id} className="bg-surface2/20 border-b border-line/40 text-xs">
               <td className="px-4 py-1.5 pl-20 text-ink-soft" colSpan={3}>
                 {ad.name} <span className="text-ink-faint">· {ad.format}</span>
-                {ad.fatigue === 'high' && <Badge tone="warning" className="ml-2">fatigue</Badge>}
+                {ad.fatigue === 'high' && (
+                  <>
+                    <Badge tone="warning" className="ml-2">fatigue</Badge>
+                    {/* Suggestion only — never auto-pauses the ad. */}
+                    <Link to={`/app/studio?topic=${encodeURIComponent(`Fresh replacement for ad: ${ad.name}`)}&angle=${encodeURIComponent('A fresh creative angle — the current ad is fatiguing, take a different hook and visual direction')}`}
+                      className="ml-2 text-[0.7rem] font-bold text-coral-ink hover:underline whitespace-nowrap">
+                      Create replacement in Studio →
+                    </Link>
+                  </>
+                )}
               </td>
               <td className="px-4 py-1.5 text-ink-faint">CTR {ad.ctr}%</td>
               <td />

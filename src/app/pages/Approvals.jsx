@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { Check, MessageSquare, Clock } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { usePosts, useInvalidatingMutation } from '../api/hooks';
 import { effyApi } from '../api/effyApi';
-import { Card, PageHeader, Button, EmptyState } from '../../ui';
+import { Card, PageHeader, Button, Badge, EmptyState } from '../../ui';
 import { ChannelIcon, PostStatus } from '../components/parts';
 import { cn } from '../../lib/cn';
 
@@ -27,6 +29,13 @@ function StageBar({ status }) {
 export default function Approvals() {
   const { workspace } = useWorkspace();
   const { data: posts = [] } = usePosts(workspace);
+  // Campaign context: content sent from a campaign/workflow keeps its link.
+  const { data: campaigns = [] } = useQuery({
+    queryKey: ['campaigns', workspace?.id],
+    queryFn: () => effyApi.listCampaigns(workspace.id),
+    enabled: !!workspace,
+  });
+  const campaignName = (id) => campaigns.find((c) => c.id === id)?.name;
   const queue = posts.filter((p) => p.status === 'internal_review' || p.status === 'client_review');
   const [sel, setSel] = useState(null);
   const [comment, setComment] = useState('');
@@ -54,7 +63,9 @@ export default function Approvals() {
                   <ChannelIcon channel={p.channel} className="w-4 h-4 shrink-0" />
                   <span className="flex-1 min-w-0">
                     <span className="block text-sm font-semibold text-ink truncate">{p.title}</span>
-                    <span className="block text-xs text-ink-faint">{p.date} · {p.time}</span>
+                    <span className="block text-xs text-ink-faint truncate">
+                      {campaignName(p.campaignId) ? `📣 ${campaignName(p.campaignId)} · ` : ''}{p.date} · {p.time}
+                    </span>
                   </span>
                   <PostStatus status={p.status} />
                 </button>
@@ -68,7 +79,12 @@ export default function Approvals() {
           <Card className="p-5">
             <div className="flex items-start justify-between gap-3 mb-4">
               <div>
-                <div className="flex items-center gap-2 mb-1"><ChannelIcon channel={active.channel} /><span className="text-xs text-ink-faint capitalize">{active.channel} · {active.type}</span></div>
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <ChannelIcon channel={active.channel} /><span className="text-xs text-ink-faint capitalize">{active.channel} · {active.type}</span>
+                  {campaignName(active.campaignId) && (
+                    <Link to={`/app/campaigns/${active.campaignId}`}><Badge tone="coral">📣 {campaignName(active.campaignId)}</Badge></Link>
+                  )}
+                </div>
                 <h2 className="text-lg font-extrabold text-ink">{active.title}</h2>
                 <p className="text-sm text-ink-faint">Scheduled for {active.date} at {active.time} · {active.assignee}</p>
               </div>

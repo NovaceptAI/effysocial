@@ -23,7 +23,46 @@ const ACTIONS = [
   ['reactivation', 'Lost-lead reactivation'],
 ];
 const ACTION_LABEL = Object.fromEntries(ACTIONS);
-const MESSAGE_ACTIONS = new Set(['whatsapp', 'email', 'sms', 'ai_voice', 'reminder']);
+const MESSAGE_ACTIONS = new Set(['whatsapp', 'email', 'sms', 'ai_voice', 'reminder', 'reactivation', 'nurture']);
+
+// One-click starting points for common performance-marketing workflows.
+// Presets only pre-fill blocks — everything stays editable before activation.
+const PRESETS = [
+  {
+    key: 'whatsapp_lead',
+    label: 'WhatsApp lead responder',
+    hint: 'Instant reply + salesperson assignment for new WhatsApp leads',
+    name: 'WhatsApp lead responder',
+    trigger: { type: 'lead_created', source: 'whatsapp' },
+    steps: [
+      { kind: 'action', type: 'whatsapp', message: 'Hi {name}! Thanks for reaching out — how can we help you today?' },
+      { kind: 'action', type: 'assign_salesperson', owner: '' },
+      { kind: 'delay', amount: 1, unit: 'hours' },
+      { kind: 'action', type: 'reminder', message: 'Check {name} got a reply on WhatsApp' },
+    ],
+  },
+  {
+    key: 'retargeting',
+    label: 'Retargeting audience builder',
+    hint: 'Add every new lead to a retargeting audience (ready for ad-platform sync)',
+    name: 'Retargeting audience builder',
+    trigger: { type: 'lead_created' },
+    steps: [
+      { kind: 'action', type: 'retargeting_audience', audience: 'All leads — 30 days' },
+    ],
+  },
+  {
+    key: 'reactivation',
+    label: 'Lost-lead reactivation',
+    hint: 'Win-back message 7 days after a lead is marked lost',
+    name: 'Lost-lead reactivation',
+    trigger: { type: 'stage_changed', stage: 'lost' },
+    steps: [
+      { kind: 'delay', amount: 7, unit: 'days' },
+      { kind: 'action', type: 'reactivation', message: 'Hi {name}, we’d love another chance to help — anything we could have done better?' },
+    ],
+  },
+];
 
 const BLOCK_META = {
   trigger: { icon: Zap, tone: 'bg-coral-soft text-coral-ink', label: 'Trigger' },
@@ -127,8 +166,43 @@ function StepBlock({ step, onChange, onRemove }) {
           <input value={step.link || ''} onChange={(e) => onChange({ ...step, link: e.target.value })}
             placeholder="https://cal.com/…" className={cn(inputCls, 'w-full')} />
         )}
+        {step.type === 'retargeting_audience' && (
+          <>
+            <input value={step.audience || ''} onChange={(e) => onChange({ ...step, audience: e.target.value })}
+              placeholder="Audience name — e.g. All leads, 30 days" className={cn(inputCls, 'w-full')} />
+            <p className="text-[0.7rem] text-ink-faint">Audience setup — saved and ready for integration. Syncs to Meta/Google once an ad account is connected.</p>
+          </>
+        )}
+        {(step.type === 'reactivation' || step.type === 'nurture') && (
+          <p className="text-[0.7rem] text-ink-faint">Sends via your messaging provider once connected — until then it’s logged on the lead.</p>
+        )}
       </div>
     </Block>
+  );
+}
+
+function PresetMenu({ onPick, disabled }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative">
+      <Button variant="secondary" onClick={() => setOpen(!open)} disabled={disabled}>
+        <Zap className="w-4 h-4" /> Use preset <ChevronDown className="w-3.5 h-3.5" />
+      </Button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 z-40 mt-1 w-72 rounded-xl border border-line bg-surface shadow-e3 p-1.5">
+            {PRESETS.map((p) => (
+              <button key={p.key} onClick={() => { setOpen(false); onPick(p); }}
+                className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-surface2">
+                <span className="block text-sm font-bold text-ink">{p.label}</span>
+                <span className="block text-xs text-ink-faint leading-snug">{p.hint}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 
@@ -291,6 +365,12 @@ export default function Followups() {
     });
     setEditing(wf);
   };
+  const startPreset = async (preset) => {
+    const wf = await create.mutateAsync({
+      workspace: workspace.id, name: preset.name, trigger: preset.trigger, steps: preset.steps,
+    });
+    setEditing(wf);
+  };
   const toggleStatus = (wf) =>
     update.mutate({ id: wf.id, status: wf.status === 'active' ? 'paused' : 'active' });
 
@@ -306,7 +386,12 @@ export default function Followups() {
       <PageHeader
         title="Follow-ups"
         subtitle="Automated responses to new leads and stage changes — trigger, condition, delay and action blocks."
-        actions={<Button onClick={startCreate} disabled={create.isPending}><Plus className="w-4 h-4" /> New workflow</Button>}
+        actions={
+          <>
+            <PresetMenu onPick={startPreset} disabled={create.isPending} />
+            <Button onClick={startCreate} disabled={create.isPending}><Plus className="w-4 h-4" /> New workflow</Button>
+          </>
+        }
       />
 
       {editing && <Editor workflow={editing} onClose={() => setEditing(null)} onSaved={refresh} />}

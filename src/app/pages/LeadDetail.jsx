@@ -33,6 +33,40 @@ function Section({ icon: Icon, title, children, className }) {
   );
 }
 
+// Sales handoff — surfaces what this lead needs NOW. Owner persists via the
+// real lead PATCH; appointment/reminder route to Follow-ups (no fake sends).
+function NextActions({ lead, patch }) {
+  const [owner, setOwner] = React.useState('');
+  const needsOwner = !lead.owner;
+  const early = ['new', 'contacted'].includes(lead.stage);
+  if (!needsOwner && !early) return null;
+  return (
+    <Section icon={Zap} title="Next actions" className="ring-1 ring-inset ring-warning/30">
+      {needsOwner ? (
+        <div className="mb-3">
+          <p className="text-xs font-semibold text-warning mb-1.5">Unassigned — give this lead an owner.</p>
+          <div className="flex gap-1.5">
+            <input value={owner} onChange={(e) => setOwner(e.target.value)} placeholder="Salesperson name"
+              className="flex-1 min-w-0 rounded-lg bg-surface2 px-2.5 py-1.5 text-sm" />
+            <Button size="sm" onClick={() => { if (owner.trim()) { patch.mutate({ owner: owner.trim() }); setOwner(''); } }}
+              disabled={patch.isPending || !owner.trim()}>Assign</Button>
+          </div>
+        </div>
+      ) : (
+        <p className="text-xs text-ink-faint mb-3">Owned by <span className="font-bold text-ink">{lead.owner}</span> — still in an early stage.</p>
+      )}
+      <div className="space-y-1.5">
+        <Link to="/app/followups" className="flex items-center justify-between text-sm font-semibold text-coral-ink rounded-lg bg-coral-tint/50 px-3 py-2 hover:bg-coral-tint transition">
+          Send appointment link <span className="text-xs text-ink-faint">via Follow-ups →</span>
+        </Link>
+        <Link to="/app/followups" className="flex items-center justify-between text-sm font-semibold text-coral-ink rounded-lg bg-coral-tint/50 px-3 py-2 hover:bg-coral-tint transition">
+          Add follow-up reminder <span className="text-xs text-ink-faint">automation →</span>
+        </Link>
+      </div>
+    </Section>
+  );
+}
+
 export default function LeadDetail() {
   const { id } = useParams();
   const { workspace } = useWorkspace();
@@ -104,6 +138,7 @@ export default function LeadDetail() {
         </div>
 
         <div className="space-y-4">
+          <NextActions lead={lead} patch={patch} />
           <Section icon={User} title="Contact">
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-2 text-ink-soft"><Phone className="w-3.5 h-3.5 text-ink-faint" />{lead.phone || '—'}</div>

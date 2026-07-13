@@ -19,6 +19,39 @@ const Field = ({ label, ...props }) => (
   </label>
 );
 
+// Message match — the ad promise vs what the page actually says. Shown only
+// when the page is campaign-linked; reads live editor values, no fake numbers.
+function MessageMatch({ page, forms }) {
+  const { data: campaign } = useQuery({
+    queryKey: ['campaign', page.campaignId],
+    queryFn: () => effyApi.getCampaign(page.campaignId),
+    enabled: !!page.campaignId,
+  });
+  if (!campaign) return null;
+  const form = forms.find((f) => f.slug === page.formSlug);
+  const rows = [
+    { label: 'Campaign promise', value: `${campaign.name} — ${campaign.objective || 'no objective set'}`, ok: true },
+    { label: 'Page headline', value: page.sections?.hero?.headline || '', ok: !!page.sections?.hero?.headline },
+    { label: 'CTA', value: page.sections?.hero?.cta || '', ok: !!page.sections?.hero?.cta },
+    { label: 'Attached form', value: form?.name || '', ok: !!form },
+  ];
+  return (
+    <div className="mb-4 rounded-xl bg-coral-tint/40 p-4">
+      <p className="text-xs font-bold uppercase tracking-wide text-coral-ink mb-2">Message match — {campaign.name}</p>
+      <div className="grid sm:grid-cols-2 gap-x-6 gap-y-1.5">
+        {rows.map((r) => (
+          <div key={r.label} className="flex items-start gap-2 text-sm">
+            {r.ok ? <Check className="w-3.5 h-3.5 text-success shrink-0 mt-0.5" /> : <span className="w-3.5 h-3.5 shrink-0 mt-0.5 rounded-full border-2 border-warning" />}
+            <span className="text-ink-faint whitespace-nowrap">{r.label}:</span>
+            <span className={cn('font-semibold min-w-0 truncate', r.ok ? 'text-ink' : 'text-warning')}>{r.value || 'missing'}</span>
+          </div>
+        ))}
+      </div>
+      <p className="text-[0.7rem] text-ink-faint mt-2">Keep the headline and CTA aligned with the ad promise — mismatch is the #1 conversion killer.</p>
+    </div>
+  );
+}
+
 function SectionEditor({ page, setPage, forms }) {
   const s = page.sections;
   const set = (key, patch) => setPage({ ...page, sections: { ...s, [key]: { ...s[key], ...patch } } });
@@ -157,6 +190,7 @@ export default function LandingPages() {
             </div>
           </div>
           {aiError && <div className="mb-3 text-sm rounded-lg bg-error-soft text-error px-3.5 py-2.5">{aiError}</div>}
+          {editing.campaignId && <MessageMatch page={editing} forms={forms} />}
           <SectionEditor page={editing} setPage={setEditing} forms={forms} />
         </Card>
       )}

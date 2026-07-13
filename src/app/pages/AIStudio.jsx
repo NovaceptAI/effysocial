@@ -5,7 +5,7 @@ import {
   Sparkles, Smartphone, Monitor, RefreshCw, Image as ImageIcon,
   Check, FileText, Film, Images, Square, MessageCircle, Video, Briefcase,
   CalendarPlus, Send, Flame, Swords, X, ArrowRight, ArrowLeft, PenLine, Palette,
-  SlidersHorizontal, Search, Clapperboard, Mic,
+  SlidersHorizontal, Search, Clapperboard, Mic, Layers,
 } from 'lucide-react';
 import Storyboard from '../components/Storyboard';
 import { useWorkspace } from '../context/WorkspaceContext';
@@ -28,6 +28,15 @@ const FORMATS = [
 const FILTERS = ['Popular', 'Instagram', 'Facebook', 'LinkedIn', 'YouTube', 'WhatsApp'];
 const LANGS = ['English', 'Hindi', 'Hinglish', 'Marathi'];
 const COPY_TOOLS = ['Rewrite', 'Shorten', 'Expand', 'Change tone', 'Add CTA', 'More hooks', 'Hashtags', 'Translate'];
+
+// Creative-testing variants: each is a distinct strategic angle so the set is
+// genuinely different (hook / CTA / contrarian / story), not four rewrites.
+const VARIANT_ANGLES = [
+  { key: 'hook', label: 'Different hook', angle: 'A completely different, bold scroll-stopping first line — change the opening approach entirely' },
+  { key: 'cta', label: 'CTA-led', angle: 'Make the call-to-action the hero — urgency-driven, action-first copy' },
+  { key: 'contrarian', label: 'Contrarian angle', angle: 'Take a contrarian or unexpected angle on the same topic — challenge a common assumption' },
+  { key: 'story', label: 'Story-driven', angle: 'Open with a tiny relatable customer story, then land the message' },
+];
 
 function scoreTone(v, invert) {
   const good = invert ? v < 30 : v >= 80;
@@ -122,6 +131,10 @@ export default function AIStudio() {
   const [voiceOn, setVoiceOn] = useState(false);
   const [voice, setVoice] = useState('');
   const [music, setMusic] = useState('');
+  const [variants, setVariants] = useState([]);   // creative-testing set
+  const [varSel, setVarSel] = useState({});       // idx → selected for approval
+  const [varSending, setVarSending] = useState(false);
+  const [varSent, setVarSent] = useState(false);
   const [refining, setRefining] = useState('');  // which tool is running
   const captionRef = useRef(null);
 
@@ -159,6 +172,38 @@ export default function AIStudio() {
       setResult((r) => ({ ...r, caption: d.caption ?? r.caption, hashtags: d.hashtags ?? r.hashtags, scores: d.scores ?? r.scores, hook: d.hook ?? r.hook }));
     } finally { setRefining(''); }
   };
+  // Creative-testing set: N strategically different takes via the existing
+  // generate endpoint (each with a distinct `angle`) — no new backend needed.
+  const genVariants = async () => {
+    setVariants(VARIANT_ANGLES.map((v) => ({ ...v, status: 'busy' })));
+    setVarSel({}); setVarSent(false);
+    await Promise.all(VARIANT_ANGLES.map(async (v, i) => {
+      try {
+        const d = await effyApi.generateStudio({ workspace: workspace.id, type: format.id, topic, language: lang, trend, angle: v.angle });
+        setVariants((prev) => prev.map((x, j) => (j === i
+          ? { ...x, status: 'ok', caption: d.caption, hook: d.hook, cta: d.cta, hashtags: d.hashtags || [] } : x)));
+      } catch (e) {
+        setVariants((prev) => prev.map((x, j) => (j === i ? { ...x, status: 'error', error: e.message } : x)));
+      }
+    }));
+  };
+  const sendVariants = async () => {
+    const picked = variants.filter((v, i) => varSel[i] && v.status === 'ok');
+    if (!picked.length) return;
+    setVarSending(true);
+    try {
+      for (const v of picked) {
+        // eslint-disable-next-line no-await-in-loop
+        await effyApi.sendToApproval({
+          workspace: workspace.id, hook: v.hook, caption: v.caption,
+          channel: format.platform, type: format.id.split('_')[1] || 'post', campaignId,
+          title: `[${v.label}] ${(v.hook || v.caption || '').slice(0, 80)}`,
+        });
+      }
+      setVarSent(true);
+    } finally { setVarSending(false); }
+  };
+
   const genImage = async () => {
     if (!workspace || !format) return;
     setImgBusy(true);
@@ -208,7 +253,7 @@ export default function AIStudio() {
     <div className="-mt-1">
       {/* Contextual top bar */}
       <div className="flex items-center gap-3 mb-5 flex-wrap">
-        <button onClick={() => { setFormat(null); setResult(null); setImage(''); setVideo(''); setVidMsg(''); }} className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-soft hover:text-ink">
+        <button onClick={() => { setFormat(null); setResult(null); setImage(''); setVideo(''); setVidMsg(''); setVariants([]); setVarSel({}); setVarSent(false); }} className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-soft hover:text-ink">
           <ArrowLeft className="w-4 h-4" /> Formats
         </button>
         <div className="h-5 w-px bg-line" />
@@ -400,6 +445,54 @@ export default function AIStudio() {
                     className="w-full rounded-xl bg-surface2 px-3.5 py-3 text-sm leading-relaxed resize-y max-h-72" />
                   {result.hashtags.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mt-2.5">{result.hashtags.map((h) => <Badge key={h} tone="new">#{h}</Badge>)}</div>
+                  )}
+                </div>
+
+                {/* PERFORMANCE CREATIVE SET — creative-testing variants */}
+                <div className="w-full mt-6">
+                  <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-ink-faint">
+                      <Layers className="w-3.5 h-3.5 text-coral-ink" /> Performance creative set
+                    </span>
+                    <Button size="sm" variant="secondary" onClick={genVariants} disabled={variants.some((v) => v.status === 'busy')}>
+                      <Sparkles className="w-3.5 h-3.5" /> {variants.length ? 'Regenerate variants' : `Generate ${VARIANT_ANGLES.length} variants`}
+                    </Button>
+                  </div>
+                  {variants.length === 0 ? (
+                    <p className="text-xs text-ink-faint">Test what works: generate {VARIANT_ANGLES.length} strategically different takes (hook · CTA · angle · story), pick the best, and send them to approval together.</p>
+                  ) : (
+                    <>
+                      <div className="grid sm:grid-cols-2 gap-2.5">
+                        {variants.map((v, i) => (
+                          <button key={v.key} onClick={() => v.status === 'ok' && setVarSel((s) => ({ ...s, [i]: !s[i] }))}
+                            className={cn('text-left rounded-xl p-3 bg-surface2/60 transition-all',
+                              varSel[i] ? 'ring-2 ring-coral bg-coral-tint/40' : 'hover:bg-surface2')}>
+                            <div className="flex items-center justify-between gap-2 mb-1">
+                              <Badge tone={varSel[i] ? 'coral' : 'default'}>{v.label}</Badge>
+                              {v.status === 'busy' && <RefreshCw className="w-3.5 h-3.5 animate-spin text-ink-faint" />}
+                              {varSel[i] && <Check className="w-4 h-4 text-coral-ink" />}
+                            </div>
+                            {v.status === 'ok' && (
+                              <>
+                                <p className="text-xs font-bold text-ink leading-snug mb-1">{v.hook || (v.caption || '').split('\n')[0]}</p>
+                                <p className="text-[0.7rem] text-ink-soft leading-snug line-clamp-3 whitespace-pre-wrap">{v.caption}</p>
+                              </>
+                            )}
+                            {v.status === 'error' && <p className="text-[0.7rem] text-error">{v.error || 'Generation failed — regenerate.'}</p>}
+                            {v.status === 'busy' && <p className="text-[0.7rem] text-ink-faint">Writing this take…</p>}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="flex items-center gap-2 mt-3 flex-wrap">
+                        <Button size="sm" onClick={sendVariants}
+                          disabled={varSending || varSent || !Object.keys(varSel).some((k) => varSel[k])}>
+                          {varSent ? <><Check className="w-3.5 h-3.5" /> Sent</>
+                            : varSending ? <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Sending…</>
+                              : <><Send className="w-3.5 h-3.5" /> Send selected to approval</>}
+                        </Button>
+                        <span className="text-xs text-ink-faint">{Object.values(varSel).filter(Boolean).length} selected{campaignId ? ' · attached to campaign' : ''}</span>
+                      </div>
+                    </>
                   )}
                 </div>
               </div>

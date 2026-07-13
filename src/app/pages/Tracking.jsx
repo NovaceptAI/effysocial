@@ -52,6 +52,60 @@ function SourceRow({ s, onTest, testing }) {
   );
 }
 
+// Per-campaign attribution checklist — every check reads REAL data (assembly
+// counts + workspace UTM stats). Nothing is assumed or simulated.
+function CampaignAttribution({ workspace, utm }) {
+  const [sel, setSel] = React.useState(null);
+  const { data: campaigns = [] } = useQuery({
+    queryKey: ['campaigns', workspace?.id],
+    queryFn: () => effyApi.listCampaigns(workspace.id),
+    enabled: !!workspace,
+  });
+  React.useEffect(() => { if (!sel && campaigns.length) setSel(campaigns[0].id); }, [campaigns, sel]);
+  const { data: asm } = useQuery({
+    queryKey: ['assembly', sel],
+    queryFn: () => effyApi.campaignAssembly(sel),
+    enabled: !!sel,
+  });
+
+  if (!campaigns.length) return null;   // no campaigns → nothing to attribute
+  const counts = asm?.counts || {};
+  const checks = [
+    { ok: (counts.landing || 0) > 0, label: 'Campaign has a landing page', to: '/app/landing', fix: 'Add one' },
+    { ok: (counts.forms || 0) > 0, label: 'Campaign has a lead form', to: '/app/forms', fix: 'Attach one' },
+    { ok: (utm.tagged || 0) > 0, label: 'Form submissions carry UTM tags', note: 'workspace-wide', to: '/app/landing', fix: 'Share UTM links' },
+    { ok: (counts.leads || 0) > 0, label: 'Conversions arriving in the pipeline', note: `${counts.leads || 0} lead(s) from this campaign`, to: '/app/pipeline', fix: 'View pipeline' },
+  ];
+  const passed = checks.filter((c) => c.ok).length;
+
+  return (
+    <Card className="mt-4 p-5">
+      <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+        <h3 className="font-extrabold tracking-tight flex items-center gap-2">
+          <ShieldCheck className="w-4 h-4 text-coral" /> Campaign attribution
+          <Badge tone={passed === checks.length ? 'success' : 'default'}>{passed}/{checks.length}</Badge>
+        </h3>
+        <select value={sel || ''} onChange={(e) => setSel(Number(e.target.value))}
+          className="rounded-lg bg-surface2 px-3 py-1.5 text-sm font-semibold">
+          {campaigns.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </select>
+      </div>
+      <div className="grid sm:grid-cols-2 gap-2">
+        {checks.map((c) => (
+          <div key={c.label} className={cn('flex items-center gap-2.5 rounded-xl px-3 py-2.5', c.ok ? 'bg-success-soft/60' : 'bg-surface2')}>
+            {c.ok ? <ShieldCheck className="w-4 h-4 text-success shrink-0" /> : <AlertTriangle className="w-4 h-4 text-warning shrink-0" />}
+            <span className="flex-1 text-sm font-semibold text-ink leading-snug">
+              {c.label}
+              {c.note && <span className="block text-[0.7rem] font-medium text-ink-faint">{c.note}</span>}
+            </span>
+            {!c.ok && <Link to={c.to} className="text-xs font-bold text-coral-ink whitespace-nowrap">{c.fix} →</Link>}
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
 export default function Tracking() {
   const { workspace } = useWorkspace();
   const { data, isLoading } = useQuery({
@@ -131,6 +185,8 @@ export default function Tracking() {
           </ol>
         </Card>
       </div>
+
+      <CampaignAttribution workspace={workspace} utm={utm} />
 
       <Card className="mt-4">
         <h3 className="font-extrabold tracking-tight mb-3">Fix recommendations</h3>
