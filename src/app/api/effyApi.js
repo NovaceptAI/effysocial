@@ -55,6 +55,9 @@ export const effyApi = {
 
   // Admin (platform owner only)
   adminUsage: () => http('/admin/usage'),
+  adminSettings: () => http('/admin/settings').then((d) => d.settings),
+  adminSetSettings: (payload) =>
+    http('/admin/settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.settings),
 
   // Workflows — persistent guided campaign workflows
   listWorkflows: (workspaceId) => http(`/workflows?workspace=${encodeURIComponent(workspaceId)}`),

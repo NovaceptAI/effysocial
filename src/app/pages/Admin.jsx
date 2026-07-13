@@ -1,10 +1,62 @@
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { ShieldCheck, Film, ImageIcon, Mic, Users, RefreshCw } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ShieldCheck, Film, ImageIcon, Mic, Users, RefreshCw, Zap } from 'lucide-react';
 import { effyApi } from '../api/effyApi';
 import { Card, PageHeader, Badge, MetricCard, Pacing, EmptyState } from '../../ui';
+import { cn } from '../../lib/cn';
 
 const usd = (v) => `$${Number(v || 0).toFixed(2)}`;
+
+// Platform engine switch — flips instantly for ALL workspaces (DB-backed).
+const ENGINES = [
+  { key: 'image_provider', label: 'Image engine', icon: ImageIcon,
+    options: [{ v: 'imagen', name: 'Imagen 4', hint: 'paid · ~$0.04/image · best quality' },
+              { v: 'flux', name: 'FLUX (Cloudflare)', hint: 'free · lower quality' }] },
+  { key: 'video_provider', label: 'Video engine', icon: Film,
+    options: [{ v: 'veo', name: 'Veo 3.1', hint: 'paid · ~$1.2/render · real AI motion' },
+              { v: 'free', name: 'Free animator', hint: 'free · Ken-Burns from image' }] },
+];
+
+function EngineSwitch() {
+  const qc = useQueryClient();
+  const { data: settings } = useQuery({ queryKey: ['admin-settings'], queryFn: () => effyApi.adminSettings(), retry: false });
+  const save = useMutation({
+    mutationFn: (p) => effyApi.adminSetSettings(p),
+    onSuccess: (s) => qc.setQueryData(['admin-settings'], s),
+  });
+  if (!settings) return null;
+  return (
+    <Card className="p-5 mb-6">
+      <h3 className="font-bold text-ink mb-1 inline-flex items-center gap-2"><Zap className="w-4 h-4 text-coral-ink" /> AI engines</h3>
+      <p className="text-xs text-ink-faint mb-4">Applies instantly, platform-wide — flip to free engines while testing to avoid paid renders.</p>
+      <div className="grid sm:grid-cols-2 gap-4">
+        {ENGINES.map((e) => (
+          <div key={e.key}>
+            <div className="text-xs font-bold uppercase tracking-wide text-ink-faint mb-2">{e.label}</div>
+            <div className="space-y-1.5">
+              {e.options.map((o) => {
+                const active = settings[e.key] === o.v;
+                return (
+                  <button key={o.v} disabled={save.isPending}
+                    onClick={() => !active && save.mutate({ [e.key]: o.v })}
+                    className={cn('w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left transition',
+                      active ? 'bg-coral-tint ring-2 ring-coral/40' : 'bg-surface2 hover:bg-surface2/70')}>
+                    <span className={cn('w-2.5 h-2.5 rounded-full shrink-0', active ? 'bg-coral' : 'bg-ink-faint/30')} />
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-sm font-bold text-ink">{o.name}</span>
+                      <span className="block text-[0.7rem] text-ink-faint">{o.hint}</span>
+                    </span>
+                    {active && <Badge tone="coral">active</Badge>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
 
 export default function Admin() {
   const { data, isLoading, isError, error } = useQuery({
@@ -35,6 +87,8 @@ export default function Admin() {
         subtitle={`Metered AI across every org, since ${month}. Costs are estimates — Google/ElevenLabs bill exact.`}
         actions={<Badge tone="coral"><ShieldCheck className="w-3 h-3" /> Platform owner</Badge>}
       />
+
+      <EngineSwitch />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <MetricCard label="Veo video renders" value={totals.veo_video} hint={`limit ${limits.veo_video}/mo per workspace`} />
