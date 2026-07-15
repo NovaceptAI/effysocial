@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   ChevronDown, Compass, Wand2, Send, Inbox, Target, FileInput, BarChart3, Settings,
@@ -141,7 +142,7 @@ export default function NavRail({ mobileOpen = false, onNavigate, desktopCollaps
               >
                 <GIcon className="w-[19px] h-[19px]" strokeWidth={2} />
               </button>
-              {isFly && (
+              {isFly && createPortal(
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setFlyout(null)} />
                   {/* fixed, not absolute — the icon column is an overflow container
@@ -169,7 +170,8 @@ export default function NavRail({ mobileOpen = false, onNavigate, desktopCollaps
                       </NavLink>
                     ))}
                   </div>
-                </>
+                </>,
+                document.body,
               )}
             </div>
           );
