@@ -11,12 +11,13 @@ import { Button, Badge } from '../../ui';
 import ShareRow from './ShareRow';
 import { cn } from '../../lib/cn';
 
-const COUNTS = [3, 4, 5, 6, 7, 8];
-const CLIPS = [6, 8, 10, 15];
+const MIN_SCENES = 2;
+const MAX_SCENES = 15;
+const CLIPS = [6, 8, 10];
 // One-tap length presets (scenes × clip seconds).
 const DURATION_PRESETS = [
-  { label: '1:30', scenes: 6, clip: 15 },
-  { label: '2:00', scenes: 8, clip: 15 },
+  { label: '2:00 · 15×8s', scenes: 15, clip: 8 },
+  { label: '2:00 · 12×10s', scenes: 12, clip: 10 },
 ];
 // Story categories — each drives a different planning arc on the backend.
 const CATEGORIES = [
@@ -93,8 +94,8 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
     setPlanning(true); setStory(null); setSent(false);
     try {
       const topic = subject.trim() ? `${brief} (recurring main subject: ${subject.trim()})` : brief;
-      const d = await effyApi.storyPlan({ workspace: workspace.id, topic, scenes: count, category });
-      setScenes((d.scenes || []).map((s) => ({ ...s, imageUrl: '', videoUrl: '', name: '', rendering: false, motion: 'push_in' })));
+      const d = await effyApi.storyPlan({ workspace: workspace.id, topic, scenes: count, category, clipSeconds: clip, voiceover: voiceOn });
+      setScenes((d.scenes || []).map((s) => ({ ...s, narration: s.narration || '', imageUrl: '', videoUrl: '', name: '', rendering: false, motion: 'push_in' })));
     } finally { setPlanning(false); }
   };
 
@@ -105,7 +106,7 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
     try {
       const d = await effyApi.storyScene({
         workspace: workspace.id, prompt: scenePrompt(sc.prompt), aspect, seconds: clip, motion: sc.motion || 'push_in',
-        voiceover: voiceOn, voice, caption: sc.caption || sc.title,
+        voiceover: voiceOn, voice, caption: sc.caption || sc.title, narration: sc.narration || '',
       });
       if (d.op) {
         // Real Veo (image-to-video) — show the seed frame, poll until the clip lands.
@@ -116,7 +117,7 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
           // eslint-disable-next-line no-await-in-loop
           const st = await effyApi.storySceneStatus({
             workspace: workspace.id, op: d.op,
-            voiceover: voiceOn, voice, caption: sc.caption || sc.title,
+            voiceover: voiceOn, voice, caption: sc.caption || sc.title, narration: sc.narration || '',
           });
           if (st.status === 'ready') {
             patch(idx, { rendering: false, videoUrl: st.videoUrl, name: st.name, hasAudio: true });
@@ -143,7 +144,7 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
 
   const addScene = () => setScenes((prev) => [
     ...prev,
-    { title: `Scene ${prev.length + 1}`, prompt: '', caption: '', imageUrl: '', videoUrl: '', name: '', rendering: false, motion: 'push_in' },
+    { title: `Scene ${prev.length + 1}`, prompt: '', caption: '', narration: '', imageUrl: '', videoUrl: '', name: '', rendering: false, motion: 'push_in' },
   ]);
   const removeScene = (idx) => setScenes((prev) => prev.filter((_, i) => i !== idx));
 
@@ -207,7 +208,13 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
           {/* settings */}
           <div className="space-y-2.5">
             <Setting label="Scenes">
-              <Segmented options={COUNTS} value={count} onChange={setCount} />
+              <div className="flex items-center rounded-lg bg-surface2 p-0.5">
+                <button onClick={() => setCount((c) => Math.max(MIN_SCENES, c - 1))}
+                  className="w-7 h-7 rounded-md text-sm font-bold text-ink-soft hover:bg-surface hover:text-ink">−</button>
+                <span className="w-9 text-center text-sm font-extrabold tabular-nums text-ink">{count}</span>
+                <button onClick={() => setCount((c) => Math.min(MAX_SCENES, c + 1))}
+                  className="w-7 h-7 rounded-md text-sm font-bold text-ink-soft hover:bg-surface hover:text-ink">+</button>
+              </div>
             </Setting>
             <Setting label="Format">
               <div className="flex rounded-lg bg-surface2 p-0.5">
@@ -266,7 +273,7 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
                     {musicOpts.map((m) => <option key={m.key} value={m.key}>{m.name}</option>)}
                   </select>
                 </Setting>
-                <p className="text-[0.7rem] text-ink-faint leading-snug">Each scene is narrated from its caption; clip length fits the voice.</p>
+                <p className="text-[0.7rem] text-ink-faint leading-snug">Narration is written to fill each scene's length — a 2:00 story gets ~2:00 of speech. Edit it per scene before rendering.</p>
               </>
             )}
           </div>
@@ -346,6 +353,11 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
                   <div className="p-3 flex flex-col gap-1.5">
                     <input value={s.caption} onChange={(e) => patch(i, { caption: e.target.value })} placeholder="On-screen caption"
                       className="w-full rounded-lg bg-surface2 px-2.5 py-1.5 text-xs font-semibold text-ink" />
+                    {voiceOn && (
+                      <textarea value={s.narration || ''} onChange={(e) => patch(i, { narration: e.target.value })} rows={2}
+                        placeholder="Narration (spoken) — written to fill the scene length"
+                        className="w-full rounded-lg bg-coral-tint/40 px-2.5 py-1.5 text-[0.7rem] text-ink leading-snug resize-none" />
+                    )}
                     <textarea value={s.prompt} onChange={(e) => patch(i, { prompt: e.target.value })} rows={2}
                       placeholder="Describe the visual for this shot…"
                       className="w-full rounded-lg bg-surface2 px-2.5 py-1.5 text-[0.7rem] text-ink-soft leading-snug resize-none" />
