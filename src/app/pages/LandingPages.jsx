@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Link2, Check, Trash2, Globe, ExternalLink, Sparkles, Loader2 } from 'lucide-react';
 import { useWorkspace, num } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
@@ -18,6 +18,90 @@ const Field = ({ label, ...props }) => (
     <input {...props} className="mt-1 w-full rounded-sm border border-line bg-surface px-3 py-2 text-sm" />
   </label>
 );
+
+/* Quick microsite — Lovable-style: brief → 3 styled options → publish.
+   Copy comes from the backend grounded in Brand Brain; no fake testimonials. */
+function QuickSite({ workspace, onPublished }) {
+  const [brief, setBrief] = useState('');
+  const [options, setOptions] = useState(null);
+  const [busy, setBusy] = useState('');
+  const [live, setLive] = useState(null);   // {slug, name}
+
+  const generate = async () => {
+    setBusy('gen'); setLive(null);
+    try {
+      const d = await effyApi.quickSite({ workspace: workspace.id, brief: brief.trim() });
+      setOptions(d.options || []);
+    } finally { setBusy(''); }
+  };
+  const publish = async (opt) => {
+    setBusy(opt.key);
+    try {
+      const page = await effyApi.createLanding({
+        workspace: workspace.id,
+        name: brief.trim().slice(0, 60) || 'Quick microsite',
+        sections: opt.sections,
+      });
+      const pub = await effyApi.updateLanding(page.id, { status: 'published', sections: opt.sections });
+      setLive({ slug: pub.slug, name: pub.name });
+      onPublished();
+    } finally { setBusy(''); }
+  };
+
+  return (
+    <Card className="p-5 mb-5">
+      <div className="flex items-center gap-2 mb-1">
+        <span className="grid place-items-center w-8 h-8 rounded-xl bg-aurora text-white"><Sparkles className="w-4 h-4" /></span>
+        <h3 className="font-bold text-ink">Quick microsite</h3>
+      </div>
+      <p className="text-xs text-ink-faint mb-3">One line in → three styled options → pick one and it's live. Perfect for partner-retailer pages.</p>
+      <div className="flex gap-2 mb-4">
+        <input value={brief} onChange={(e) => setBrief(e.target.value)}
+          placeholder="e.g. Diwali offer page for Sharma Electronics — 20% off + free installation"
+          className="flex-1 rounded-xl bg-surface2 px-3.5 py-2.5 text-sm" />
+        <Button onClick={generate} disabled={!brief.trim() || busy === 'gen'}>
+          {busy === 'gen' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} Generate
+        </Button>
+      </div>
+
+      {options && (
+        <div className="grid sm:grid-cols-3 gap-3">
+          {options.map((o) => (
+            <div key={o.key} className="rounded-2xl bg-surface2/60 overflow-hidden flex flex-col">
+              {/* mini preview */}
+              <div className="p-4 text-center"
+                style={o.theme.hero === 'tint' ? { background: `${o.theme.accent}14` }
+                  : o.theme.hero === 'dark' ? { background: '#1d1917' } : { background: '#fff' }}>
+                <p className={`text-sm font-extrabold leading-snug line-clamp-2 ${o.theme.hero === 'dark' ? 'text-white' : 'text-ink'}`}>
+                  {o.sections.hero.headline}
+                </p>
+                <span className="inline-block mt-2.5 rounded-lg text-white text-[0.65rem] font-bold px-3 py-1.5"
+                  style={{ background: o.theme.accent }}>{o.sections.hero.cta}</span>
+              </div>
+              <div className="p-3 flex items-center justify-between gap-2">
+                <span className="text-xs font-bold text-ink">{o.name}</span>
+                <Button size="sm" onClick={() => publish(o)} disabled={!!busy}>
+                  {busy === o.key ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Globe className="w-3.5 h-3.5" />} Publish
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {live && (
+        <div className="mt-3 flex items-center gap-2 rounded-xl bg-success-soft/60 px-3.5 py-2.5 text-sm">
+          <Check className="w-4 h-4 text-success shrink-0" />
+          <span className="font-semibold text-ink flex-1">Live!</span>
+          <a href={`/p/${live.slug}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-coral-ink">
+            /p/{live.slug} <ExternalLink className="w-3 h-3" />
+          </a>
+          <button onClick={() => navigator.clipboard.writeText(`${window.location.origin}/p/${live.slug}`)}
+            className="text-xs font-bold text-ink-soft hover:text-ink">Copy link</button>
+        </div>
+      )}
+    </Card>
+  );
+}
 
 // Message match — the ad promise vs what the page actually says. Shown only
 // when the page is campaign-linked; reads live editor values, no fake numbers.
@@ -123,7 +207,9 @@ export default function LandingPages() {
     queryFn: () => effyApi.listForms(workspace.id),
     enabled: !!workspace,
   });
+  const qc = useQueryClient();
   const invalidate = () => ['landing', workspace?.id];
+  const refresh = () => qc.invalidateQueries({ queryKey: invalidate() });
   const create = useInvalidatingMutation((p) => effyApi.createLanding(p), invalidate);
   const update = useInvalidatingMutation(({ id, ...p }) => effyApi.updateLanding(id, p), invalidate);
 
@@ -175,6 +261,8 @@ export default function LandingPages() {
         subtitle="Hosted pages with lead capture — visits and submissions flow into your pipeline with UTM attribution."
         actions={<Button onClick={startCreate} disabled={create.isPending}><Plus className="w-4 h-4" /> New page</Button>}
       />
+
+      <QuickSite workspace={workspace} onPublished={refresh} />
 
       {editing && (
         <Card className="p-5 mb-5 border-coral">

@@ -7,10 +7,18 @@ import {
 import { useWorkspace } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
 import { Button, Badge } from '../../ui';
+import ShareRow from './ShareRow';
 import { cn } from '../../lib/cn';
 
 const COUNTS = [3, 4, 5, 6];
 const CLIPS = [6, 8, 10];
+// Story categories — each drives a different planning arc on the backend.
+const CATEGORIES = [
+  { key: '', label: 'Free-form' },
+  { key: 'explainer', label: 'Explainer' },
+  { key: 'product_shoot', label: 'Product Shoot' },
+  { key: 'product_launch', label: 'Product Launch' },
+];
 const MOTIONS = [
   { key: 'push_in', label: 'Push in' },
   { key: 'pull_out', label: 'Pull out' },
@@ -28,6 +36,7 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
   const { workspace } = useWorkspace();
 
   const [brief, setBrief] = useState(initialBrief);
+  const [category, setCategory] = useState('');
   const [subject, setSubject] = useState('');
   const [count, setCount] = useState(4);
   const [clip, setClip] = useState(8);
@@ -57,7 +66,7 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
     setPlanning(true); setStory(null); setSent(false);
     try {
       const topic = subject.trim() ? `${brief} (recurring main subject: ${subject.trim()})` : brief;
-      const d = await effyApi.storyPlan({ workspace: workspace.id, topic, scenes: count });
+      const d = await effyApi.storyPlan({ workspace: workspace.id, topic, scenes: count, category });
       setScenes((d.scenes || []).map((s) => ({ ...s, imageUrl: '', videoUrl: '', name: '', rendering: false, motion: 'push_in' })));
     } finally { setPlanning(false); }
   };
@@ -143,6 +152,16 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
         </div>
 
         <div className="flex-1 min-h-0 flex flex-col p-5 overflow-y-auto">
+          {/* Category — shapes the planning arc */}
+          <div className="flex flex-wrap gap-1.5 mb-4">
+            {CATEGORIES.map((c) => (
+              <button key={c.key} onClick={() => setCategory(c.key)}
+                className={cn('px-3 py-1.5 rounded-full text-xs font-bold transition',
+                  category === c.key ? 'bg-ink text-white' : 'bg-surface2 text-ink-soft hover:text-ink')}>
+                {c.label}
+              </button>
+            ))}
+          </div>
           <label className="block text-xs font-bold uppercase tracking-wide text-ink-faint mb-2">Describe your story</label>
           <textarea value={brief} onChange={(e) => setBrief(e.target.value)}
             placeholder="e.g. a day in the life at our clinic — from welcome to a happy patient walking out"

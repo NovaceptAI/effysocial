@@ -42,6 +42,22 @@ export const effyApi = {
   studioVideoStatus: (payload) =>
     http('/studio/video/status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
   studioVoices: () => http('/studio/voices'),
+  avatarSubmit: (workspaceId, { video, audioFile, script, voice, language }) => {
+    const fd = new FormData();
+    fd.append('workspace', workspaceId);
+    fd.append('video', video);
+    if (audioFile) fd.append('audio', audioFile);
+    if (script) fd.append('script', script);
+    if (voice) fd.append('voice', voice);
+    if (language) fd.append('language', language);
+    return http('/studio/avatar', { method: 'POST', body: fd });
+  },
+  avatarStatus: (payload) =>
+    http('/studio/avatar/status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
+  publishReelStart: (payload) =>
+    http('/publish/instagram-reel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
+  publishReelFinish: (payload) =>
+    http('/publish/instagram-reel/finish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
   storyPlan: (payload) =>
     http('/studio/story/plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
   storyScene: (payload) =>
@@ -166,6 +182,8 @@ export const effyApi = {
 
   // Convert — landing pages
   listLanding: (workspaceId) => http(`/landing?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.pages),
+  quickSite: (payload) =>
+    http('/landing/quick-site', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
   createLanding: (payload) =>
     http('/landing', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.page),
   updateLanding: (id, payload) =>

@@ -5,9 +5,11 @@ import {
   Sparkles, Smartphone, Monitor, RefreshCw, Image as ImageIcon,
   Check, FileText, Film, Images, Square, MessageCircle, Video, Briefcase,
   CalendarPlus, Send, Flame, Swords, X, ArrowRight, ArrowLeft, PenLine, Palette,
-  SlidersHorizontal, Search, Clapperboard, Mic, Layers,
+  SlidersHorizontal, Search, Clapperboard, Mic, Layers, UserSquare,
 } from 'lucide-react';
 import Storyboard from '../components/Storyboard';
+import ShareRow from '../components/ShareRow';
+import AvatarStudio from '../components/AvatarStudio';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
 import { Button, Badge, Pacing } from '../../ui';
@@ -24,8 +26,9 @@ const FORMATS = [
   { id: 'yt_short', label: 'YouTube Short', platform: 'youtube', icon: Video, aspect: '9 / 16', size: '1080 × 1920', group: 'YouTube', video: true },
   { id: 'yt_story', label: 'YouTube Story', platform: 'youtube', icon: Clapperboard, aspect: '16 / 9', size: 'Multi-scene story', group: 'YouTube', storyboard: true, thumb: 'yt_short' },
   { id: 'wa_promo', label: 'WhatsApp', platform: 'whatsapp', icon: MessageCircle, aspect: '1 / 1', size: '1080 × 1080', group: 'WhatsApp' },
+  { id: 'avatar_video', label: 'AI Avatar Video', platform: 'instagram', icon: UserSquare, aspect: '9 / 16', size: 'Talking-head lipsync', group: 'Avatar', avatar: true, thumb: 'ig_reel' },
 ];
-const FILTERS = ['Popular', 'Instagram', 'Facebook', 'LinkedIn', 'YouTube', 'WhatsApp'];
+const FILTERS = ['Popular', 'Instagram', 'Facebook', 'LinkedIn', 'YouTube', 'WhatsApp', 'Avatar'];
 const LANGS = ['English', 'Hindi', 'Hinglish', 'Marathi'];
 const COPY_TOOLS = ['Rewrite', 'Shorten', 'Expand', 'Change tone', 'Add CTA', 'More hooks', 'Hashtags', 'Translate'];
 
@@ -238,6 +241,10 @@ export default function AIStudio() {
     return <FormatChooser onPick={(f) => { setFormat(f); setPanel('brief'); }} />;
   }
 
+  if (format.avatar) {
+    return <AvatarStudio onBack={() => setFormat(null)} />;
+  }
+
   // Storyboard formats get a dedicated multi-scene experience.
   if (format.storyboard) {
     return <Storyboard format={format} onBack={() => setFormat(null)} initialBrief={topic} />;
@@ -409,6 +416,7 @@ export default function AIStudio() {
                   )}
                 </div>
                 {vidMsg && !vidBusy && <p className="mt-2 text-xs text-ink-faint text-center">{vidMsg}</p>}
+                {video && <ShareRow videoUrl={video} caption={result?.caption || topic} />}
                 {format.video && (
                   <div className="mt-3 w-full rounded-xl bg-surface2/60 p-3">
                     <div className="flex items-center justify-between">

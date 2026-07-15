@@ -124,7 +124,10 @@ export default function PublicLanding() {
   }
 
   const { sections, formSlug, whatsapp, phone } = page;
-  const accent = page.accent || '#e84a33';
+  // Quick-microsite theme wins over the workspace accent when present.
+  const theme = sections.theme || {};
+  const accent = theme.accent || page.accent || '#e84a33';
+  const heroStyle = theme.hero || 'plain';   // plain | tint | dark
   const enabled = sections.enabled || {};
   const waLink = whatsapp
     ? `https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hi! I'm interested in ${page.name}.`)}`
@@ -138,10 +141,12 @@ export default function PublicLanding() {
       </header>
 
       <main className="max-w-3xl mx-auto px-6 pb-16">
-        {/* Hero */}
-        <section className="text-center py-12">
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">{sections.hero.headline || page.name}</h1>
-          {sections.hero.sub && <p className="mt-4 text-lg text-ink-soft max-w-xl mx-auto">{sections.hero.sub}</p>}
+        {/* Hero — style variant from the microsite theme */}
+        <section className={`text-center py-12 ${heroStyle !== 'plain' ? 'rounded-3xl px-6' : ''}`}
+          style={heroStyle === 'tint' ? { background: `${accent}14` }
+            : heroStyle === 'dark' ? { background: '#1d1917' } : undefined}>
+          <h1 className={`text-3xl md:text-4xl font-extrabold tracking-tight ${heroStyle === 'dark' ? 'text-white' : ''}`}>{sections.hero.headline || page.name}</h1>
+          {sections.hero.sub && <p className={`mt-4 text-lg max-w-xl mx-auto ${heroStyle === 'dark' ? 'text-white/70' : 'text-ink-soft'}`}>{sections.hero.sub}</p>}
           <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
             {enabled.form && formSlug && (
               <a href="#lead-form" className="rounded-lg text-white font-bold px-6 py-3 hover:-translate-y-0.5 transition"
