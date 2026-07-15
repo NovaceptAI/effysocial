@@ -62,6 +62,8 @@ export const effyApi = {
     http('/studio/story/plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
   storyScene: (payload) =>
     http('/studio/story/scene', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
+  storyIdeas: (payload) =>
+    http('/studio/story/ideas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.ideas),
   storySceneStatus: (payload) =>
     http('/studio/story/scene/status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
   storyStitch: (payload) =>
@@ -107,6 +109,9 @@ export const effyApi = {
   // Strategy intelligence (real trends + competitors)
   strategyTrends: (workspaceId) => http(`/strategy/trends?workspace=${encodeURIComponent(workspaceId)}`),
   strategyCompetitors: (workspaceId) => http(`/strategy/competitors?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.competitors),
+  addCompetitor: (payload) =>
+    http('/strategy/competitors', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.competitor),
+  deleteCompetitor: (id) => http(`/strategy/competitors/${id}`, { method: 'DELETE' }),
 
   // Publish
   listPosts: (workspaceId) => http(`/posts?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.posts),

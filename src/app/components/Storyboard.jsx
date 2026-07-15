@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import {
   ArrowLeft, Clapperboard, Sparkles, RefreshCw, Film, Play, Check, Send,
   Monitor, Smartphone, Wand2, ImageIcon, Download, Plus, X, User, Mic,
+  Lightbulb, Package, Rocket, Clock,
 } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
@@ -10,15 +11,21 @@ import { Button, Badge } from '../../ui';
 import ShareRow from './ShareRow';
 import { cn } from '../../lib/cn';
 
-const COUNTS = [3, 4, 5, 6];
-const CLIPS = [6, 8, 10];
+const COUNTS = [3, 4, 5, 6, 7, 8];
+const CLIPS = [6, 8, 10, 15];
+// One-tap length presets (scenes × clip seconds).
+const DURATION_PRESETS = [
+  { label: '1:30', scenes: 6, clip: 15 },
+  { label: '2:00', scenes: 8, clip: 15 },
+];
 // Story categories — each drives a different planning arc on the backend.
 const CATEGORIES = [
-  { key: '', label: 'Free-form' },
-  { key: 'explainer', label: 'Explainer' },
-  { key: 'product_shoot', label: 'Product Shoot' },
-  { key: 'product_launch', label: 'Product Launch' },
+  { key: '', label: 'Free-form', icon: Sparkles },
+  { key: 'explainer', label: 'Explainer', icon: Lightbulb },
+  { key: 'product_shoot', label: 'Product Shoot', icon: Package },
+  { key: 'product_launch', label: 'Product Launch', icon: Rocket },
 ];
+const fmtDur = (s) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
 const MOTIONS = [
   { key: 'push_in', label: 'Push in' },
   { key: 'pull_out', label: 'Pull out' },
@@ -54,6 +61,26 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
   const { data: audioOpts } = useQuery({ queryKey: ['studio-voices'], queryFn: () => effyApi.studioVoices() });
   const voices = audioOpts?.voices || [];
   const musicOpts = audioOpts?.music || [{ key: '', name: 'None' }];
+  const videoProvider = audioOpts?.videoProvider || 'free';
+  const veoMax = audioOpts?.veoMaxSeconds || 8;
+
+  // Category idea prompts — 4 brand-grounded briefs to pick from.
+  const [ideas, setIdeas] = useState(null);
+  const [ideasBusy, setIdeasBusy] = useState(false);
+  const pickCategory = async (key) => {
+    setCategory(key);
+    setIdeas(null);
+    if (!key || !workspace) return;
+    setIdeasBusy(true);
+    try {
+      setIdeas(await effyApi.storyIdeas({ workspace: workspace.id, category: key }));
+    } finally { setIdeasBusy(false); }
+  };
+
+  // Honest total: Veo renders at most `veoMax` seconds per scene.
+  const nScenes = scenes.length || count;
+  const effClip = videoProvider === 'veo' ? Math.min(clip, veoMax) : clip;
+  const totalSecs = nScenes * effClip;
 
   const scenesRef = useRef(scenes);
   useEffect(() => { scenesRef.current = scenes; }, [scenes]);
@@ -152,13 +179,15 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
         </div>
 
         <div className="flex-1 min-h-0 flex flex-col p-5 overflow-y-auto">
-          {/* Category — shapes the planning arc */}
+          {/* Category — shapes the planning arc (coral fill = selected) */}
           <div className="flex flex-wrap gap-1.5 mb-4">
             {CATEGORIES.map((c) => (
-              <button key={c.key} onClick={() => setCategory(c.key)}
-                className={cn('px-3 py-1.5 rounded-full text-xs font-bold transition',
-                  category === c.key ? 'bg-ink text-white' : 'bg-surface2 text-ink-soft hover:text-ink')}>
-                {c.label}
+              <button key={c.key} onClick={() => pickCategory(c.key)}
+                className={cn('inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition',
+                  category === c.key
+                    ? 'bg-coral text-white shadow-coral'
+                    : 'bg-surface2 text-ink-soft hover:bg-coral-tint hover:text-coral-ink')}>
+                <c.icon className="w-3.5 h-3.5" /> {c.label}
               </button>
             ))}
           </div>
@@ -189,6 +218,29 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
             <Setting label="Clip length">
               <Segmented options={CLIPS} value={clip} onChange={setClip} suffix="s" />
             </Setting>
+            <Setting label="Quick length">
+              <div className="flex gap-1.5">
+                {DURATION_PRESETS.map((p) => (
+                  <button key={p.label} onClick={() => { setCount(p.scenes); setClip(p.clip); }}
+                    className={cn('px-3 h-7 rounded-lg text-xs font-bold transition',
+                      count === p.scenes && clip === p.clip ? 'bg-coral text-white' : 'bg-surface2 text-ink-soft hover:text-ink')}>
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </Setting>
+          </div>
+
+          {/* Honest total-length readout */}
+          <div className="mt-3 rounded-xl bg-surface2/60 px-3.5 py-2.5">
+            <div className="flex items-center justify-between text-sm">
+              <span className="inline-flex items-center gap-1.5 font-semibold text-ink"><Clock className="w-3.5 h-3.5 text-coral-ink" /> Total video</span>
+              <span className="font-extrabold tabular-nums text-ink">≈ {fmtDur(totalSecs)}</span>
+            </div>
+            <p className="text-[0.7rem] text-ink-faint mt-0.5">{nScenes} scenes × {effClip}s</p>
+            {videoProvider === 'veo' && clip > veoMax && (
+              <p className="text-[0.7rem] text-warning mt-1">Veo renders max {veoMax}s per scene — {clip}s clips apply on the free engine. For ≈{fmtDur(nScenes * clip)}, switch the video engine to Free (Admin) or add scenes.</p>
+            )}
           </div>
 
           {/* Audio: voiceover commentary + music bed */}
@@ -324,16 +376,25 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
               <h2 className="font-display text-[1.9rem] leading-tight font-semibold tracking-tight mb-2">Multi-Shot Story</h2>
               <p className="text-ink-soft mb-8">Write a simple brief. Get a multi-scene story — a frame and a short clip each — stitched into one preview your client can watch end-to-end.</p>
               <div className="w-full">
-                <div className="text-xs font-bold uppercase tracking-wide text-ink-faint mb-3 text-left">Try one of these</div>
-                <div className="grid sm:grid-cols-2 gap-3">
-                  {EXAMPLES.map((ex) => (
-                    <button key={ex.title} onClick={() => setBrief(ex.body)}
-                      className="text-left rounded-2xl bg-surface shadow-e1 hover:shadow-e3 hover:-translate-y-0.5 transition-all p-4">
-                      <div className="font-bold text-sm text-ink mb-1">{ex.title}</div>
-                      <p className="text-xs text-ink-soft leading-relaxed line-clamp-2">{ex.body}</p>
-                    </button>
-                  ))}
+                <div className="text-xs font-bold uppercase tracking-wide text-ink-faint mb-3 text-left">
+                  {category ? `${CATEGORIES.find((c) => c.key === category)?.label} ideas for your brand — pick one` : 'Try one of these'}
                 </div>
+                {ideasBusy ? (
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    {[0, 1, 2, 3].map((i) => <div key={i} className="h-20 rounded-2xl bg-surface2 animate-pulse" />)}
+                  </div>
+                ) : (
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    {(category && ideas ? ideas.map((i) => ({ title: i.title, body: i.brief })) : EXAMPLES).map((ex) => (
+                      <button key={ex.title} onClick={() => setBrief(ex.body)}
+                        className={cn('text-left rounded-2xl bg-surface shadow-e1 hover:shadow-e3 hover:-translate-y-0.5 transition-all p-4',
+                          brief === ex.body && 'ring-2 ring-coral/40')}>
+                        <div className="font-bold text-sm text-ink mb-1">{ex.title}</div>
+                        <p className="text-xs text-ink-soft leading-relaxed line-clamp-2">{ex.body}</p>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
