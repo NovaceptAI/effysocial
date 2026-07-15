@@ -19,9 +19,10 @@ const GROUP_HINTS = {
   Administration: 'Team and settings',
 };
 
-const STORE_KEY = 'effy.nav.open';
-const loadOpen = () => {
-  try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch { return {}; }
+// Accordion: exactly ONE group open at a time — keeps the rail on one screen.
+const STORE_KEY = 'effy.nav.openGroup';
+const loadOpenGroup = () => {
+  try { return localStorage.getItem(STORE_KEY) || ''; } catch { return ''; }
 };
 
 export default function NavRail({ mobileOpen = false, onNavigate, desktopCollapsed = false }) {
@@ -32,17 +33,18 @@ export default function NavRail({ mobileOpen = false, onNavigate, desktopCollaps
   const home = NAV.find((grp) => grp.group === 'Overview')?.items[0];
   const groups = NAV.filter((grp) => grp.group !== 'Overview');
   const flatItems = groups.flatMap((grp) => grp.items.filter((item) => (isAgency || !AGENCY_ONLY.has(item.to)) && (!item.adminOnly || authUser?.is_admin)));
-  // Default: the most common daily areas open; deeper admin/revenue areas collapsed.
-  const [open, setOpen] = useState(() => {
-    const saved = loadOpen();
-    if (Object.keys(saved).length) return saved;
-    return { Strategy: true, Content: true, Publish: true, Engage: true,
-      Advertise: false, Convert: false, Analytics: true, Administration: false };
-  });
+  // One open group (accordion). The group holding the current page auto-opens
+  // on navigation so you always see where you are.
+  const groupOfPath = groups.find((grp) =>
+    grp.items.some((item) => pathname === item.to || pathname.startsWith(`${item.to}/`)))?.group;
+  const [openGroup, setOpenGroup] = useState(() => loadOpenGroup() || groupOfPath || 'Strategy');
+  React.useEffect(() => {
+    if (groupOfPath) setOpenGroup(groupOfPath);
+  }, [groupOfPath]);
 
-  const toggle = (g) => setOpen((prev) => {
-    const next = { ...prev, [g]: !prev[g] };
-    try { localStorage.setItem(STORE_KEY, JSON.stringify(next)); } catch { /* noop */ }
+  const toggle = (g) => setOpenGroup((prev) => {
+    const next = prev === g ? '' : g;
+    try { localStorage.setItem(STORE_KEY, next); } catch { /* noop */ }
     return next;
   });
 
@@ -124,34 +126,31 @@ export default function NavRail({ mobileOpen = false, onNavigate, desktopCollaps
         ))}
       </div>
 
-      <div className={cn('flex-1 overflow-y-auto px-3 pb-4 space-y-3', desktopCollapsed && 'md:hidden')}>
+      <div className={cn('flex-1 overflow-y-auto px-3 pb-4 space-y-0.5', desktopCollapsed && 'md:hidden')}>
         {groups.map((grp) => {
           const visibleItems = grp.items.filter((item) => (isAgency || !AGENCY_ONLY.has(item.to)) && (!item.adminOnly || authUser?.is_admin));
           if (!visibleItems.length) return null;
           const groupActive = visibleItems.some((item) => pathname === item.to || pathname.startsWith(`${item.to}/`));
+          const isOpen = openGroup === grp.group;
           return (
-            <div key={grp.group} className="rounded-[16px]">
+            <div key={grp.group}>
+              {/* Slim section header — small caps row, coral dot marks the
+                  section holding the current page when it's closed. */}
               <button
                 onClick={() => toggle(grp.group)}
+                title={GROUP_HINTS[grp.group] || grp.group}
                 className={cn(
-                  'w-full flex items-center gap-2 rounded-[14px] px-3 py-2.5 text-left transition',
-                  groupActive || open[grp.group]
-                    ? 'bg-white/[0.07] text-white'
-                    : 'text-rail-ink hover:bg-white/[0.045] hover:text-white',
+                  'w-full flex items-center gap-1.5 rounded-[10px] px-3 py-2 text-left transition',
+                  'text-[0.68rem] font-bold uppercase tracking-[0.09em]',
+                  isOpen || groupActive ? 'text-white' : 'text-rail-muted hover:text-rail-ink hover:bg-white/[0.04]',
                 )}
               >
-                <span className="flex-1">
-                  <span className="block text-[0.92rem] font-bold leading-tight">{grp.group}</span>
-                  <span className="block text-[0.66rem] font-semibold text-rail-muted leading-4">
-                    {GROUP_HINTS[grp.group] || `${visibleItems.length} ${visibleItems.length === 1 ? 'tool' : 'tools'}`}
-                  </span>
-                </span>
-                <span className="grid h-7 w-7 place-items-center rounded-full bg-black/10 text-rail-muted">
-                  <ChevronDown className={cn('w-3.5 h-3.5 transition-transform', !open[grp.group] && '-rotate-90')} />
-                </span>
+                <span className="flex-1">{grp.group}</span>
+                {groupActive && !isOpen && <span className="w-1.5 h-1.5 rounded-full bg-coral-light" />}
+                <ChevronDown className={cn('w-3.5 h-3.5 transition-transform text-rail-muted', !isOpen && '-rotate-90')} />
               </button>
-              {open[grp.group] && (
-                <ul className="mt-1.5 space-y-1">
+              {isOpen && (
+                <ul className="mb-2 space-y-0.5">
                   {visibleItems.map((item) => (
                     <li key={item.to}>
                       <NavLink
@@ -159,7 +158,7 @@ export default function NavRail({ mobileOpen = false, onNavigate, desktopCollaps
                         end={item.end}
                         onClick={onNavigate}
                         className={({ isActive }) => cn(
-                          'group relative flex items-center gap-2.5 rounded-[13px] px-2.5 py-2.5 text-sm font-semibold transition-all duration-200',
+                          'group relative flex items-center gap-2.5 rounded-[11px] px-2.5 py-[7px] text-sm font-semibold transition-all duration-200',
                           isActive
                             ? 'bg-white text-black shadow-[0_10px_24px_-18px_rgba(255,255,255,0.85)]'
                             : 'text-rail-ink hover:bg-white/[0.055] hover:text-white',
@@ -168,10 +167,10 @@ export default function NavRail({ mobileOpen = false, onNavigate, desktopCollaps
                         {({ isActive }) => (
                           <>
                             <span className={cn(
-                              'grid h-8 w-8 shrink-0 place-items-center rounded-[11px] transition',
+                              'grid h-7 w-7 shrink-0 place-items-center rounded-[9px] transition',
                               isActive ? 'bg-surface2 text-black' : 'bg-white/[0.055] text-rail-muted group-hover:bg-white/10 group-hover:text-coral-light',
                             )}>
-                              <item.icon className="w-[17px] h-[17px]" strokeWidth={2} />
+                              <item.icon className="w-4 h-4" strokeWidth={2} />
                             </span>
                             <span className="flex-1 truncate" style={isActive ? { color: '#000' } : undefined}>{item.label}</span>
                             {item.badge && (

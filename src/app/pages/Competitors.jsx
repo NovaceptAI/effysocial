@@ -40,7 +40,7 @@ export default function Competitors() {
       <PageHeader
         title="Competitors"
         subtitle="Track rival accounts — benchmarking metrics activate with channel sync."
-        actions={!adding && <Button onClick={() => setAdding(true)}><Plus className="w-4 h-4" /> Add competitor</Button>}
+        // actions={!adding && <Button onClick={() => setAdding(true)}><Plus className="w-4 h-4" /> Add competitor</Button>}
       />
 
       {adding && (
