@@ -9,6 +9,12 @@ import { Button, Badge } from '../../ui';
 import ShareRow from './ShareRow';
 import { cn } from '../../lib/cn';
 
+const FESTIVALS = ['Diwali', 'Holi', 'Navratri', 'Eid', 'Christmas', 'New Year'];
+// ~35 words ≈ 15 seconds of speech — the Sync Labs free-tier render limit.
+const demoScript = (name, festival) =>
+  `Hi, I'm ${name || 'Rohan'}! Wishing you and your family a very happy ${festival}. ` +
+  `This ${festival}, we have something special waiting for you — visit us and celebrate with our exclusive festive offers. See you soon!`;
+
 const GUIDELINES = [
   'One person, face clearly visible and front-facing',
   'Good, even lighting — avoid strong backlight',
@@ -18,6 +24,9 @@ const GUIDELINES = [
 
 export default function AvatarStudio({ onBack }) {
   const { workspace } = useWorkspace();
+  const [source, setSource] = useState('demo');  // demo | upload
+  const [demoName, setDemoName] = useState('');
+  const [festival, setFestival] = useState('Diwali');
   const [videoFile, setVideoFile] = useState(null);
   const [mode, setMode] = useState('script');    // script | audio
   const [script, setScript] = useState('');
@@ -33,13 +42,19 @@ export default function AvatarStudio({ onBack }) {
   const { data: audioOpts } = useQuery({ queryKey: ['studio-voices'], queryFn: () => effyApi.studioVoices() });
   const voices = audioOpts?.voices || [];
 
-  const canGo = videoFile && (mode === 'audio' ? !!audioFile : script.trim().length > 0);
+  // Demo mode: name/festival compose the script (still editable afterwards).
+  React.useEffect(() => {
+    if (source === 'demo') setScript(demoScript(demoName, festival));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [source, demoName, festival]);
+
+  const canGo = (source === 'demo' ? true : !!videoFile) && (mode === 'audio' ? !!audioFile : script.trim().length > 0);
 
   const generate = async () => {
     setState('rendering'); setMsg('Uploading your clip…'); setResult('');
     try {
       const { job } = await effyApi.avatarSubmit(workspace.id, {
-        video: videoFile,
+        video: videoFile, template: source === 'demo' ? 'demo' : '',
         audioFile: mode === 'audio' ? audioFile : null,
         script: mode === 'script' ? script.trim() : '',
         voice, language,
@@ -75,25 +90,58 @@ export default function AvatarStudio({ onBack }) {
         {/* 1 — the person */}
         <div className="bg-surface rounded-2xl shadow-e1 p-5">
           <h3 className="font-bold text-ink mb-1">1 · The person</h3>
-          <p className="text-xs text-ink-faint mb-3">Upload a short clip — we make them say your script.</p>
-          <input ref={vidRef} type="file" accept="video/mp4,video/quicktime" hidden
-            onChange={(e) => setVideoFile(e.target.files?.[0] || null)} />
-          <button onClick={() => vidRef.current?.click()}
-            className={cn('w-full rounded-xl border-2 border-dashed p-5 text-center transition',
-              videoFile ? 'border-success bg-success-soft/40' : 'border-line hover:border-coral/50 hover:bg-coral-tint/30')}>
-            {videoFile ? (
-              <span className="inline-flex items-center gap-2 text-sm font-bold text-ink"><Check className="w-4 h-4 text-success" /> {videoFile.name}</span>
-            ) : (
-              <span className="flex flex-col items-center gap-1.5 text-ink-soft">
-                <Upload className="w-5 h-5" /><span className="text-sm font-semibold">Upload clip</span>
-              </span>
-            )}
-          </button>
-          <ul className="mt-3 space-y-1">
-            {GUIDELINES.map((g) => (
-              <li key={g} className="flex items-start gap-1.5 text-xs text-ink-faint"><Check className="w-3 h-3 text-success shrink-0 mt-0.5" /> {g}</li>
-            ))}
-          </ul>
+          <div className="flex gap-1.5 my-3">
+            <button onClick={() => setSource('demo')}
+              className={cn('flex-1 rounded-lg px-3 py-2 text-xs font-bold transition',
+                source === 'demo' ? 'bg-ink text-white' : 'bg-surface2 text-ink-soft')}>
+              Demo avatar
+            </button>
+            <button onClick={() => setSource('upload')}
+              className={cn('flex-1 rounded-lg px-3 py-2 text-xs font-bold transition',
+                source === 'upload' ? 'bg-ink text-white' : 'bg-surface2 text-ink-soft')}>
+              Upload your own
+            </button>
+          </div>
+
+          {source === 'demo' ? (
+            <>
+              <div className="relative rounded-xl overflow-hidden bg-black">
+                <video src="/formats/00125.mp4" muted loop playsInline className="w-full"
+                  onMouseEnter={(e) => e.currentTarget.play()} onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }} />
+                <span className="absolute top-2 left-2"><Badge tone="success">Ready to use · 10s</Badge></span>
+              </div>
+              <p className="text-xs text-ink-faint mt-2 mb-3">Change the name or celebration below — the script updates and he says it.</p>
+              <div className="flex gap-2">
+                <input value={demoName} onChange={(e) => setDemoName(e.target.value)} placeholder="Name (e.g. Rohan)"
+                  className="flex-1 min-w-0 rounded-lg bg-surface2 px-2.5 py-2 text-xs font-semibold" />
+                <select value={festival} onChange={(e) => setFestival(e.target.value)}
+                  className="rounded-lg bg-surface2 px-2.5 py-2 text-xs font-semibold">
+                  {FESTIVALS.map((f) => <option key={f}>{f}</option>)}
+                </select>
+              </div>
+            </>
+          ) : (
+            <>
+              <input ref={vidRef} type="file" accept="video/mp4,video/quicktime" hidden
+                onChange={(e) => setVideoFile(e.target.files?.[0] || null)} />
+              <button onClick={() => vidRef.current?.click()}
+                className={cn('w-full rounded-xl border-2 border-dashed p-5 text-center transition',
+                  videoFile ? 'border-success bg-success-soft/40' : 'border-line hover:border-coral/50 hover:bg-coral-tint/30')}>
+                {videoFile ? (
+                  <span className="inline-flex items-center gap-2 text-sm font-bold text-ink"><Check className="w-4 h-4 text-success" /> {videoFile.name}</span>
+                ) : (
+                  <span className="flex flex-col items-center gap-1.5 text-ink-soft">
+                    <Upload className="w-5 h-5" /><span className="text-sm font-semibold">Upload clip</span>
+                  </span>
+                )}
+              </button>
+              <ul className="mt-3 space-y-1">
+                {GUIDELINES.map((g) => (
+                  <li key={g} className="flex items-start gap-1.5 text-xs text-ink-faint"><Check className="w-3 h-3 text-success shrink-0 mt-0.5" /> {g}</li>
+                ))}
+              </ul>
+            </>
+          )}
         </div>
 
         {/* 2 — the speech */}
@@ -115,7 +163,10 @@ export default function AvatarStudio({ onBack }) {
             <>
               <textarea value={script} onChange={(e) => setScript(e.target.value)} rows={4}
                 placeholder="Type what they should say… e.g. Namaste! This Diwali, get 20% off on all dental checkups at our clinic."
-                className="w-full rounded-xl bg-surface2 px-3.5 py-2.5 text-sm mb-2.5" />
+                className="w-full rounded-xl bg-surface2 px-3.5 py-2.5 text-sm mb-1" />
+              <p className={cn('text-[0.7rem] mb-2.5', script.trim().split(/\s+/).filter(Boolean).length > 38 ? 'text-warning' : 'text-ink-faint')}>
+                {script.trim().split(/\s+/).filter(Boolean).length} words · lipsync renders ~15s (~38 words max — longer scripts are trimmed)
+              </p>
               <div className="flex gap-2">
                 <select value={voice} onChange={(e) => setVoice(e.target.value)} className="flex-1 rounded-lg bg-surface2 px-2.5 py-2 text-xs font-semibold">
                   <option value="">Auto voice</option>

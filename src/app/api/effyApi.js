@@ -42,10 +42,11 @@ export const effyApi = {
   studioVideoStatus: (payload) =>
     http('/studio/video/status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
   studioVoices: () => http('/studio/voices'),
-  avatarSubmit: (workspaceId, { video, audioFile, script, voice, language }) => {
+  avatarSubmit: (workspaceId, { video, template, audioFile, script, voice, language }) => {
     const fd = new FormData();
     fd.append('workspace', workspaceId);
-    fd.append('video', video);
+    if (template) fd.append('template', template);
+    else fd.append('video', video);
     if (audioFile) fd.append('audio', audioFile);
     if (script) fd.append('script', script);
     if (voice) fd.append('voice', voice);
