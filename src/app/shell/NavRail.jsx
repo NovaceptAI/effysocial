@@ -39,7 +39,7 @@ export default function NavRail({ mobileOpen = false, onNavigate, desktopCollaps
   const isAgency = org?.type === 'agency';
   const home = NAV.find((grp) => grp.group === 'Overview')?.items[0];
   const groups = NAV.filter((grp) => grp.group !== 'Overview');
-  const [flyout, setFlyout] = useState('');   // minimized-rail group flyout
+  const [flyout, setFlyout] = useState(null); // {group, top} — minimized-rail flyout
   // One open group (accordion). The group holding the current page auto-opens
   // on navigation so you always see where you are.
   const groupOfPath = groups.find((grp) =>
@@ -120,11 +120,16 @@ export default function NavRail({ mobileOpen = false, onNavigate, desktopCollaps
           if (!visibleItems.length) return null;
           const GIcon = GROUP_ICONS[grp.group] || Compass;
           const groupActive = visibleItems.some((item) => pathname === item.to || pathname.startsWith(`${item.to}/`));
-          const isFly = flyout === grp.group;
+          const isFly = flyout?.group === grp.group;
           return (
             <div key={grp.group} className="relative">
               <button
-                onClick={() => setFlyout(isFly ? '' : grp.group)}
+                onClick={(e) => {
+                  if (isFly) { setFlyout(null); return; }
+                  const r = e.currentTarget.getBoundingClientRect();
+                  // fixed-position panel: clamp so it never runs off-screen
+                  setFlyout({ group: grp.group, top: Math.max(8, Math.min(r.top, window.innerHeight - 340)) });
+                }}
                 title={`${grp.group} — ${GROUP_HINTS[grp.group] || ''}`}
                 aria-label={grp.group}
                 className={cn(
@@ -138,15 +143,18 @@ export default function NavRail({ mobileOpen = false, onNavigate, desktopCollaps
               </button>
               {isFly && (
                 <>
-                  <div className="fixed inset-0 z-40" onClick={() => setFlyout('')} />
-                  <div className="absolute left-full top-0 z-50 ml-2 w-56 rounded-2xl bg-[#241f1d] border border-white/10 shadow-2xl p-1.5">
+                  <div className="fixed inset-0 z-40" onClick={() => setFlyout(null)} />
+                  {/* fixed, not absolute — the icon column is an overflow container
+                      and clips absolutely-positioned children */}
+                  <div className="fixed z-50 w-56 max-h-[70vh] overflow-y-auto rounded-2xl bg-[#241f1d] border border-white/10 shadow-2xl p-1.5"
+                    style={{ left: 84, top: flyout.top }}>
                     <p className="px-3 pt-2 pb-1.5 text-[0.65rem] font-bold uppercase tracking-[0.09em] text-rail-muted">{grp.group}</p>
                     {visibleItems.map((item) => (
                       <NavLink
                         key={item.to}
                         to={item.to}
                         end={item.end}
-                        onClick={() => { setFlyout(''); onNavigate?.(); }}
+                        onClick={() => { setFlyout(null); onNavigate?.(); }}
                         className={({ isActive }) => cn(
                           'flex items-center gap-2.5 rounded-[11px] px-3 py-2 text-sm font-semibold transition',
                           isActive ? 'bg-white text-black' : 'text-rail-ink hover:bg-white/[0.07] hover:text-white',
