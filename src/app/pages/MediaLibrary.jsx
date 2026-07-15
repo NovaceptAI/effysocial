@@ -100,7 +100,7 @@ export default function MediaLibrary() {
               <div className="relative bg-ink/90" style={{ aspectRatio: m.aspect ? m.aspect.replace(':', ' / ') : '1 / 1' }}>
                 {m.kind === 'video'
                   ? <video src={m.url} muted loop playsInline className="absolute inset-0 w-full h-full object-cover"
-                      onMouseEnter={(e) => e.currentTarget.play()} onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }} />
+                      onMouseEnter={(e) => e.currentTarget.play().catch(() => {})} onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }} />
                   : <img src={m.url} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />}
                 <span className="absolute top-2 left-2 grid place-items-center w-6 h-6 rounded-md bg-ink/55 text-white backdrop-blur-sm">
                   {m.kind === 'video' ? <Play className="w-3 h-3" /> : <ImageIcon className="w-3 h-3" />}

@@ -107,7 +107,7 @@ export default function AvatarStudio({ onBack }) {
             <>
               <div className="relative rounded-xl overflow-hidden bg-black">
                 <video src="/formats/00125.mp4" muted loop playsInline className="w-full"
-                  onMouseEnter={(e) => e.currentTarget.play()} onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }} />
+                  onMouseEnter={(e) => e.currentTarget.play().catch(() => {})} onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }} />
                 <span className="absolute top-2 left-2"><Badge tone="success">Ready to use · 10s</Badge></span>
               </div>
               <p className="text-xs text-ink-faint mt-2 mb-3">Change the name or celebration below — the script updates and he says it.</p>
