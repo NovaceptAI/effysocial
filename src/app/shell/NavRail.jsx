@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { ChevronDown } from 'lucide-react';
+import {
+  ChevronDown, Compass, Wand2, Send, Inbox, Target, FileInput, BarChart3, Settings,
+} from 'lucide-react';
 import { NAV } from '../nav';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useAppAuth } from '../context/AppAuth';
@@ -18,6 +20,11 @@ const GROUP_HINTS = {
   Analytics: 'Read performance',
   Administration: 'Team and settings',
 };
+// One icon per group for the minimized rail — 8 icons instead of ~30.
+const GROUP_ICONS = {
+  Strategy: Compass, Content: Wand2, Publish: Send, Engage: Inbox,
+  Advertise: Target, Convert: FileInput, Analytics: BarChart3, Administration: Settings,
+};
 
 // Accordion: exactly ONE group open at a time — keeps the rail on one screen.
 const STORE_KEY = 'effy.nav.openGroup';
@@ -32,7 +39,7 @@ export default function NavRail({ mobileOpen = false, onNavigate, desktopCollaps
   const isAgency = org?.type === 'agency';
   const home = NAV.find((grp) => grp.group === 'Overview')?.items[0];
   const groups = NAV.filter((grp) => grp.group !== 'Overview');
-  const flatItems = groups.flatMap((grp) => grp.items.filter((item) => (isAgency || !AGENCY_ONLY.has(item.to)) && (!item.adminOnly || authUser?.is_admin)));
+  const [flyout, setFlyout] = useState('');   // minimized-rail group flyout
   // One open group (accordion). The group holding the current page auto-opens
   // on navigation so you always see where you are.
   const groupOfPath = groups.find((grp) =>
@@ -105,25 +112,60 @@ export default function NavRail({ mobileOpen = false, onNavigate, desktopCollaps
         )}
       </div>
 
-      <div className={cn('flex-1 overflow-y-auto px-2 pb-4 space-y-1', desktopCollapsed ? 'hidden md:block' : 'hidden')}>
-        {flatItems.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.end}
-            onClick={onNavigate}
-            title={item.label}
-            aria-label={item.label}
-            className={({ isActive }) => cn(
-              'group mx-auto flex h-11 w-11 items-center justify-center rounded-[14px] transition-all duration-200',
-              isActive
-                ? 'bg-white text-black shadow-[0_10px_24px_-18px_rgba(255,255,255,0.85)]'
-                : 'text-rail-ink hover:bg-white/[0.07] hover:text-white',
-            )}
-          >
-            <item.icon className="w-[19px] h-[19px]" strokeWidth={2} />
-          </NavLink>
-        ))}
+      {/* Minimized rail: ONE icon per group (8 total — fits any screen).
+          Clicking opens a flyout with that group's pages. */}
+      <div className={cn('flex-1 overflow-y-auto px-2 pb-4 pt-1 space-y-1.5', desktopCollapsed ? 'hidden md:block' : 'hidden')}>
+        {groups.map((grp) => {
+          const visibleItems = grp.items.filter((item) => (isAgency || !AGENCY_ONLY.has(item.to)) && (!item.adminOnly || authUser?.is_admin));
+          if (!visibleItems.length) return null;
+          const GIcon = GROUP_ICONS[grp.group] || Compass;
+          const groupActive = visibleItems.some((item) => pathname === item.to || pathname.startsWith(`${item.to}/`));
+          const isFly = flyout === grp.group;
+          return (
+            <div key={grp.group} className="relative">
+              <button
+                onClick={() => setFlyout(isFly ? '' : grp.group)}
+                title={`${grp.group} — ${GROUP_HINTS[grp.group] || ''}`}
+                aria-label={grp.group}
+                className={cn(
+                  'mx-auto flex h-11 w-11 items-center justify-center rounded-[14px] transition-all duration-200',
+                  groupActive
+                    ? 'bg-white text-black shadow-[0_10px_24px_-18px_rgba(255,255,255,0.85)]'
+                    : isFly ? 'bg-white/15 text-white' : 'bg-transparent text-rail-ink hover:bg-white/[0.07] hover:text-white',
+                )}
+              >
+                <GIcon className="w-[19px] h-[19px]" strokeWidth={2} />
+              </button>
+              {isFly && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setFlyout('')} />
+                  <div className="absolute left-full top-0 z-50 ml-2 w-56 rounded-2xl bg-[#241f1d] border border-white/10 shadow-2xl p-1.5">
+                    <p className="px-3 pt-2 pb-1.5 text-[0.65rem] font-bold uppercase tracking-[0.09em] text-rail-muted">{grp.group}</p>
+                    {visibleItems.map((item) => (
+                      <NavLink
+                        key={item.to}
+                        to={item.to}
+                        end={item.end}
+                        onClick={() => { setFlyout(''); onNavigate?.(); }}
+                        className={({ isActive }) => cn(
+                          'flex items-center gap-2.5 rounded-[11px] px-3 py-2 text-sm font-semibold transition',
+                          isActive ? 'bg-white text-black' : 'text-rail-ink hover:bg-white/[0.07] hover:text-white',
+                        )}
+                      >
+                        {({ isActive }) => (
+                          <>
+                            <item.icon className="w-4 h-4 shrink-0" strokeWidth={2} />
+                            <span style={isActive ? { color: '#000' } : undefined}>{item.label}</span>
+                          </>
+                        )}
+                      </NavLink>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       <div className={cn('flex-1 overflow-y-auto px-3 pb-4 space-y-0.5', desktopCollapsed && 'md:hidden')}>
@@ -140,7 +182,7 @@ export default function NavRail({ mobileOpen = false, onNavigate, desktopCollaps
                 onClick={() => toggle(grp.group)}
                 title={GROUP_HINTS[grp.group] || grp.group}
                 className={cn(
-                  'w-full flex items-center gap-1.5 rounded-[10px] px-3 py-2 text-left transition',
+                  'w-full flex items-center gap-1.5 rounded-[10px] px-3 py-2 text-left transition bg-transparent',
                   'text-[0.68rem] font-bold uppercase tracking-[0.09em]',
                   isOpen || groupActive ? 'text-white' : 'text-rail-muted hover:text-rail-ink hover:bg-white/[0.04]',
                 )}

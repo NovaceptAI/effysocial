@@ -210,10 +210,10 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
             <Setting label="Scenes">
               <div className="flex items-center rounded-lg bg-surface2 p-0.5">
                 <button onClick={() => setCount((c) => Math.max(MIN_SCENES, c - 1))}
-                  className="w-7 h-7 rounded-md text-sm font-bold text-ink-soft hover:bg-surface hover:text-ink">−</button>
+                  className="w-7 h-7 rounded-md bg-transparent text-sm font-bold text-ink-soft hover:bg-surface hover:text-ink">−</button>
                 <span className="w-9 text-center text-sm font-extrabold tabular-nums text-ink">{count}</span>
                 <button onClick={() => setCount((c) => Math.min(MAX_SCENES, c + 1))}
-                  className="w-7 h-7 rounded-md text-sm font-bold text-ink-soft hover:bg-surface hover:text-ink">+</button>
+                  className="w-7 h-7 rounded-md bg-transparent text-sm font-bold text-ink-soft hover:bg-surface hover:text-ink">+</button>
               </div>
             </Setting>
             <Setting label="Format">

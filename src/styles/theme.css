@@ -106,13 +106,9 @@ a {
 }
 
 /* Preflight is disabled, so native <button> keeps the browser's ButtonFace
-   (near-white) background — any button without an explicit bg-* class renders
-   as a white slab (e.g. collapsed nav group headers). Reset to transparent;
-   styled buttons set their own backgrounds. */
-.app-root button {
-  background: none;
-  font: inherit;
-}
+   (near-white) background. NOTE: do NOT reset this globally — `.app-root
+   button` outranks Tailwind bg-* utilities and blanks every styled button.
+   Buttons that want no background must set bg-transparent themselves. */
 
 input, select, textarea {
   font-family: var(--font);
