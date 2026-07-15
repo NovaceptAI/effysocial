@@ -74,7 +74,7 @@ export default function AvatarStudio({ onBack }) {
   };
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       <div className="flex items-center gap-3 mb-5">
         <button onClick={onBack} className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-soft hover:text-ink">
           <ArrowLeft className="w-4 h-4" /> Formats
@@ -86,18 +86,18 @@ export default function AvatarStudio({ onBack }) {
         <Badge tone="new">Lipsync</Badge>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid md:grid-cols-2 gap-5 items-stretch">
         {/* 1 — the person */}
-        <div className="bg-surface rounded-2xl shadow-e1 p-5">
-          <h3 className="font-bold text-ink mb-1">1 · The person</h3>
+        <div className="bg-surface rounded-2xl shadow-e1 p-6">
+          <h3 className="font-bold text-ink text-lg mb-1">1 · The person</h3>
           <div className="flex gap-1.5 my-3">
             <button onClick={() => setSource('demo')}
-              className={cn('flex-1 rounded-lg px-3 py-2 text-xs font-bold transition',
+              className={cn('flex-1 rounded-xl px-3 py-2.5 text-sm font-bold transition',
                 source === 'demo' ? 'bg-ink text-white' : 'bg-surface2 text-ink-soft')}>
               Demo avatar
             </button>
             <button onClick={() => setSource('upload')}
-              className={cn('flex-1 rounded-lg px-3 py-2 text-xs font-bold transition',
+              className={cn('flex-1 rounded-xl px-3 py-2.5 text-sm font-bold transition',
                 source === 'upload' ? 'bg-ink text-white' : 'bg-surface2 text-ink-soft')}>
               Upload your own
             </button>
@@ -113,9 +113,9 @@ export default function AvatarStudio({ onBack }) {
               <p className="text-xs text-ink-faint mt-2 mb-3">Change the name or celebration below — the script updates and he says it.</p>
               <div className="flex gap-2">
                 <input value={demoName} onChange={(e) => setDemoName(e.target.value)} placeholder="Name (e.g. Rohan)"
-                  className="flex-1 min-w-0 rounded-lg bg-surface2 px-2.5 py-2 text-xs font-semibold" />
+                  className="flex-1 min-w-0 rounded-xl bg-surface2 px-3.5 py-2.5 text-sm font-semibold" />
                 <select value={festival} onChange={(e) => setFestival(e.target.value)}
-                  className="rounded-lg bg-surface2 px-2.5 py-2 text-xs font-semibold">
+                  className="rounded-xl bg-surface2 px-3.5 py-2.5 text-sm font-semibold">
                   {FESTIVALS.map((f) => <option key={f}>{f}</option>)}
                 </select>
               </div>
@@ -145,34 +145,34 @@ export default function AvatarStudio({ onBack }) {
         </div>
 
         {/* 2 — the speech */}
-        <div className="bg-surface rounded-2xl shadow-e1 p-5">
-          <h3 className="font-bold text-ink mb-1">2 · What they say</h3>
+        <div className="bg-surface rounded-2xl shadow-e1 p-6 flex flex-col">
+          <h3 className="font-bold text-ink text-lg mb-1">2 · What they say</h3>
           <div className="flex gap-1.5 my-3">
             <button onClick={() => setMode('script')}
-              className={cn('flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition',
+              className={cn('flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-bold transition',
                 mode === 'script' ? 'bg-ink text-white' : 'bg-surface2 text-ink-soft')}>
               <Mic className="w-3.5 h-3.5" /> Script + AI voice
             </button>
             <button onClick={() => setMode('audio')}
-              className={cn('flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition',
+              className={cn('flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-bold transition',
                 mode === 'audio' ? 'bg-ink text-white' : 'bg-surface2 text-ink-soft')}>
               <FileAudio className="w-3.5 h-3.5" /> Upload audio
             </button>
           </div>
           {mode === 'script' ? (
             <>
-              <textarea value={script} onChange={(e) => setScript(e.target.value)} rows={4}
+              <textarea value={script} onChange={(e) => setScript(e.target.value)} rows={9}
                 placeholder="Type what they should say… e.g. Namaste! This Diwali, get 20% off on all dental checkups at our clinic."
-                className="w-full rounded-xl bg-surface2 px-3.5 py-2.5 text-sm mb-1" />
+                className="w-full flex-1 min-h-[220px] rounded-xl bg-surface2 px-4 py-3 text-[0.95rem] leading-relaxed mb-1" />
               <p className={cn('text-[0.7rem] mb-2.5', script.trim().split(/\s+/).filter(Boolean).length > 38 ? 'text-warning' : 'text-ink-faint')}>
                 {script.trim().split(/\s+/).filter(Boolean).length} words · lipsync renders ~15s (~38 words max — longer scripts are trimmed)
               </p>
               <div className="flex gap-2">
-                <select value={voice} onChange={(e) => setVoice(e.target.value)} className="flex-1 rounded-lg bg-surface2 px-2.5 py-2 text-xs font-semibold">
+                <select value={voice} onChange={(e) => setVoice(e.target.value)} className="flex-1 rounded-xl bg-surface2 px-3 py-2.5 text-sm font-semibold">
                   <option value="">Auto voice</option>
                   {voices.map((v) => <option key={v.key} value={v.key}>{v.name} · {v.lang}</option>)}
                 </select>
-                <select value={language} onChange={(e) => setLanguage(e.target.value)} className="rounded-lg bg-surface2 px-2.5 py-2 text-xs font-semibold">
+                <select value={language} onChange={(e) => setLanguage(e.target.value)} className="rounded-xl bg-surface2 px-3 py-2.5 text-sm font-semibold">
                   {['English', 'Hindi', 'Hinglish', 'Marathi'].map((l) => <option key={l}>{l}</option>)}
                 </select>
               </div>
