@@ -193,7 +193,7 @@ export default function NavRail({ mobileOpen = false, onNavigate, desktopCollaps
                 title={GROUP_HINTS[grp.group] || grp.group}
                 className={cn(
                   'w-full flex items-center gap-1.5 rounded-[10px] px-3 py-2 text-left transition bg-transparent',
-                  'text-[0.68rem] font-bold uppercase tracking-[0.09em]',
+                  'text-[0.95rem] font-extrabold tracking-tight',
                   isOpen || groupActive ? 'text-white' : 'text-rail-muted hover:text-rail-ink hover:bg-white/[0.04]',
                 )}
               >
@@ -210,7 +210,7 @@ export default function NavRail({ mobileOpen = false, onNavigate, desktopCollaps
                         end={item.end}
                         onClick={onNavigate}
                         className={({ isActive }) => cn(
-                          'group relative flex items-center gap-2.5 rounded-[11px] px-2.5 py-[7px] text-sm font-semibold transition-all duration-200',
+                          'group relative flex items-center gap-2.5 rounded-[11px] px-2.5 py-[7px] text-[0.82rem] font-medium transition-all duration-200',
                           isActive
                             ? 'bg-white text-black shadow-[0_10px_24px_-18px_rgba(255,255,255,0.85)]'
                             : 'text-rail-ink hover:bg-white/[0.055] hover:text-white',
