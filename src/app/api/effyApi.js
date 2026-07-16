@@ -55,6 +55,28 @@ export const effyApi = {
   },
   avatarStatus: (payload) =>
     http('/studio/avatar/status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
+  // Personalized dealer avatars (identity-locked)
+  listDealers: (workspaceId) => http(`/dealer-avatars?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.dealers),
+  createDealer: (workspaceId, { photo, ...fields }) => {
+    const fd = new FormData();
+    fd.append('workspace', workspaceId);
+    fd.append('photo', photo);
+    Object.entries(fields).forEach(([k, v]) => v != null && fd.append(k, v));
+    return http('/dealer-avatars', { method: 'POST', body: fd }).then((d) => d.dealer);
+  },
+  getDealer: (id) => http(`/dealer-avatars/${id}`).then((d) => d.dealer),
+  updateDealer: (id, payload) =>
+    http(`/dealer-avatars/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.dealer),
+  dealerReference: (id) => http(`/dealer-avatars/${id}/reference`, { method: 'POST' }).then((d) => d.dealer),
+  dealerPose: (id, key) =>
+    http(`/dealer-avatars/${id}/pose`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key }) }).then((d) => d.dealer),
+  dealerLock: (id, locked) =>
+    http(`/dealer-avatars/${id}/lock`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ locked }) }).then((d) => d.dealer),
+  dealerVoicePreview: (id, text) =>
+    http(`/dealer-avatars/${id}/voice-preview`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) }),
+  dealerRender: (id) => http(`/dealer-avatars/${id}/render`, { method: 'POST' }).then((d) => d.dealer),
+  dealerExports: (id) => http(`/dealer-avatars/${id}/exports`, { method: 'POST' }),
+
   publishReelStart: (payload) =>
     http('/publish/instagram-reel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
   publishReelFinish: (payload) =>

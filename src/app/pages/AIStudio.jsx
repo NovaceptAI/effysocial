@@ -5,11 +5,12 @@ import {
   Sparkles, Smartphone, Monitor, RefreshCw, Image as ImageIcon,
   Check, FileText, Film, Images, Square, MessageCircle, Video, Briefcase,
   CalendarPlus, Send, Flame, Swords, X, ArrowRight, ArrowLeft, PenLine, Palette,
-  SlidersHorizontal, Search, Clapperboard, Mic, Layers, UserSquare,
+  SlidersHorizontal, Search, Clapperboard, Mic, Layers, UserSquare, Users,
 } from 'lucide-react';
 import Storyboard from '../components/Storyboard';
 import ShareRow from '../components/ShareRow';
 import AvatarStudio from '../components/AvatarStudio';
+import DealerAvatarStudio from '../components/DealerAvatarStudio';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
 import { Button, Badge, Pacing } from '../../ui';
@@ -27,6 +28,7 @@ const FORMATS = [
   { id: 'yt_story', label: 'YouTube Story', platform: 'youtube', icon: Clapperboard, aspect: '16 / 9', size: 'Multi-scene story', group: 'YouTube', storyboard: true, thumb: 'yt_short' },
   { id: 'wa_promo', label: 'WhatsApp', platform: 'whatsapp', icon: MessageCircle, aspect: '1 / 1', size: '1080 × 1080', group: 'WhatsApp' },
   { id: 'avatar_video', label: 'AI Avatar Video', platform: 'instagram', icon: UserSquare, aspect: '9 / 16', size: 'Talking-head lipsync', group: 'Avatar', avatar: true, thumb: 'ig_reel' },
+  { id: 'dealer_avatar', label: 'Personalized Avatar Video', platform: 'whatsapp', icon: Users, aspect: '16 / 9', size: 'Identity-locked dealers', group: 'Avatar', dealer: true, thumb: 'fb_post' },
 ];
 const FILTERS = ['Popular', 'Instagram', 'Facebook', 'LinkedIn', 'YouTube', 'WhatsApp', 'Avatar'];
 const LANGS = ['English', 'Hindi', 'Hinglish', 'Marathi'];
@@ -243,6 +245,10 @@ export default function AIStudio() {
 
   if (format.avatar) {
     return <AvatarStudio onBack={() => setFormat(null)} />;
+  }
+
+  if (format.dealer) {
+    return <DealerAvatarStudio onBack={() => setFormat(null)} />;
   }
 
   // Storyboard formats get a dedicated multi-scene experience.
