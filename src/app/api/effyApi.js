@@ -74,6 +74,7 @@ export const effyApi = {
     http(`/dealer-avatars/${id}/lock`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ locked }) }).then((d) => d.dealer),
   dealerVoicePreview: (id, text) =>
     http(`/dealer-avatars/${id}/voice-preview`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) }),
+  dealerCompliance: (id) => http(`/dealer-avatars/${id}/compliance`, { method: 'POST' }),
   dealerRender: (id) => http(`/dealer-avatars/${id}/render`, { method: 'POST' }).then((d) => d.dealer),
   dealerExports: (id) => http(`/dealer-avatars/${id}/exports`, { method: 'POST' }),
 

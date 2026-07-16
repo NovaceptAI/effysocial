@@ -30,6 +30,7 @@ export default function DealerAvatarStudio({ onBack }) {
   const [err, setErr] = useState('');
   const [previewAudio, setPreviewAudio] = useState('');
   const [exports, setExports] = useState(null);
+  const [compliance, setCompliance] = useState(null);
   const photoRef = useRef(null);
   const [form, setForm] = useState({ name: '', shop: '', city: '', language: 'English' });
   const [photoFile, setPhotoFile] = useState(null);
@@ -118,7 +119,7 @@ export default function DealerAvatarStudio({ onBack }) {
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {dealers.map((d) => (
-              <button key={d.id} onClick={() => { setSelId(d.id); setExports(null); setPreviewAudio(''); }}
+              <button key={d.id} onClick={() => { setSelId(d.id); setExports(null); setPreviewAudio(''); setCompliance(null); }}
                 className="text-left rounded-2xl bg-surface shadow-e1 hover:shadow-e3 hover:-translate-y-0.5 transition-all p-4">
                 <div className="flex items-center gap-3">
                   <span className="w-14 h-14 rounded-xl bg-surface2 overflow-hidden shrink-0">
@@ -269,10 +270,63 @@ export default function DealerAvatarStudio({ onBack }) {
         </div>
       </Card>
 
+      {/* ②b Full script & compliance */}
+      <Card className="p-6 mb-5">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <h3 className="font-bold text-ink text-lg">③ Full script & compliance</h3>
+          <Button variant="secondary" size="sm" disabled={!!busy}
+            onClick={() => run('compliance', async () => setCompliance(await effyApi.dealerCompliance(dealer.id)))}>
+            {busy === 'compliance' ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+            Run compliance check
+          </Button>
+        </div>
+        {!compliance ? (
+          <p className="text-sm text-ink-faint">Assembles the exact script the video will speak and show, then checks it against your Brand Brain prohibited words, risky-claim rules, slot lengths and an ASCI-style AI review.</p>
+        ) : (
+          <>
+            <div className="overflow-x-auto mb-4">
+              <table className="w-full text-sm min-w-[520px]">
+                <thead>
+                  <tr className="text-left text-xs font-bold text-ink-faint uppercase tracking-wide border-b border-line">
+                    <th className="py-2 pr-3">Slot</th><th className="py-2 pr-3">When</th><th className="py-2">Content</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {compliance.script.map((s) => (
+                    <tr key={s.slot} className="border-b border-line/60 last:border-0 align-top">
+                      <td className="py-2.5 pr-3 font-bold text-ink whitespace-nowrap">{s.slot}</td>
+                      <td className="py-2.5 pr-3 text-xs text-ink-faint whitespace-nowrap">{s.window}</td>
+                      <td className={cn('py-2.5 text-ink-soft', !s.text && 'text-warning italic')}>{s.text || 'empty — fill it in section ②'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex items-center gap-2 mb-3">
+              <Badge tone={compliance.passed === compliance.total ? 'success' : 'warning'}>
+                {compliance.passed}/{compliance.total} checks passed
+              </Badge>
+              <span className="text-xs text-ink-faint">Edit the dialogues in section ② and re-run.</span>
+            </div>
+            <div className="space-y-1.5">
+              {compliance.checks.map((c) => (
+                <div key={c.key} className={cn('flex items-start gap-2.5 rounded-xl px-3 py-2', c.pass ? 'bg-success-soft/50' : 'bg-warning-soft/60')}>
+                  {c.pass ? <Check className="w-4 h-4 text-success shrink-0 mt-0.5" /> : <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />}
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold text-ink">{c.label}</span>
+                    <span className="block text-xs text-ink-faint">{c.notes}</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </Card>
+
       {/* ③ Render & ④ Export */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-          <h3 className="font-bold text-ink text-lg">③ Personalized video</h3>
+          <h3 className="font-bold text-ink text-lg">④ Personalized video</h3>
           <div className="flex gap-2">
             <Button onClick={() => run('render', () => effyApi.dealerRender(dealer.id))} disabled={!dealer.locked || !!busy}>
               {busy === 'render' ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Film className="w-4 h-4" />}
