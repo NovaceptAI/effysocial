@@ -1,6 +1,7 @@
 # Ad Films — Client Film Mode: Final Spec
 
-_Finalized 2026-07-19. Planning document — implementation pending go-ahead._
+_Finalized 2026-07-19. **All three phases implemented and deployed 2026-07-19** — pending user review._
+_Phase notes: voice casting uses the shared library's own preview MP3s (auditioning is free); adopted voices are stored as raw `id:` keys on the film; reference-footage grading comes from a mid-frame vision pass and overrides logo-derived mood; end cards composite the real logo asset when one is uploaded; dealer versions rebuild only the end card so extra dealers cost nothing._
 _Origin: the Dr. Fixit "Roof Ka Rakshak" production (July 2026), done manually via scripts; this productizes that exact pipeline._
 
 ## 1. Positioning
@@ -122,10 +123,10 @@ Client, product, target duration, **language: English / Hinglish / Hindi** (Hing
 
 **Explicitly out of scope for now:** synthetic SFX via ElevenLabs sound-generation (API key lacks the permission; wasn't needed — native Veo audio + transplants covered it).
 
-## 7. Open decisions (need user call)
+## 7. Decisions (settled)
 
-1. **Veo quota**: separate `EFFY_LIMIT_FILM_VEO_MONTHLY` for client work vs sharing the global 20/month. **Recommendation: separate** — client jobs are billable and must never compete with internal testing.
-2. **Budget cap per film**: hard block at cap vs warn-and-allow for admin. **Recommendation: warn-and-allow for admin, hard block for other users.**
+1. **Veo quota**: separate — `EFFY_LIMIT_FILM_VEO_MONTHLY=60` (env, set on the server). Film renders log as kind `film_veo` and never touch the global testing quota.
+2. **Budget cap per film**: required, default $10/film. Hard 402 block for regular users; admins get warned and allowed. Only admins can raise a film's budget.
 
 ## 8. Known costs (from the Dr. Fixit production, for the step-card tags)
 

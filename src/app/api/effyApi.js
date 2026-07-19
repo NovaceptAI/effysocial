@@ -107,6 +107,11 @@ export const effyApi = {
     http(`/films/${id}/vo`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload || {}) }),
   filmAssemble: (id) => http(`/films/${id}/assemble`, { method: 'POST' }).then((d) => d.film),
   filmExports: (id) => http(`/films/${id}/exports`, { method: 'POST' }).then((d) => d.film),
+  filmVoiceSearch: (q) => http(`/films/voices/search?q=${encodeURIComponent(q)}`).then((d) => d.voices),
+  filmVoiceAdopt: (id, payload) =>
+    http(`/films/${id}/voice-adopt`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.film),
+  filmPersonalize: (id, dealers) =>
+    http(`/films/${id}/personalize`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dealers }) }),
 
   publishReelStart: (payload) =>
     http('/publish/instagram-reel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),

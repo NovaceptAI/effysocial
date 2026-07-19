@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Clapperboard, Palette, FileText, Image as ImageIcon, Film, Mic, Layers,
-  Send, Plus, RefreshCw, Trash2, Play, ArrowRight, Download,
+  Send, Plus, RefreshCw, Trash2, Play, ArrowRight, Download, Link as LinkIcon,
 } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
@@ -177,9 +177,15 @@ export default function Films() {
                     {f.status === 'delivered' ? 'Open' : 'Resume'}
                   </Button>
                   {f.status === 'delivered' && master && (
-                    <a href={master} download className="inline-flex items-center gap-1 text-xs font-semibold text-ink-soft hover:text-ink">
-                      <Download className="w-3.5 h-3.5" /> Master
-                    </a>
+                    <>
+                      <a href={master} download className="inline-flex items-center gap-1 text-xs font-semibold text-ink-soft hover:text-ink">
+                        <Download className="w-3.5 h-3.5" /> Master
+                      </a>
+                      <button type="button" onClick={() => navigator.clipboard?.writeText(master)}
+                        className="bg-transparent inline-flex items-center gap-1 text-xs font-semibold text-ink-soft hover:text-ink">
+                        <LinkIcon className="w-3.5 h-3.5" /> Copy link
+                      </button>
+                    </>
                   )}
                   <button type="button" title="Delete film"
                     onClick={() => window.confirm(`Delete "${f.title}"? Renders already paid for will be removed from this list.`) && remove.mutate(f.id)}

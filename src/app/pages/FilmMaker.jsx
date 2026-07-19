@@ -76,6 +76,9 @@ export default function FilmMaker() {
   const [notice, setNotice] = useState(null); // {kind:'warn'|'error', text}
   const fileRef = useRef(null);
   const [editDrafts, setEditDrafts] = useState({}); // sceneId → edit text
+  const [castQuery, setCastQuery] = useState('');
+  const [castResults, setCastResults] = useState([]);
+  const [dealerText, setDealerText] = useState('');
 
   useEffect(() => { const t = setTimeout(() => setLit(true), 30); return () => clearTimeout(t); }, []);
 
@@ -110,6 +113,9 @@ export default function FilmMaker() {
 
   const pickDirection = (field, value) =>
     patch.mutate({ direction: { [field]: { value, userSet: true } } });
+
+  const runCastSearch = () =>
+    run('cast', async () => setCastResults(await effyApi.filmVoiceSearch(castQuery || 'indian english')));
 
   // Poll any scene that is animating.
   useEffect(() => {
@@ -466,9 +472,14 @@ export default function FilmMaker() {
               before the mix, not after.
             </p>
             <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16, flexWrap: 'wrap' }}>
-              <select value={film.voice || ''} onChange={(e) => patch.mutate({ voice: e.target.value })}
+              <select value={film.voice?.startsWith('id:') ? '' : (film.voice || '')}
+                onChange={(e) => patch.mutate({ voice: e.target.value })}
                 style={{ ...inputStyle, width: 260 }}>
-                <option value="">Default for {film.language}</option>
+                <option value="">
+                  {film.voice?.startsWith('id:')
+                    ? `${film.direction?.voiceName || 'Adopted voice'} (from library)`
+                    : `Default for ${film.language}`}
+                </option>
                 {voices.map((v) => (
                   <option key={v.key} value={v.key}>{v.name} — {v.lang} ({v.gender})</option>
                 ))}
@@ -483,6 +494,39 @@ export default function FilmMaker() {
               })}>
                 {busy === 'vo' ? <RefreshCw size={15} className="animate-spin" /> : <Mic size={15} />} Generate all lines
               </Btn>
+            </div>
+            {/* Casting: search the ElevenLabs shared library — previews are the
+                library's own MP3s, so auditioning costs nothing. */}
+            <div style={{ background: T.raised, borderRadius: 12, padding: 14, marginBottom: 16 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: T.dim, letterSpacing: '.05em', marginBottom: 10 }}>
+                FIND MORE VOICES
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                <input value={castQuery} onChange={(e) => setCastQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && runCastSearch()}
+                  placeholder='e.g. "hinglish", "hindi ad", "indian english female"'
+                  style={{ ...inputStyle, background: T.surface }} />
+                <Btn kind="quiet" disabled={busy === 'cast'} onClick={runCastSearch}>
+                  {busy === 'cast' ? <RefreshCw size={14} className="animate-spin" /> : 'Search'}
+                </Btn>
+              </div>
+              {castResults.map((v) => (
+                <div key={v.voiceId} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0', borderTop: `1px solid ${T.border}` }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{v.name}</div>
+                    <div style={{ fontSize: 11, color: T.dim }}>{[v.gender, v.accent, v.useCase].filter(Boolean).join(' · ')} · {(v.usedBy || 0).toLocaleString()} users</div>
+                  </div>
+                  {v.previewUrl && <audio src={v.previewUrl} controls preload="none" style={{ height: 26, width: 170 }} />}
+                  <Btn kind="quiet" style={{ padding: '5px 10px', fontSize: 12 }} disabled={!!busy}
+                    onClick={() => run('adopt', async () => {
+                      const f = await effyApi.filmVoiceAdopt(id, { voiceId: v.voiceId, ownerId: v.ownerId, name: v.name });
+                      qc.setQueryData(['film', id], f);
+                      setNotice({ kind: 'warn', text: `${v.name} is now this film's narrator — regenerate the lines below.` });
+                    })}>
+                    Use
+                  </Btn>
+                </div>
+              ))}
             </div>
             {scenes.filter((s) => s.vo).length > 0 && (
               <div style={{ display: 'grid', gap: 8 }}>
@@ -579,12 +623,55 @@ export default function FilmMaker() {
                       <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 10, background: T.raised, borderRadius: 10, padding: '10px 14px' }}>
                         <Play size={14} color={T.dim} />
                         <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>{label}</span>
+                        <button type="button" title="Copy link"
+                          onClick={() => { navigator.clipboard?.writeText(film.renders[k]); setNotice({ kind: 'warn', text: `${label} link copied.` }); }}
+                          style={{ background: 'none', color: T.dim, cursor: 'pointer', fontSize: 12.5, fontWeight: 600 }}>
+                          Copy link
+                        </button>
                         <a href={film.renders[k]} target="_blank" rel="noreferrer" style={{ color: T.coral, fontSize: 12.5, fontWeight: 600, display: 'inline-flex', gap: 5, alignItems: 'center' }}>
                           <Download size={13} /> Download
                         </a>
                       </div>
                     )
                   ))}
+                </div>
+
+                {/* Dealer personalization: scene renders are reused — each
+                    variant only rebuilds the end card, so extra dealers are free. */}
+                <div style={{ background: T.raised, borderRadius: 12, padding: 14, marginTop: 16 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: T.dim, letterSpacing: '.05em', marginBottom: 6 }}>
+                    DEALER VERSIONS
+                  </div>
+                  <p style={{ fontSize: 11.5, color: T.dim, marginBottom: 10 }}>
+                    One dealer per line as <em>Name, Shop, City</em>. Each gets the same film with a personalized
+                    end card — no extra AI spend (up to 10 per run).
+                  </p>
+                  <textarea value={dealerText} onChange={(e) => setDealerText(e.target.value)} rows={3}
+                    placeholder={'Sharma Hardware, Sharma Traders, Pune\nGupta Paints, Gupta & Sons, Nagpur'}
+                    style={{ ...inputStyle, background: T.surface, resize: 'vertical', marginBottom: 8 }} />
+                  <Btn kind="quiet" disabled={busy === 'pers' || !dealerText.trim()} onClick={() => run('pers', async () => {
+                    const dealers = dealerText.split('\n').map((l) => {
+                      const [name, shop, city] = l.split(',').map((x) => x.trim());
+                      return name ? { name, shop: shop || '', city: city || '' } : null;
+                    }).filter(Boolean);
+                    const r = await effyApi.filmPersonalize(id, dealers);
+                    qc.setQueryData(['film', id], r.film);
+                  })}>
+                    {busy === 'pers' ? <RefreshCw size={14} className="animate-spin" /> : <Layers size={14} />}
+                    Build dealer versions
+                  </Btn>
+                  {(film.renders?.personalized || []).length > 0 && (
+                    <div style={{ display: 'grid', gap: 6, marginTop: 10 }}>
+                      {film.renders.personalized.map((p) => (
+                        <div key={p.media} style={{ display: 'flex', alignItems: 'center', gap: 10, background: T.surface, borderRadius: 8, padding: '8px 12px' }}>
+                          <span style={{ fontSize: 12.5, fontWeight: 600, flex: 1 }}>{p.name}</span>
+                          <a href={p.url} target="_blank" rel="noreferrer" style={{ color: T.coral, fontSize: 12, fontWeight: 600, display: 'inline-flex', gap: 4, alignItems: 'center' }}>
+                            <Download size={12} /> Download
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </>
             )}
