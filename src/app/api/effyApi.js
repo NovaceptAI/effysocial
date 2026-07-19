@@ -91,6 +91,8 @@ export const effyApi = {
     fd.append('file', file);
     return http(`/films/${id}/asset`, { method: 'POST', body: fd });
   },
+  filmDirectionOptions: (id) =>
+    http(`/films/${id}/direction-options`, { method: 'POST' }).then((d) => d.film),
   filmScript: (id, payload) =>
     http(`/films/${id}/script`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload || {}) }).then((d) => d.film),
   filmSceneUpdate: (id, sceneId, payload) =>
