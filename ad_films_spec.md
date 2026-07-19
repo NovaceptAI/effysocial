@@ -128,9 +128,11 @@ Client, product, target duration, **language: English / Hinglish / Hindi** (Hing
 1. **Veo quota**: separate — `EFFY_LIMIT_FILM_VEO_MONTHLY=60` (env, set on the server). Film renders log as kind `film_veo` and never touch the global testing quota.
 2. **Budget cap per film**: required, default $10/film. Hard 402 block for regular users; admins get warned and allowed. Only admins can raise a film's budget.
 
-## 8. Known costs (from the Dr. Fixit production, for the step-card tags)
+## 8. Costs (verified against published list prices, 2026-07-19)
 
-- Still generation/edit: ~$0.04–0.05 per image (gemini-3.1-flash-image / Imagen).
-- Veo 3.1 Fast i2v: ~$0.15/second → ~$0.60 per 4s scene take.
-- TTS: negligible marginal (ElevenLabs subscription quota).
-- A full 20s film, all revisions included, landed at ~$4.10 in API spend.
+- Still generation/edit: **$0.067 per 1K image** (gemini-3.1-flash-image list price) — the budget gate and spend counter use this exact figure; step cards show "~$0.07".
+- Veo 3.1 Fast i2v: **$0.15/second, audio included** → $0.60 per 4s scene take. Failed renders are refunded on the film's spend counter (Google doesn't bill failed generations).
+- TTS: $0 marginal (ElevenLabs subscription quota); excluded from film budgets by design.
+- Not counted (fractions of a cent per film): Groq script drafts, Gemini vision asset analysis, audio-QA listen passes.
+- Ground truth remains the Google Cloud billing console — the app tracks list-price estimates, labelled as such; reconcile monthly against the invoice.
+- Reference: the Dr. Fixit 20s film, all revisions included, ≈ $4.20 at these rates.

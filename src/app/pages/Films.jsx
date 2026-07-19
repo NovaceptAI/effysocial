@@ -14,7 +14,7 @@ import { Card, PageHeader, Button, Badge } from '../../ui';
 const STEPS = [
   { icon: Palette, title: 'Assets & Direction', text: 'Upload logo, pack shots, references. AI reads your brand colors and suggests audience, setting and concept.', cost: 'free' },
   { icon: FileText, title: 'Brief & Script', text: 'AI drafts the beat map in English, Hinglish or Hindi. Every line editable.', cost: 'free' },
-  { icon: ImageIcon, title: 'Stills', text: 'One matched still per scene. Regenerate and edit until every frame is right — this is the cheap zone.', cost: '~$0.05 / image' },
+  { icon: ImageIcon, title: 'Stills', text: 'One matched still per scene. Regenerate and edit until every frame is right — this is the cheap zone.', cost: '~$0.07 / image' },
   { icon: Film, title: 'Animate', text: 'Approved stills come alive with Veo. Locked until every still is approved. Each clip is auto-checked for stray voices.', cost: '~$0.60 / scene' },
   { icon: Mic, title: 'Voice', text: 'Pick the narrator, generate every line, catch overruns before the mix.', cost: 'free' },
   { icon: Layers, title: 'Assemble', text: 'Beat-timed voiceover over scene ambience, brand end card, final audio QA.', cost: 'free' },
