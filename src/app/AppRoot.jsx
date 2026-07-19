@@ -41,6 +41,8 @@ import WorkflowRunner from './pages/WorkflowRunner';
 import Admin from './pages/Admin';
 import CampaignLaunch from './pages/CampaignLaunch';
 import LandingPages from './pages/LandingPages';
+import Films from './pages/Films';
+import FilmMaker from './pages/FilmMaker';
 import Tracking from './pages/Tracking';
 import Followups from './pages/Followups';
 import BioPages from './pages/BioPages';
@@ -60,7 +62,7 @@ const BUILT = new Set([
   '/app/inbox', '/app/reviews', '/app/analytics/organic', '/app/reports',
   '/app/integrations', '/app/team',
   '/app/plan', '/app/trends', '/app/competitors', '/app/listening',
-  '/app/ideas', '/app/media', '/app/templates',
+  '/app/ideas', '/app/media', '/app/templates', '/app/films',
   '/app/billing', '/app/settings', '/app/comments', '/app/engage-leads',
   '/app/pipeline', '/app/forms', '/app/ads', '/app/playbooks', '/app/launch', '/app/landing', '/app/tracking',
   '/app/followups', '/app/bio',
@@ -83,6 +85,7 @@ export default function AppRoot() {
             <Route path="campaigns/:id" element={<CampaignWorkspace />} />
             <Route path="brand" element={<BrandBrain />} />
             <Route path="studio" element={<AIStudio />} />
+            <Route path="films" element={<Films />} />
             <Route path="calendar" element={<Calendar />} />
             <Route path="scheduled" element={<Scheduled />} />
             <Route path="approvals" element={<Approvals />} />
@@ -127,6 +130,7 @@ export default function AppRoot() {
             ))}
             <Route path="*" element={<ModulePlaceholder />} />
           </Route>
+          <Route path="films/:id" element={<FilmMaker />} />
         </Routes>
       </WorkspaceProvider>
     </QueryClientProvider>

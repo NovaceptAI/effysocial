@@ -78,6 +78,36 @@ export const effyApi = {
   dealerRender: (id) => http(`/dealer-avatars/${id}/render`, { method: 'POST' }).then((d) => d.dealer),
   dealerExports: (id) => http(`/dealer-avatars/${id}/exports`, { method: 'POST' }),
 
+  // Ad Films (client-film mode) — gated production pipeline
+  listFilms: (workspaceId) => http(`/films?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.films),
+  createFilm: (payload) =>
+    http('/films', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.film),
+  getFilm: (id) => http(`/films/${id}`).then((d) => d.film),
+  updateFilm: (id, payload) =>
+    http(`/films/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.film),
+  deleteFilm: (id) => http(`/films/${id}`, { method: 'DELETE' }),
+  filmAsset: (id, file) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    return http(`/films/${id}/asset`, { method: 'POST', body: fd });
+  },
+  filmScript: (id, payload) =>
+    http(`/films/${id}/script`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload || {}) }).then((d) => d.film),
+  filmSceneUpdate: (id, sceneId, payload) =>
+    http(`/films/${id}/scenes/${sceneId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.scene),
+  filmStill: (id, sceneId, payload) =>
+    http(`/films/${id}/scenes/${sceneId}/still`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload || {}) }),
+  filmApprove: (id, sceneId, approved) =>
+    http(`/films/${id}/scenes/${sceneId}/approve`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ approved }) }),
+  filmAnimate: (id, sceneId) =>
+    http(`/films/${id}/scenes/${sceneId}/animate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) }),
+  filmAnimateStatus: (id, sceneId) =>
+    http(`/films/${id}/scenes/${sceneId}/animate/status`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) }),
+  filmVo: (id, payload) =>
+    http(`/films/${id}/vo`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload || {}) }),
+  filmAssemble: (id) => http(`/films/${id}/assemble`, { method: 'POST' }).then((d) => d.film),
+  filmExports: (id) => http(`/films/${id}/exports`, { method: 'POST' }).then((d) => d.film),
+
   publishReelStart: (payload) =>
     http('/publish/instagram-reel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
   publishReelFinish: (payload) =>
