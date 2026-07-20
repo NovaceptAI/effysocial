@@ -78,6 +78,21 @@ export const effyApi = {
   dealerRender: (id) => http(`/dealer-avatars/${id}/render`, { method: 'POST' }).then((d) => d.dealer),
   dealerExports: (id) => http(`/dealer-avatars/${id}/exports`, { method: 'POST' }),
 
+  // EffyCharacters — default lip-sync speakers
+  listCharacters: (workspaceId) => http(`/characters?workspace=${encodeURIComponent(workspaceId)}`),
+  createCharacter: (workspaceId, { photo, video, ...fields }) => {
+    const fd = new FormData();
+    fd.append('workspace', workspaceId);
+    if (photo) fd.append('photo', photo);
+    if (video) fd.append('video', video);
+    Object.entries(fields).forEach(([k, v]) => v != null && fd.append(k, v));
+    return http('/characters', { method: 'POST', body: fd }).then((d) => d.character);
+  },
+  characterStatus: (id) => http(`/characters/${id}/status`, { method: 'POST' }),
+  deleteCharacter: (id) => http(`/characters/${id}`, { method: 'DELETE' }),
+  characterSpeak: (payload) =>
+    http('/characters/speak', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
+
   // Ad Films (client-film mode) — gated production pipeline
   listFilms: (workspaceId) => http(`/films?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.films),
   createFilm: (payload) =>

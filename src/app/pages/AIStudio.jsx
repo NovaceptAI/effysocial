@@ -11,6 +11,7 @@ import Storyboard from '../components/Storyboard';
 import ShareRow from '../components/ShareRow';
 import AvatarStudio from '../components/AvatarStudio';
 import DealerAvatarStudio from '../components/DealerAvatarStudio';
+import CharactersStudio from '../components/CharactersStudio';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
 import { Button, Badge, Pacing } from '../../ui';
@@ -29,6 +30,7 @@ const FORMATS = [
   { id: 'wa_promo', label: 'WhatsApp', platform: 'whatsapp', icon: MessageCircle, aspect: '1 / 1', size: '1080 × 1080', group: 'WhatsApp' },
   { id: 'avatar_video', label: 'AI Avatar Video', platform: 'instagram', icon: UserSquare, aspect: '9 / 16', size: 'Talking-head lipsync', group: 'Avatar', avatar: true, thumb: 'ig_reel' },
   { id: 'dealer_avatar', label: 'Personalized Avatar Video', platform: 'whatsapp', icon: Users, aspect: '16 / 9', size: 'Identity-locked dealers', group: 'Avatar', dealer: true, thumb: 'fb_post' },
+  { id: 'characters', label: 'EffyCharacters', platform: 'instagram', icon: UserSquare, aspect: '9 / 16', size: 'Lip-sync speakers', group: 'Avatar', characters: true, thumb: 'ig_reel' },
 ];
 const FILTERS = ['Popular', 'Instagram', 'Facebook', 'LinkedIn', 'YouTube', 'WhatsApp', 'Avatar'];
 const LANGS = ['English', 'Hindi', 'Hinglish', 'Marathi'];
@@ -47,6 +49,41 @@ function scoreTone(v, invert) {
   const good = invert ? v < 30 : v >= 80;
   const mid = invert ? v < 60 : v >= 60;
   return good ? 'success' : mid ? 'warning' : 'error';
+}
+
+function SocialPlatformIcon({ platform, className = 'w-4 h-4' }) {
+  const common = {
+    className,
+    viewBox: '0 0 24 24',
+    fill: 'currentColor',
+    'aria-hidden': true,
+  };
+
+  if (platform === 'instagram') {
+    return (
+      <svg {...common} fill="none" stroke="currentColor" strokeWidth="2">
+        <rect x="3" y="3" width="18" height="18" rx="5" />
+        <circle cx="12" cy="12" r="4" />
+        <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+      </svg>
+    );
+  }
+  if (platform === 'facebook') {
+    return <svg {...common}><path d="M13.7 22v-9h3l.45-3.5H13.7V7.26c0-1.01.28-1.7 1.74-1.7h1.86V2.43c-.32-.04-1.43-.14-2.72-.14-2.7 0-4.55 1.65-4.55 4.68V9.5H7v3.5h3.03v9h3.67Z" /></svg>;
+  }
+  if (platform === 'linkedin') {
+    return <svg {...common}><path d="M5.34 7.67H2.13V22h3.21V7.67ZM3.73 2A1.87 1.87 0 1 0 3.73 5.74 1.87 1.87 0 0 0 3.73 2ZM22 13.78c0-4.31-2.3-6.32-5.37-6.32-2.47 0-3.58 1.36-4.2 2.32V7.67H9.22V22h3.21v-7.1c0-1.87.36-3.69 2.68-3.69 2.29 0 2.32 2.14 2.32 3.81V22h3.21v-7.87L22 13.78Z" /></svg>;
+  }
+  if (platform === 'twitter') {
+    return <svg {...common}><path d="M18.9 2H22l-6.77 7.74L23.2 22h-6.24l-4.89-6.39L6.48 22H3.36l7.26-8.3L2.98 2h6.4l4.42 5.84L18.9 2Zm-1.1 17.84h1.72L8.44 4.05H6.6L17.8 19.84Z" /></svg>;
+  }
+  if (platform === 'youtube') {
+    return <svg {...common}><path d="M23.5 6.2a3.02 3.02 0 0 0-2.13-2.14C19.5 3.55 12 3.55 12 3.55s-7.5 0-9.37.51A3.02 3.02 0 0 0 .5 6.2 31.5 31.5 0 0 0 0 12a31.5 31.5 0 0 0 .5 5.8 3.02 3.02 0 0 0 2.13 2.14c1.87.51 9.37.51 9.37.51s7.5 0 9.37-.51a3.02 3.02 0 0 0 2.13-2.14A31.5 31.5 0 0 0 24 12a31.5 31.5 0 0 0-.5-5.8ZM9.6 15.6V8.4l6.23 3.6-6.23 3.6Z" /></svg>;
+  }
+  if (platform === 'whatsapp') {
+    return <svg {...common}><path d="M20.52 3.48A11.8 11.8 0 0 0 1.96 17.71L.29 23.8l6.23-1.63A11.78 11.78 0 0 0 12 23.57h.01A11.8 11.8 0 0 0 20.52 3.48ZM12 21.58a9.75 9.75 0 0 1-4.97-1.36l-.36-.21-3.7.97.99-3.61-.23-.37A9.8 9.8 0 1 1 12 21.58Zm5.38-7.34c-.3-.15-1.75-.86-2.02-.96-.27-.1-.47-.15-.67.15-.2.3-.76.96-.93 1.16-.17.2-.34.22-.64.07-1.74-.87-2.88-1.55-4.03-3.53-.3-.52.3-.48.87-1.6.1-.2.05-.37-.02-.52-.08-.15-.67-1.61-.91-2.21-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.21 3.08c.15.2 2.1 3.2 5.08 4.49.71.3 1.27.49 1.7.63.72.23 1.37.2 1.88.12.58-.08 1.75-.72 2-1.41.24-.7.24-1.3.17-1.42-.07-.12-.27-.2-.56-.35Z" /></svg>;
+  }
+  return <Sparkles className={className} aria-hidden="true" />;
 }
 
 /* ───────────────────────── Format chooser ───────────────────────── */
@@ -81,14 +118,25 @@ function FormatChooser({ onPick }) {
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         {shown.map((f) => (
           <button key={f.id} onClick={() => onPick(f)}
-            className="group text-left rounded-2xl p-4 bg-surface shadow-e1 hover:shadow-e3 hover:-translate-y-0.5 transition-all">
-            <div className="relative h-36 rounded-xl mb-3 overflow-hidden bg-surface2">
-              <img src={`/formats/${f.thumb || f.id}.jpg`} alt="" loading="lazy"
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
-              <span className="absolute bottom-2 right-2 grid place-items-center w-6 h-6 rounded-lg bg-ink/50 text-white backdrop-blur-sm"><f.icon className="w-3.5 h-3.5" /></span>
+            className="group relative h-56 overflow-hidden rounded-2xl bg-ink text-left shadow-e1 hover:shadow-e3 hover:-translate-y-0.5 transition-all">
+            <img src={`/formats/${f.thumb || f.id}.jpg`} alt="" loading="lazy"
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+            <div className="absolute inset-0 bg-gradient-to-t from-ink/95 via-ink/10 to-ink/10" />
+            <div className="absolute inset-x-0 top-0 flex items-start justify-between p-3">
+              <span className="rounded-full bg-black/35 px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-wide text-white backdrop-blur-md">
+                {f.group}
+              </span>
+              <span className="grid h-7 w-7 place-items-center rounded-lg bg-black/35 text-white backdrop-blur-md">
+                <SocialPlatformIcon platform={f.platform} className="w-4 h-4" />
+              </span>
             </div>
-            <div className="font-bold text-sm text-ink">{f.label}</div>
-            <div className="text-xs text-ink-faint mt-0.5">{f.size} px</div>
+            <div className="absolute inset-x-0 bottom-0 p-4">
+              <div className="font-bold text-sm text-white drop-shadow-sm">{f.label}</div>
+              <div className="text-xs text-white/75 mt-0.5">
+                {f.size.includes('×') ? `${f.size} px` : f.size}
+              </div>
+            </div>
+            <span className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/10 group-hover:ring-white/25 transition" />
           </button>
         ))}
       </div>
@@ -247,6 +295,10 @@ export default function AIStudio() {
 
   if (format.dealer) {
     return <DealerAvatarStudio onBack={() => setFormat(null)} />;
+  }
+
+  if (format.characters) {
+    return <CharactersStudio onBack={() => setFormat(null)} />;
   }
 
   // Storyboard formats get a dedicated multi-scene experience.
