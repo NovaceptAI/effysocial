@@ -11,6 +11,14 @@ dist/
 *.pdf
 mahesh.png
 
+# Scratch/working media dropped at the repo root (real app user-media lives on
+# the backend in _media/, not here). Anchored so tracked assets under
+# public/formats/ are unaffected.
+/*.mp4
+/*.mov
+/*.webm
+/public/fixit/
+
 # Editor/OS noise
 .DS_Store
 *.log
