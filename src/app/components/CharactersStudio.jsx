@@ -157,7 +157,7 @@ export default function CharactersStudio({ onBack }) {
       <div className="grid lg:grid-cols-[1fr_380px] gap-6 items-start">
         {/* Gallery */}
         <div>
-          <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))' }}>
+          <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 xl:grid-cols-4">
             {/* Custom character card */}
             <button type="button" onClick={() => setCreating(true)}
               className="relative rounded-2xl grid place-items-center transition-all duration-300 hover:-translate-y-1 bg-transparent ring-1 ring-black/10"
