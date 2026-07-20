@@ -130,9 +130,9 @@ export default function CharactersStudio({ onBack }) {
             {ch.status === 'animating' ? 'ANIMATING…' : 'COMING SOON'}
           </span>
         )}
-        <span className="absolute inset-x-0 bottom-0 p-3 pt-8" style={{ background: 'linear-gradient(transparent, rgba(0,0,0,0.85))' }}>
-          <span className="block text-white font-bold text-[15px] leading-tight">{ch.name}</span>
-          <span className="block text-white/55 text-[11.5px] mt-0.5">{ch.role}</span>
+        <span className="absolute inset-x-0 bottom-0 p-4 pt-10" style={{ background: 'linear-gradient(transparent, rgba(0,0,0,0.88))' }}>
+          <span className="block text-white font-bold text-[19px] leading-tight">{ch.name}</span>
+          <span className="block text-white/55 text-[13px] mt-1">{ch.role}</span>
         </span>
         {isActive && (
           <span className="absolute bottom-3 right-3 grid place-items-center w-6 h-6 rounded-full bg-coral text-white"><Check className="w-3.5 h-3.5" /></span>
@@ -157,7 +157,7 @@ export default function CharactersStudio({ onBack }) {
       <div className="grid lg:grid-cols-[1fr_380px] gap-6 items-start">
         {/* Gallery */}
         <div>
-          <div className="grid gap-3.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))' }}>
+          <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))' }}>
             {/* Custom character card */}
             <button type="button" onClick={() => setCreating(true)}
               className="relative rounded-2xl grid place-items-center transition-all duration-300 hover:-translate-y-1 bg-transparent ring-1 ring-black/10"
@@ -165,9 +165,9 @@ export default function CharactersStudio({ onBack }) {
               <span className="grid place-items-center gap-2 text-white/60">
                 <span className="grid place-items-center w-12 h-12 rounded-xl bg-white/10"><Plus className="w-6 h-6" /></span>
               </span>
-              <span className="absolute inset-x-0 bottom-0 p-3">
-                <span className="block text-white font-bold text-[15px]">Custom Character</span>
-                <span className="block text-white/50 text-[11.5px] mt-0.5">From a photo or a clip</span>
+              <span className="absolute inset-x-0 bottom-0 p-4">
+                <span className="block text-white font-bold text-[19px]">Custom Character</span>
+                <span className="block text-white/50 text-[13px] mt-1">From a photo or a clip</span>
               </span>
             </button>
             {presets.map((p) => <CharCard key={p.key} ch={p} />)}
