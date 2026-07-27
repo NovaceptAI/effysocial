@@ -10,9 +10,22 @@
       href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap"
     />
     <title>EffySocial — AI Social Growth Studio</title>
+    <style>
+      /* Instant dark boot background — shown from the very first paint, before
+         CSS/JS load, so the light body theme never flashes on reload. */
+      html { background: #0B0C0E; }
+      #boot-splash {
+        position: fixed; inset: 0; z-index: 9999;
+        background: #0B0C0E; display: grid; place-items: center;
+        transition: opacity .3s ease;
+      }
+      #boot-splash img { height: 28px; opacity: .92; }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="boot-splash"><img src="/brand/effysocial-logo-trim.png" alt="EffySocial" /></div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

@@ -1,89 +1,293 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Brain, Sparkles, Check, Loader2, Globe, ShieldCheck } from 'lucide-react';
+import { Check, Loader2, Pencil, Plus, X, ShieldCheck, Sparkles, Info, Upload, Image as ImageIcon } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
 import { Card, PageHeader, Button, Badge, Pacing } from '../../ui';
 
+// ── parse / serialize helpers ──────────────────────────────────────────────
 const csv = (s) => s.split(/[,\n]/).map((x) => x.trim()).filter(Boolean);
-const lines = (s) => s.split('\n').map((x) => x.trim()).filter(Boolean).map((l) => {
-  const [title, ...rest] = l.split(/[-—:]/);
-  return { title: title.trim(), desc: rest.join('-').trim() };
+const nlines = (s) => s.split('\n').map((x) => x.trim()).filter(Boolean);
+const parseList = (s, k) => nlines(s).map((l) => {
+  const [first, ...rest] = l.split(/[-—–:]/);
+  return { [k[0]]: first.trim(), [k[1]]: rest.join('-').trim() };
 });
+// Read primary/secondary tolerantly so legacy + AI rows (title/name/q, desc/motivation/a) all render.
+const pri = (it, k) => it[k[0]] ?? it.title ?? it.name ?? it.q ?? '';
+const sec = (it, k) => it[k[1]] ?? it.desc ?? it.motivation ?? it.a ?? '';
+const listToText = (arr, k) => (arr || []).map((it) => {
+  const a = pri(it, k); const b = sec(it, k);
+  return b ? `${a} — ${b}` : a;
+}).join('\n');
 
-// Setup questionnaire — everything saved becomes a REAL brand fact that grounds
-// every AI generation. (Auto-extraction from website/socials + AI persona with
-// admin approval is the next slice; this form is the foundation it feeds.)
-// Defined at module scope (NOT inside Questionnaire) so its identity is stable
-// across re-renders — otherwise React remounts the textarea on every keystroke
-// and focus is lost (pressing space then scrolls the page instead of typing).
-function Field({ label, hint, rows = 2, placeholder, value, onChange }) {
+// AI suggestion (any shape) -> editor text for the given section type.
+function suggestionToText(section, sug) {
+  if (sug == null) return '';
+  if (section.type === 'paragraph') return String(sug);
+  if (section.type === 'chips') return (Array.isArray(sug) ? sug : [sug]).join(', ');
+  if (section.type === 'lines') return (Array.isArray(sug) ? sug : [sug]).join('\n');
+  if (section.type === 'list') return listToText(Array.isArray(sug) ? sug : [], section.keys);
+  return '';
+}
+
+// ── the 12 Brand-Brain sections (denominator of completeness) ──────────────
+const SECTIONS = [
+  { key: 'summary', label: 'About the brand', type: 'paragraph', rows: 3, span: true,
+    hint: 'One or two sentences — who you serve and what makes you different.',
+    help: 'A short description of your business — who you serve and what makes you different. This anchors the voice of every caption, ad and reply.',
+    placeholder: 'e.g. We are a family dental clinic in Pune known for gentle, transparent care…' },
+  { key: 'tone', label: 'Brand tone', type: 'chips', tone: 'default',
+    hint: 'Comma-separated words.',
+    help: 'The personality of your writing — e.g. warm, professional, playful. Effy matches this in everything it drafts.',
+    placeholder: 'warm, professional, reassuring' },
+  { key: 'approved', label: 'Words to use', type: 'chips', tone: 'success',
+    hint: 'Phrases you like in your marketing (comma-separated).',
+    help: 'Words and phrases you want to appear in your marketing. Effy will prefer them.',
+    placeholder: 'trusted, transparent, book now' },
+  { key: 'prohibited', label: 'Words to avoid', type: 'chips', tone: 'error',
+    hint: 'Never say these (comma-separated).',
+    help: 'Words or claims you never want used — risky superlatives, unverifiable guarantees, off-brand slang. Effy avoids them everywhere.',
+    placeholder: 'cheapest, guaranteed, #1' },
+  { key: 'products', label: 'Products / services', type: 'list', keys: ['title', 'desc'],
+    hint: 'One per line: Name — short description.',
+    help: 'What you sell. Effy references these by name so content is specific, not generic.',
+    placeholder: 'Root canal — single-sitting RCT\nTeeth whitening — in-clinic & take-home' },
+  { key: 'offers', label: 'Current offers', type: 'list', keys: ['title', 'desc'],
+    hint: 'One per line: Offer — who it is for.',
+    help: 'Current promotions or deals. Effy can weave them into timely content and campaigns.',
+    placeholder: 'Free first consultation — for new patients' },
+  { key: 'personas', label: 'Target customers', type: 'list', keys: ['name', 'motivation'],
+    hint: 'One per line: Who — what they want.',
+    help: "Who you're trying to reach and what they care about. Effy writes to them, not to everyone.",
+    placeholder: 'Young parents — safe, painless care for kids' },
+  { key: 'faqs', label: 'FAQs', type: 'list', keys: ['q', 'a'],
+    hint: 'One per line: Question — answer.',
+    help: 'Questions customers commonly ask, with your answers. Effy uses them to reply consistently in DMs, comments and content.',
+    placeholder: 'Do you accept insurance? — Yes, all major providers' },
+  { key: 'objections', label: 'Objections & responses', type: 'list', keys: ['q', 'a'],
+    hint: 'One per line: Objection — how you answer it.',
+    help: 'The reasons people hesitate to buy, and how you answer each — your sales rebuttal playbook. Effy uses these to pre-empt doubts in copy and replies.',
+    placeholder: 'Too expensive — No-cost EMI on treatments over ₹10k' },
+  { key: 'competitors', label: 'Competitors & positioning', type: 'list', keys: ['title', 'desc'],
+    hint: 'One per line: Competitor — how you differ.',
+    help: "Who you compete with and how you're different. Effy leans on your strengths without disparaging others.",
+    placeholder: 'CityDental — we offer same-day appointments they cannot' },
+  { key: 'visual', label: 'Visual identity', type: 'visual',
+    hint: 'Brand colours and fonts for on-brand images.',
+    help: 'Your logo, brand colours and fonts — used to keep generated images, ad films and landing pages on-brand. Upload a logo and Effy reads the colours for you.' },
+  { key: 'legal', label: 'Legal & disclaimers', type: 'lines',
+    hint: 'One per line — claims Effy must include or respect.',
+    help: "Disclaimers or compliance lines you must include or respect (e.g. 'results vary'). Effy honours them in every output.",
+    placeholder: 'Results vary by individual' },
+];
+
+const isSuggestable = (section) => section.type !== 'visual';
+
+function isFilled(section, data) {
+  if (section.type === 'paragraph') return !!(data && String(data).trim());
+  if (section.type === 'visual') return !!(data && ((data.colors || []).length || (data.fonts || []).length || data.logo));
+  return Array.isArray(data) && data.length > 0;
+}
+
+// ── tiny hover/focus tooltip for the ⓘ on each section ─────────────────────
+function InfoTip({ text }) {
   return (
-    <div>
-      <label className="block text-sm font-semibold text-ink mb-1">{label}</label>
-      {hint && <p className="text-xs text-ink-faint mb-1.5">{hint}</p>}
-      <textarea rows={rows} value={value} onChange={onChange} placeholder={placeholder}
-        className="w-full rounded-xl bg-surface2 px-3.5 py-2.5 text-sm" />
+    <span className="relative inline-flex group align-middle">
+      <button type="button" aria-label="What's this?"
+        className="grid place-items-center w-4 h-4 rounded-full bg-transparent text-ink-faint hover:text-ink focus:text-ink">
+        <Info className="w-3.5 h-3.5" />
+      </button>
+      <span className="pointer-events-none absolute left-0 top-6 z-30 hidden group-hover:block group-focus-within:block
+        w-64 max-w-[80vw] rounded-lg border border-line bg-surface2 px-3 py-2 text-xs font-normal text-ink-soft shadow-e3 leading-relaxed normal-case tracking-normal">
+        {text}
+      </span>
+    </span>
+  );
+}
+
+// ── logo upload → auto-extract brand colours ──────────────────────────────
+function LogoUploader({ workspaceId, logoUrl, onDone }) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const inputRef = useRef(null);
+  const onFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBusy(true); setErr('');
+    try {
+      await effyApi.uploadBrandLogo(workspaceId, file);
+      await onDone();
+    } catch (ex) { setErr(ex.message || 'Upload failed'); }
+    finally { setBusy(false); if (inputRef.current) inputRef.current.value = ''; }
+  };
+  return (
+    <div className="flex items-center gap-3 mb-4 pb-4 border-b border-line/60">
+      <div className="grid place-items-center w-16 h-16 rounded-xl bg-surface2 overflow-hidden shrink-0 border border-line">
+        {logoUrl ? <img src={logoUrl} alt="Logo" className="w-full h-full object-contain p-1.5" /> : <ImageIcon className="w-6 h-6 text-ink-faint" />}
+      </div>
+      <div className="min-w-0">
+        <button type="button" onClick={() => inputRef.current?.click()} disabled={busy}
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-coral-ink bg-transparent hover:opacity-80 disabled:opacity-60">
+          {busy ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Reading your colours…</> : <><Upload className="w-3.5 h-3.5" /> {logoUrl ? 'Replace logo' : 'Upload logo'}</>}
+        </button>
+        <p className="text-[11px] text-ink-faint mt-0.5">PNG, JPG, WEBP or SVG. Effy reads your brand colours from it.</p>
+        {err && <p className="text-[11px] text-error mt-0.5">{err}</p>}
+      </div>
+      <input ref={inputRef} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" onChange={onFile} className="hidden" />
     </div>
   );
 }
 
-function Questionnaire({ workspace, onDone }) {
-  const [f, setF] = useState({ summary: '', tone: '', approved: '', prohibited: '', products: '', offers: '', personas: '' });
+function Display({ section, data }) {
+  if (!isFilled(section, data) && section.type !== 'visual') {
+    return <p className="text-sm text-ink-faint">Not set yet — add it, or let Effy draft it for you.</p>;
+  }
+  if (section.type === 'paragraph') return <p className="text-sm text-ink-soft leading-relaxed">{data}</p>;
+  if (section.type === 'chips') {
+    return <div className="flex flex-wrap gap-1.5">{data.map((t) => <Badge key={t} tone={section.tone}>{t}</Badge>)}</div>;
+  }
+  if (section.type === 'lines') {
+    return <ul className="space-y-1 text-sm text-ink-soft list-disc pl-4">{data.map((t, i) => <li key={i}>{t}</li>)}</ul>;
+  }
+  if (section.type === 'visual') {
+    const colors = data?.colors || []; const fonts = data?.fonts || [];
+    if (!colors.length && !fonts.length) return <p className="text-sm text-ink-faint">Upload a logo above, or add colours &amp; fonts.</p>;
+    return (
+      <div className="space-y-3">
+        {colors.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {colors.map((c, i) => (
+              <span key={i} className="inline-flex items-center gap-1.5 text-xs text-ink-soft rounded-full bg-surface2 pl-1 pr-2.5 py-1">
+                <span className="w-4 h-4 rounded-full border border-line" style={{ background: c }} />{c}
+              </span>
+            ))}
+          </div>
+        )}
+        {fonts.length > 0 && <div className="flex flex-wrap gap-1.5">{fonts.map((f) => <Badge key={f} tone="default">{f}</Badge>)}</div>}
+      </div>
+    );
+  }
+  return (
+    <ul className="space-y-2">
+      {data.map((it, i) => (
+        <li key={i} className="text-sm">
+          <span className="font-semibold text-ink">{pri(it, section.keys)}</span>
+          {sec(it, section.keys) && <span className="text-ink-soft"> — {sec(it, section.keys)}</span>}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function SectionCard({ section, data, workspaceId, onSaved }) {
+  const filled = isFilled(section, data);
+  const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
-  const set = (k) => (e) => setF((prev) => ({ ...prev, [k]: e.target.value }));
+  const [drafting, setDrafting] = useState(false);
+  const initText = () => {
+    if (section.type === 'paragraph') return data || '';
+    if (section.type === 'chips') return (data || []).join(', ');
+    if (section.type === 'lines') return (data || []).join('\n');
+    if (section.type === 'list') return listToText(data, section.keys);
+    return '';
+  };
+  const [val, setVal] = useState(initText);
+  const [vis, setVis] = useState({ colors: (data?.colors || []).join(', '), fonts: (data?.fonts || []).join(', ') });
+
+  const open = () => {
+    setVal(initText());
+    setVis({ colors: (data?.colors || []).join(', '), fonts: (data?.fonts || []).join(', ') });
+    setEditing(true);
+  };
+
+  const draft = async () => {
+    setDrafting(true);
+    try { setVal(suggestionToText(section, await effyApi.suggestBrandSection(workspaceId, section.key))); }
+    catch { /* leave current text; user can retry */ }
+    finally { setDrafting(false); }
+  };
+  const openAndDraft = () => { open(); draft(); };
+
+  const build = () => {
+    if (section.type === 'paragraph') return val.trim();
+    if (section.type === 'chips') return csv(val);
+    if (section.type === 'lines') return nlines(val);
+    if (section.type === 'list') return parseList(val, section.keys);
+    if (section.type === 'visual') return { ...(data || {}), colors: csv(vis.colors), fonts: csv(vis.fonts) };
+    return null;
+  };
 
   const save = async () => {
     setBusy(true);
     try {
-      const facts = [];
-      if (f.summary.trim()) facts.push({ section: 'summary', data: f.summary.trim() });
-      if (f.tone.trim()) facts.push({ section: 'tone', data: csv(f.tone) });
-      if (f.approved.trim()) facts.push({ section: 'approved', data: csv(f.approved) });
-      if (f.prohibited.trim()) facts.push({ section: 'prohibited', data: csv(f.prohibited) });
-      if (f.products.trim()) facts.push({ section: 'products', data: lines(f.products) });
-      if (f.offers.trim()) facts.push({ section: 'offers', data: lines(f.offers) });
-      if (f.personas.trim()) facts.push({ section: 'personas', data: lines(f.personas).map((p) => ({ name: p.title, motivation: p.desc })) });
-      for (const fact of facts) {
-        await effyApi.saveBrandFact({ workspace: workspace.id, section: fact.section, data: fact.data, status: 'good', sources: ['Questionnaire'] });
-      }
-      onDone();
+      await effyApi.saveBrandFact({ workspace: workspaceId, section: section.key, data: build(), status: 'good', sources: ['Manual'] });
+      await onSaved();
+      setEditing(false);
     } finally { setBusy(false); }
   };
 
   return (
-    <Card className="p-6 max-w-2xl">
-      <div className="flex items-center gap-2.5 mb-1">
-        <span className="grid place-items-center w-9 h-9 rounded-xl bg-aurora text-white"><Brain className="w-5 h-5" /></span>
-        <h2 className="font-display text-xl font-semibold tracking-tight">Tell Effy about your brand</h2>
+    <Card className={`p-5 ${section.span ? 'lg:col-span-2' : ''}`}>
+      <div className="flex items-start justify-between gap-3 mb-2">
+        <h3 className="font-bold text-ink flex items-center gap-1.5">{section.label}<InfoTip text={section.help} /></h3>
+        {!editing && (
+          <div className="flex items-center gap-3 shrink-0">
+            {isSuggestable(section) && (
+              <button onClick={openAndDraft}
+                className="inline-flex items-center gap-1 text-xs font-bold text-coral-ink bg-transparent hover:opacity-80">
+                <Sparkles className="w-3.5 h-3.5" /> Draft with AI
+              </button>
+            )}
+            <button onClick={open}
+              className="inline-flex items-center gap-1 text-xs font-bold text-ink-soft bg-transparent hover:text-ink">
+              {filled ? <><Pencil className="w-3.5 h-3.5" /> Edit</> : <><Plus className="w-3.5 h-3.5" /> Add</>}
+            </button>
+          </div>
+        )}
       </div>
-      <p className="text-sm text-ink-soft mb-6">Everything you enter grounds every AI generation — captions, images, landing copy and replies. You can refine it anytime.</p>
-      <div className="space-y-4">
-        <Field label="What does your business do?" hint="One or two sentences — who you serve and what makes you different." rows={3}
-          value={f.summary} onChange={set('summary')}
-          placeholder="e.g. We're a family dental clinic in Pune known for gentle, transparent care…" />
-        <Field label="Brand tone" hint="Comma-separated words." value={f.tone} onChange={set('tone')} placeholder="warm, professional, reassuring" />
-        <Field label="Words to use" hint="Phrases you like in your marketing (comma-separated)." value={f.approved} onChange={set('approved')} placeholder="trusted, transparent, book now" />
-        <Field label="Words to avoid" hint="Never say these (comma-separated)." value={f.prohibited} onChange={set('prohibited')} placeholder="cheapest, guaranteed, #1" />
-        <Field label="Products / services" hint="One per line: Name — short description." rows={3}
-          value={f.products} onChange={set('products')}
-          placeholder={"Root canal — single-sitting RCT\nTeeth whitening — in-clinic & take-home"} />
-        <Field label="Current offers" hint="One per line (optional)." value={f.offers} onChange={set('offers')} placeholder="Free first consultation — for new patients" />
-        <Field label="Target customers" hint="One per line: Who — what they want (optional)." value={f.personas} onChange={set('personas')}
-          placeholder="Young parents — safe, painless care for kids" />
-      </div>
-      <Button variant="spark" className="mt-6 w-full" onClick={save} disabled={busy}>
-        {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving…</> : <><Sparkles className="w-4 h-4" /> Build my Brand Brain</>}
-      </Button>
-      <p className="text-xs text-ink-faint mt-3 flex items-center gap-1.5"><Globe className="w-3.5 h-3.5" /> Next up: auto-extraction from your website &amp; social pages, with an AI brand persona you approve.</p>
+
+      {section.type === 'visual' && (
+        <LogoUploader workspaceId={workspaceId} logoUrl={data?.logoUrl} onDone={onSaved} />
+      )}
+
+      {editing ? (
+        <div>
+          {section.hint && <p className="text-xs text-ink-faint mb-1.5">{section.hint}</p>}
+          {section.type === 'visual' ? (
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-ink-soft mb-1">Colours (comma-separated hex or names)</label>
+                <input value={vis.colors} onChange={(e) => setVis((p) => ({ ...p, colors: e.target.value }))}
+                  placeholder="#E5484D, #0D0E12, warm cream" className="w-full rounded-xl bg-surface2 px-3.5 py-2.5 text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-ink-soft mb-1">Fonts (comma-separated)</label>
+                <input value={vis.fonts} onChange={(e) => setVis((p) => ({ ...p, fonts: e.target.value }))}
+                  placeholder="Playfair Display, Inter" className="w-full rounded-xl bg-surface2 px-3.5 py-2.5 text-sm" />
+              </div>
+            </div>
+          ) : (
+            <textarea autoFocus rows={section.rows || (section.type === 'list' ? 4 : 2)} value={val} onChange={(e) => setVal(e.target.value)}
+              placeholder={section.placeholder} className="w-full rounded-xl bg-surface2 px-3.5 py-2.5 text-sm" />
+          )}
+          <div className="flex items-center gap-2 mt-3">
+            <Button size="sm" variant="primary" onClick={save} disabled={busy || drafting}>
+              {busy ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving…</> : <><Check className="w-3.5 h-3.5" /> Save</>}
+            </Button>
+            {isSuggestable(section) && (
+              <Button size="sm" variant="secondary" onClick={draft} disabled={drafting || busy}>
+                {drafting ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Drafting…</> : <><Sparkles className="w-3.5 h-3.5" /> {val.trim() ? 'Re-draft' : 'Draft with AI'}</>}
+              </Button>
+            )}
+            <Button size="sm" variant="ghost" onClick={() => setEditing(false)} disabled={busy}><X className="w-3.5 h-3.5" /> Cancel</Button>
+          </div>
+        </div>
+      ) : (
+        <Display section={section} data={data} />
+      )}
     </Card>
   );
 }
-
-const CHIP_SECTIONS = [
-  ['tone', 'Tone', 'default'], ['approved', 'Words to use', 'success'], ['prohibited', 'Words to avoid', 'error'],
-];
-const LIST_SECTIONS = [['products', 'Products / services'], ['offers', 'Offers'], ['personas', 'Target customers']];
 
 export default function BrandBrain() {
   const { workspace } = useWorkspace();
@@ -97,63 +301,38 @@ export default function BrandBrain() {
 
   if (isLoading || !brain) return <div className="p-10 text-sm text-ink-soft">Loading Brand Brain…</div>;
 
-  if (!brain.completeness) {
-    return (
-      <div>
-        <PageHeader title="Brand Brain" subtitle="The knowledge that makes every AI output sound like you." />
-        <Questionnaire workspace={workspace} onDone={refetch} />
-      </div>
-    );
-  }
+  const done = SECTIONS.filter((s) => isFilled(s, brain[s.key]?.data)).length;
 
   return (
     <div>
       <PageHeader
         title="Brand Brain"
-        subtitle="The knowledge grounding every AI generation."
+        subtitle="The knowledge grounding every AI generation — captions, images, ad films, landing copy and Effy's replies."
         actions={<Badge tone="success"><ShieldCheck className="w-3 h-3" /> {brain.completeness}% complete</Badge>}
       />
-      <div className="max-w-xl mb-6"><Pacing value={brain.completeness} max={100} tone="success" /></div>
+
+      <div className="max-w-xl mb-1"><Pacing value={brain.completeness} max={100} tone="success" /></div>
+      <p className="text-xs text-ink-faint mb-6">{done} of {SECTIONS.length} sections filled. Not sure what to write? Hit <span className="font-semibold text-coral-ink">Draft with AI</span> on any section and refine it.</p>
+
+      {brain.completeness < 100 && (
+        <Card className="p-4 mb-4 bg-coral-tint/60 flex items-start gap-2.5">
+          <Sparkles className="w-4 h-4 text-coral-ink mt-0.5 shrink-0" />
+          <p className="text-sm text-ink-soft">
+            <span className="font-semibold text-ink">Let Effy help.</span> Upload your logo to learn your colours, and use <span className="font-semibold text-ink">Draft with AI</span> to fill any section — then edit to taste. Every section sharpens every output.
+          </p>
+        </Card>
+      )}
 
       <div className="grid lg:grid-cols-2 gap-4 items-start">
-        <Card className="p-5">
-          <h3 className="font-bold text-ink mb-2">About the brand</h3>
-          <p className="text-sm text-ink-soft leading-relaxed">{brain.summary?.data || <span className="text-ink-faint">Not set yet.</span>}</p>
-          <div className="mt-4 space-y-3">
-            {CHIP_SECTIONS.map(([key, label, tone]) => (
-              <div key={key}>
-                <div className="text-xs font-semibold text-ink-soft mb-1.5">{label}</div>
-                <div className="flex flex-wrap gap-1.5">
-                  {(brain[key]?.data || []).length
-                    ? brain[key].data.map((t) => <Badge key={t} tone={tone}>{t}</Badge>)
-                    : <span className="text-xs text-ink-faint">—</span>}
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-        <div className="space-y-4">
-          {LIST_SECTIONS.map(([key, label]) => (
-            <Card key={key} className="p-5">
-              <h3 className="font-bold text-ink mb-2">{label}</h3>
-              {(brain[key]?.data || []).length ? (
-                <ul className="space-y-2">
-                  {brain[key].data.map((it, i) => (
-                    <li key={i} className="text-sm">
-                      <span className="font-semibold text-ink">{it.title || it.name}</span>
-                      {(it.desc || it.motivation) && <span className="text-ink-soft"> — {it.desc || it.motivation}</span>}
-                    </li>
-                  ))}
-                </ul>
-              ) : <p className="text-xs text-ink-faint">Not set yet.</p>}
-            </Card>
-          ))}
-          <Card className="p-5 bg-coral-tint/60">
-            <h3 className="font-bold text-ink mb-1 flex items-center gap-2"><Check className="w-4 h-4 text-coral-ink" /> Grounding is live</h3>
-            <p className="text-sm text-ink-soft">AI Studio, landing copy and Effy replies now use these facts. Coming next: auto-extraction from your website &amp; socials with an approval step.</p>
-          </Card>
-        </div>
+        {SECTIONS.map((s) => (
+          <SectionCard key={s.key} section={s} data={brain[s.key]?.data} workspaceId={workspace.id} onSaved={refetch} />
+        ))}
       </div>
+
+      <Card className="p-5 mt-4 bg-coral-tint/60">
+        <h3 className="font-bold text-ink mb-1 flex items-center gap-2"><Check className="w-4 h-4 text-coral-ink" /> Grounding is live</h3>
+        <p className="text-sm text-ink-soft">AI Studio, ad films, landing copy and Effy replies use these facts right now. Coming next: auto-extraction from your website &amp; socials with an approval step.</p>
+      </Card>
     </div>
   );
 }

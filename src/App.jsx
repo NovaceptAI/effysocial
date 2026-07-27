@@ -11,6 +11,7 @@ import Reset from './marketing/Reset';
 import PublicForm from './marketing/PublicForm';
 import Pricing from './marketing/Pricing';
 import PublicLanding from './marketing/PublicLanding';
+import PublicSite from './marketing/PublicSite';
 import PublicBio from './marketing/PublicBio';
 import Hub from './Hub';
 
@@ -26,9 +27,22 @@ import BrightStyleGuide from './marketing/StyleGuide';
 
 // Gate the product: unauthenticated visitors are sent to the login screen.
 // Waits for the async session check so we don't flash a redirect on refresh.
+// Dark full-screen loading — matches the app theme so the light marketing body
+// (cream + coral blooms) never flashes through during auth / code-split loads.
+function AppLoading({ label = 'Loading…' }) {
+  return (
+    <div style={{ minHeight: '100dvh', background: '#0B0C0E', color: '#ECEDEF', display: 'grid', placeItems: 'center', fontFamily: 'Manrope, system-ui, sans-serif' }}>
+      <div style={{ display: 'grid', placeItems: 'center', gap: 14 }}>
+        <img src="/brand/effysocial-logo-trim.png" alt="EffySocial" style={{ height: 24, opacity: 0.92 }} />
+        <span style={{ fontSize: 13, color: 'rgba(236,237,239,0.5)' }}>{label}</span>
+      </div>
+    </div>
+  );
+}
+
 function RequireAuth({ children }) {
   const { user, loading } = useAppAuth();
-  if (loading) return <div style={{ padding: 40, fontFamily: 'system-ui', color: '#6f645c' }}>Loading…</div>;
+  if (loading) return <AppLoading />;
   if (!user) return <Navigate to="/login" replace />;
   return children;
 }
@@ -49,6 +63,8 @@ export default function App() {
             <Route path="/f/:slug" element={<PublicForm />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/p/:slug" element={<PublicLanding />} />
+            <Route path="/s/:slug" element={<PublicSite />} />
+            <Route path="/s/:slug/:pageKey" element={<PublicSite />} />
             <Route path="/b/:slug" element={<PublicBio />} />
             <Route path="/onboarding" element={<RequireAuth><Onboarding /></RequireAuth>} />
 
@@ -57,7 +73,7 @@ export default function App() {
               path="/app/*"
               element={
                 <RequireAuth>
-                  <Suspense fallback={<div style={{ padding: 40, fontFamily: 'system-ui' }}>Loading EffySocial…</div>}>
+                  <Suspense fallback={<AppLoading label="Loading EffySocial…" />}>
                     <AppRoot />
                   </Suspense>
                 </RequireAuth>

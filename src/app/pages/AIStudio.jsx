@@ -5,13 +5,15 @@ import {
   Sparkles, Smartphone, Monitor, RefreshCw, Image as ImageIcon,
   Check, FileText, Film, Images, Square, MessageCircle, Video, Briefcase,
   CalendarPlus, Send, Flame, Swords, X, ArrowRight, ArrowLeft, PenLine, Palette,
-  SlidersHorizontal, Search, Clapperboard, Mic, Layers, UserSquare, Users,
+  SlidersHorizontal, Search, Clapperboard, Mic, Layers, UserSquare, Users, Package,
 } from 'lucide-react';
 import Storyboard from '../components/Storyboard';
 import ShareRow from '../components/ShareRow';
 import AvatarStudio from '../components/AvatarStudio';
 import DealerAvatarStudio from '../components/DealerAvatarStudio';
 import CharactersStudio from '../components/CharactersStudio';
+import ProductShotStudio from '../components/ProductShotStudio';
+import GrowNudge from '../components/GrowNudge';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
 import { Button, Badge, Pacing } from '../../ui';
@@ -31,8 +33,9 @@ const FORMATS = [
   { id: 'avatar_video', label: 'AI Avatar Video', platform: 'instagram', icon: UserSquare, aspect: '9 / 16', size: 'Talking-head lipsync', group: 'Avatar', avatar: true, thumb: 'ig_reel' },
   { id: 'dealer_avatar', label: 'Personalized Avatar Video', platform: 'whatsapp', icon: Users, aspect: '16 / 9', size: 'Identity-locked dealers', group: 'Avatar', dealer: true, thumb: 'fb_post' },
   { id: 'characters', label: 'EffyCharacters', platform: 'instagram', icon: UserSquare, aspect: '9 / 16', size: 'Lip-sync speakers', group: 'Avatar', characters: true, thumb: 'ig_reel' },
+  { id: 'product_shot', label: 'Product Shots', platform: 'instagram', icon: Package, aspect: '9 / 16', size: 'Beauty product video', group: 'Product', product: true, thumb: 'ig_carousel' },
 ];
-const FILTERS = ['Popular', 'Instagram', 'Facebook', 'LinkedIn', 'YouTube', 'WhatsApp', 'Avatar'];
+const FILTERS = ['Popular', 'Instagram', 'Facebook', 'LinkedIn', 'YouTube', 'WhatsApp', 'Avatar', 'Product'];
 const LANGS = ['English', 'Hindi', 'Hinglish', 'Marathi'];
 const COPY_TOOLS = ['Rewrite', 'Shorten', 'Expand', 'Change tone', 'Add CTA', 'More hooks', 'Hashtags', 'Translate'];
 
@@ -300,6 +303,9 @@ export default function AIStudio() {
   if (format.characters) {
     return <CharactersStudio onBack={() => setFormat(null)} />;
   }
+  if (format.product) {
+    return <ProductShotStudio onBack={() => setFormat(null)} />;
+  }
 
   // Storyboard formats get a dedicated multi-scene experience.
   if (format.storyboard) {
@@ -334,6 +340,12 @@ export default function AIStudio() {
         </Button>
       </div>
 
+      {sent && (
+        <div className="mb-5">
+          <GrowNudge text="This is ready to go. Schedule it, publish it and track how it performs in Performance Marketing." />
+        </div>
+      )}
+
       {/* Editor: slim icon rail · optional panel · big canvas · scores */}
       <div className="flex gap-4 items-start">
         {/* icon rail */}
@@ -349,7 +361,7 @@ export default function AIStudio() {
 
         {/* tool panel (on demand) */}
         {panel && (
-          <div className="shrink-0 w-72 bg-surface rounded-2xl shadow-e1 p-4 max-h-[76vh] overflow-y-auto">
+          <div className="shrink-0 w-80 bg-surface rounded-2xl shadow-e1 p-4 min-h-[76vh] max-h-[76vh] overflow-y-auto flex flex-col">
             {panel === 'brief' && (
               <>
                 <h3 className="font-bold text-ink text-sm mb-3">Brief</h3>
@@ -365,6 +377,31 @@ export default function AIStudio() {
                 <Button variant="spark" className="w-full" onClick={generate} disabled={busy}>
                   <Sparkles className="w-4 h-4" /> {busy ? 'Generating…' : result ? 'Regenerate' : 'Generate'}
                 </Button>
+
+                {/* Fill the composer with calm, useful context — not an empty card. */}
+                {(ctx?.trends || []).length > 0 && (
+                  <div className="mt-5 pt-5 border-t border-line">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-ink-soft mb-2.5"><Flame className="w-3.5 h-3.5 text-error" /> Trending now</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(ctx?.trends || []).slice(0, 4).map((t) => (
+                        <button key={t.topic} onClick={() => setTrend(t.topic)}
+                          className={cn('text-[11px] font-medium px-2.5 py-1.5 rounded-full transition',
+                            trend === t.topic ? 'bg-coral-tint text-coral-ink' : 'bg-surface2 text-ink-soft hover:bg-coral-tint/60')}>
+                          {t.topic}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {(ctx?.brand?.tone || []).length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-line">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-ink-soft mb-2.5"><Palette className="w-3.5 h-3.5 text-coral-ink" /> Brand voice</div>
+                    <div className="flex flex-wrap gap-1.5">{(ctx?.brand?.tone || []).slice(0, 5).map((t) => <Badge key={t}>{t}</Badge>)}</div>
+                  </div>
+                )}
+                <p className="text-[11.5px] text-ink-soft leading-relaxed mt-auto pt-5">
+                  Every draft is grounded in your Brand Brain and scored before you post.
+                </p>
               </>
             )}
             {panel === 'trends' && (
@@ -408,12 +445,12 @@ export default function AIStudio() {
             )}
             {panel === 'refine' && (
               <>
-                <h3 className="font-bold text-ink text-sm mb-1 flex items-center gap-1.5"><SlidersHorizontal className="w-4 h-4 text-coral-ink" /> Refine copy</h3>
-                <p className="text-xs text-ink-faint mb-3">{result ? 'Transforms your current caption.' : 'Generate a draft first.'}</p>
-                <div className="flex flex-wrap gap-1.5">
+                <h3 className="font-bold text-ink text-sm mb-1.5 flex items-center gap-1.5"><SlidersHorizontal className="w-4 h-4 text-coral-ink" /> Refine copy</h3>
+                <p className="text-xs text-ink-faint">{result ? 'Transforms your current caption.' : 'Generate a draft first.'}</p>
+                <div className="flex flex-wrap gap-2 mt-8">
                   {COPY_TOOLS.map((tool) => (
                     <button key={tool} disabled={!result || !!refining} onClick={() => refine(tool.toLowerCase())}
-                      className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-surface2 text-ink-soft hover:bg-coral-tint hover:text-coral-ink disabled:opacity-40 transition">
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-full bg-surface2 text-ink ring-1 ring-black/15 hover:bg-coral-tint hover:text-coral-ink hover:ring-coral disabled:opacity-60 disabled:hover:bg-surface2 disabled:hover:text-ink disabled:hover:ring-black/15 transition">
                       {refining === tool.toLowerCase() && <RefreshCw className="w-3 h-3 animate-spin" />}{tool}
                     </button>
                   ))}
@@ -562,11 +599,20 @@ export default function AIStudio() {
               </div>
             </div>
           ) : (
-            <div className="flex-1 grid place-items-center text-center px-6">
-              <div className="max-w-sm">
-                <div className="grid place-items-center w-14 h-14 rounded-2xl bg-coral-tint text-coral-ink mx-auto mb-4"><FileText className="w-6 h-6" /></div>
-                <h3 className="font-display text-xl font-semibold tracking-tight mb-1.5">A blank canvas for your {format.label.toLowerCase()}</h3>
-                <p className="text-sm text-ink-soft leading-relaxed mb-5">Add a brief, pick a trend or just hit generate — grounded in your brand voice and scored before you post.</p>
+            <div className="flex-1 grid place-items-center text-center p-8">
+              <div className="w-full max-w-md flex flex-col items-center">
+                {/* A real canvas surface at the format's true aspect — a dimmed sample
+                    fills it so it reads as an editor, not an empty page. */}
+                <div className="mx-auto mb-7 w-full relative rounded-2xl overflow-hidden border-2 border-dashed border-line bg-surface2/40"
+                  style={{ aspectRatio: format.aspect, maxWidth: (format.aspect || '').startsWith('9') ? 250 : 360 }}>
+                  <img src={`/formats/${format.thumb || format.id}.jpg`} alt="" loading="lazy"
+                    className="absolute inset-0 w-full h-full object-cover opacity-25" />
+                  <div className="absolute inset-0 grid place-items-center">
+                    <div className="grid place-items-center w-14 h-14 rounded-2xl bg-coral-tint text-coral-ink shadow-e1"><format.icon className="w-6 h-6" /></div>
+                  </div>
+                </div>
+                <h3 className="font-display text-xl font-semibold tracking-tight mb-2">A blank canvas for your {format.label.toLowerCase()}</h3>
+                <p className="text-sm text-ink-soft leading-relaxed mb-8 max-w-sm">Add a brief, pick a trend or just hit generate — grounded in your brand voice and scored before you post.</p>
                 <Button variant="spark" onClick={() => { setPanel('brief'); generate(); }} disabled={busy}>
                   <Sparkles className="w-4 h-4" /> Generate
                 </Button>

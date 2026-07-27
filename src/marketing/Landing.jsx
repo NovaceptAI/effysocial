@@ -1,224 +1,330 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  ArrowRight, Wand2, CalendarCheck, Inbox, Target, GitBranch, BarChart3,
-  Sparkles, ShieldCheck, Zap, Menu, X,
+  ArrowRight, Play, Image as ImageIcon, Sparkles, Menu, X,
+  Wand2, Clapperboard, Package, UserSquare, BarChart3,
+  Megaphone, Globe, GitBranch, Repeat2, Inbox,
 } from 'lucide-react';
 
-const JOURNEY = ['Strategy', 'Content', 'Publishing', 'Engagement', 'Advertising', 'Leads', 'Revenue'];
+/* EffySocial landing — dark, cinematic, media-driven (Runway-style). Each
+   section is anchored by one hero visual. Media slots are placeholders now
+   (labelled VIDEO/IMAGE) so real clips/stills drop in with a one-line swap. */
 
-const FEATURES = [
-  { icon: Wand2, title: 'AI Studio', body: 'Generate brand-aware posts, carousels, reels and ads — scored on brand fit, hook and policy before you publish.' },
-  { icon: CalendarCheck, title: 'Plan & Approve', body: 'A calendar, scheduling and client approvals in one clean review workflow your clients actually enjoy.' },
-  { icon: Inbox, title: 'Unified Inbox', body: 'Every comment, DM, mention and review in a single queue, with AI-suggested replies in your brand voice.' },
-  { icon: Target, title: 'Performance Ads', body: 'Build funnels, launch Meta & Google campaigns, and optimise relentlessly on CPL and ROAS.' },
-  { icon: GitBranch, title: 'Convert & Follow-up', body: 'Landing pages, forms, a lead pipeline and WhatsApp follow-up — a genuinely closed loop.' },
-  { icon: BarChart3, title: 'Analytics & Reports', body: 'Tie likes to leads to revenue. White-label client reports with AI-written summaries.' },
+const INK = '#ECEDEF';
+const MUTED = 'rgba(236,237,239,0.62)';
+const FAINT = 'rgba(236,237,239,0.42)';
+const BG = '#0B0C0E';
+const CORAL = '#FF6A5C';
+
+// AI Studio creatives row — one line of four outputs.
+const STUDIO_TILES = [
+  { label: 'EffyCharacters', video: '/landing/characters.mp4', poster: '/formats/ig_reel.jpg',
+    desc: 'Lifelike lip-sync presenters that speak your script — in any language, in your own voice.' },
+  { label: 'Every format', video: '/landing/studio.mp4', poster: '/formats/ig_post.jpg',
+    desc: 'On-brand posts, carousels and reels for every channel — generated in seconds, scored before you post.' },
+  { label: 'YouTube Story', video: '/landing/hero.mp4', poster: '/formats/yt_short.jpg',
+    desc: 'Vertical stories and shorts, sized and styled to stop the scroll and earn the click.' },
+];
+
+// Performance Marketing — the supporting parts (Brand Brain is the hub, below).
+const PM_PARTS = [
+  { key: 'pm-strategy', title: 'Strategy → Campaigns', desc: 'AI marketing plans that turn straight into live, launch-ready campaigns.' },
+  { key: 'pm-ads', title: 'Ads & Convert', desc: 'Meta & Google ads, landing pages, forms and a lead pipeline that closes.' },
+  { key: 'pm-analytics', title: 'Analytics & Revenue', desc: 'Every like tied back to leads and revenue — white-label, AI-written.' },
 ];
 
 const CLIENTS = ['🦷 Dental', '🏦 Banking', '🐾 Pet care', '🏠 Real estate', '🍛 Restaurants', '✨ D2C brands'];
 
-const PRINCIPLES = [
-  { icon: Sparkles, title: 'AI that explains itself', body: 'Every recommendation shows what it detected, why it matters and the expected impact — never a black box.' },
-  { icon: ShieldCheck, title: 'Humans control the spend', body: 'AI drafts, schedules and suggests. Anything that spends money or ships publicly waits for your approval.' },
-  { icon: Zap, title: 'India-first, world-class', body: 'WhatsApp leads, click-to-call and local services — built for how business really happens here.' },
-];
+// Reusable media placeholder — a dark, aspect-correct frame that names the
+// intended asset. Swap `poster`→real still / wrap a <video> here to go live.
+function MediaFrame({ kind = 'video', poster, video, label, portrait = false, className = '' }) {
+  const Icon = kind === 'video' ? Play : ImageIcon;
+  return (
+    <div className={`relative overflow-hidden rounded-2xl ${className}`}
+      style={{ aspectRatio: portrait ? '9 / 16' : '16 / 10', background: '#0D0E12', border: '1px solid #23262D', boxShadow: '0 30px 80px -40px rgba(0,0,0,0.9)' }}>
+      {video ? (
+        <video className="absolute inset-0 w-full h-full object-cover" autoPlay loop muted playsInline poster={poster}>
+          <source src={video} type="video/mp4" />
+        </video>
+      ) : (
+        <>
+          {poster && <img src={poster} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: 0.32 }} />}
+          <div className="absolute inset-0" style={{ background: `radial-gradient(120% 110% at 50% 0%, rgba(255,106,92,0.12), transparent 58%)` }} />
+          <div className="absolute inset-0 grid place-items-center">
+            <div className="grid place-items-center gap-3 px-6 text-center">
+              <span className="grid place-items-center w-16 h-16 rounded-full backdrop-blur"
+                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.14)' }}>
+                <Icon className="w-6 h-6" style={{ color: INK, marginLeft: kind === 'video' ? 3 : 0 }} />
+              </span>
+              <span className="text-[11px] font-bold uppercase tracking-[0.18em]" style={{ color: FAINT }}>
+                {kind} · {label}
+              </span>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 export default function Landing() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const btnPrimary = { background: INK, color: '#0B0C0E' };
+  const btnGhost = { border: '1px solid rgba(255,255,255,0.2)', color: INK };
+
   return (
-    <div className="min-h-dvh bg-canvas text-ink font-sans overflow-x-hidden">
+    <div className="min-h-dvh font-sans overflow-x-hidden" style={{ background: BG, color: INK }}>
       <style>{`
         html { scroll-behavior: smooth; }
         @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
-        @keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
-        .rise { animation: rise .8s cubic-bezier(.2,.7,.2,1) both; }
-        .rise-2 { animation-delay: .1s; } .rise-3 { animation-delay: .2s; } .rise-4 { animation-delay: .3s; }
-        @keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+        .rise { animation: rise .9s cubic-bezier(.2,.7,.2,1) both; }
+        .rise-2 { animation-delay: .08s; } .rise-3 { animation-delay: .16s; } .rise-4 { animation-delay: .24s; }
+        @keyframes bloom { 0%,100% { opacity: .5; transform: scale(1); } 50% { opacity: .8; transform: scale(1.08); } }
+        .bloom { animation: bloom 9s ease-in-out infinite; }
+        .gshader { position: absolute; inset: -22%; filter: blur(36px);
+          background:
+            radial-gradient(38% 42% at 22% 30%, rgba(34,197,94,0.70), transparent 62%),
+            radial-gradient(36% 40% at 80% 68%, rgba(16,185,129,0.58), transparent 62%),
+            radial-gradient(46% 48% at 55% 100%, rgba(5,150,105,0.55), transparent 62%),
+            radial-gradient(40% 40% at 100% 8%, rgba(132,204,22,0.38), transparent 60%),
+            #05170d;
+          animation: gflow 14s ease-in-out infinite alternate; }
+        @keyframes gflow { 0% { transform: scale(1.05) translate(0,0); } 50% { transform: scale(1.28) translate(-5%,4%); } 100% { transform: scale(1.12) translate(4%,-3%); } }
       `}</style>
 
-      {/* Nav */}
-      <header className="sticky top-0 z-30 bg-canvas/70 backdrop-blur-xl border-b border-hair">
+      {/* ── Nav ─────────────────────────────────────────────────────────── */}
+      <header className="sticky top-0 z-40 backdrop-blur-xl" style={{ background: 'rgba(11,12,14,0.72)', borderBottom: '3px solid rgba(255,255,255,0.6)' }}>
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <span className="grid place-items-center w-8 h-8 rounded-[10px] bg-aurora text-white shadow-[0_4px_14px_-2px_rgba(232,74,51,0.55)]">✦</span>
-            <span className="font-display font-semibold text-[1.25rem] tracking-tight">EffySocial</span>
-          </div>
-          <nav className="hidden md:flex items-center gap-8 text-sm font-semibold text-ink-soft">
-            <a href="#features" className="hover:text-ink transition-colors">Product</a>
-            <a href="#journey" className="hover:text-ink transition-colors">How it works</a>
-            <a href="#who" className="hover:text-ink transition-colors">Who it's for</a>
-            <Link to="/pricing" className="hover:text-ink transition-colors">Pricing</Link>
+          <Link to="/" className="flex items-center">
+            <img src="/brand/effysocial-logo-trim.png" alt="EffySocial" className="w-auto" style={{ height: 30 }} />
+          </Link>
+          <nav className="hidden md:flex items-center gap-8 text-sm font-semibold" style={{ color: MUTED }}>
+            <a href="#studio" className="hover:text-white transition-colors">Product</a>
+            <a href="#who" className="hover:text-white transition-colors">Who it's for</a>
+            <Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link>
           </nav>
           <div className="flex items-center gap-2">
-            <Link to="/login" className="hidden sm:inline-flex px-4 py-2 rounded-lg text-sm font-bold text-ink hover:bg-surface2 transition">Log in</Link>
-            <Link to="/login" className="px-4 py-2 rounded-[11px] text-sm font-bold bg-coral-btn text-white shadow-coral hover:shadow-coral-lg hover:brightness-105 transition-all">Get started</Link>
-            <button onClick={() => setMenuOpen((v) => !v)} className="md:hidden grid place-items-center w-9 h-9 rounded-lg hover:bg-surface2 transition text-ink" aria-label="Menu">
+            <Link to="/login" className="hidden sm:inline-flex px-4 py-2 rounded-lg text-sm font-bold hover:bg-white/10 transition" style={{ color: INK }}>Log in</Link>
+            <Link to="/login" className="px-4 py-2 rounded-[11px] text-sm font-bold transition-all hover:-translate-y-0.5" style={btnPrimary}>Get started</Link>
+            <button onClick={() => setMenuOpen((v) => !v)} className="md:hidden grid place-items-center w-9 h-9 rounded-lg hover:bg-white/10 transition" style={{ color: INK }} aria-label="Menu">
               {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>
-
-        {/* Mobile menu */}
         {menuOpen && (
-          <nav className="md:hidden border-t border-hair bg-canvas/95 backdrop-blur-xl px-6 py-3 flex flex-col gap-1 text-sm font-semibold">
-            <a href="#features" onClick={() => setMenuOpen(false)} className="py-2 text-ink-soft hover:text-ink">Product</a>
-            <a href="#journey" onClick={() => setMenuOpen(false)} className="py-2 text-ink-soft hover:text-ink">How it works</a>
-            <a href="#who" onClick={() => setMenuOpen(false)} className="py-2 text-ink-soft hover:text-ink">Who it's for</a>
-            <Link to="/pricing" onClick={() => setMenuOpen(false)} className="py-2 text-coral-ink">Pricing</Link>
-            <Link to="/login" onClick={() => setMenuOpen(false)} className="py-2 text-ink-soft hover:text-ink">Log in</Link>
+          <nav className="md:hidden px-6 py-3 flex flex-col gap-1 text-sm font-semibold" style={{ borderTop: '1px solid rgba(255,255,255,0.07)', color: MUTED }}>
+            <a href="#studio" onClick={() => setMenuOpen(false)} className="py-2 hover:text-white">Product</a>
+            <a href="#who" onClick={() => setMenuOpen(false)} className="py-2 hover:text-white">Who it's for</a>
+            <Link to="/pricing" onClick={() => setMenuOpen(false)} className="py-2" style={{ color: CORAL }}>Pricing</Link>
+            <Link to="/login" onClick={() => setMenuOpen(false)} className="py-2 hover:text-white">Log in</Link>
           </nav>
         )}
       </header>
 
-      {/* Hero — dramatic warm-dark stage */}
-      <section className="relative overflow-hidden bg-rail text-white">
-        {/* atmospheric glows */}
+      {/* ── 1. Hero — full-bleed background video ────────────────────────── */}
+      <section className="relative overflow-hidden flex items-center" style={{ minHeight: '88vh' }}>
+        {/* Background video (poster shows until landing/hero.mp4 is generated) */}
+        <video className="absolute inset-0 w-full h-full object-cover" autoPlay loop muted playsInline preload="auto"
+          style={{ background: '#0B0C0E' }}>
+          <source src="/landing/films.mp4" type="video/mp4" />
+        </video>
+        {/* Legibility + brand glow overlays */}
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(11,12,14,0.55) 0%, rgba(11,12,14,0.30) 38%, rgba(11,12,14,0.94) 100%)' }} />
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-40 -left-20 w-[38rem] h-[38rem] rounded-full blur-3xl opacity-50"
-               style={{ background: 'radial-gradient(circle, rgba(255,107,94,0.55), transparent 62%)' }} />
-          <div className="absolute -top-24 right-0 w-[34rem] h-[34rem] rounded-full blur-3xl opacity-40"
-               style={{ background: 'radial-gradient(circle, rgba(245,158,11,0.5), transparent 60%)' }} />
-          <div className="absolute inset-0 opacity-[0.06] mix-blend-overlay"
-               style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")" }} />
+          <div className="bloom absolute -top-40 -left-24 w-[42rem] h-[42rem] rounded-full blur-3xl" style={{ background: `radial-gradient(circle, rgba(255,106,92,0.22), transparent 62%)` }} />
+          <div className="bloom absolute -top-24 right-0 w-[38rem] h-[38rem] rounded-full blur-3xl" style={{ background: 'radial-gradient(circle, rgba(245,158,11,0.16), transparent 60%)', animationDelay: '2s' }} />
         </div>
-
-        <div className="relative max-w-5xl mx-auto px-6 pt-24 pb-28 text-center">
-          <span className="rise inline-flex items-center gap-1.5 text-[0.7rem] font-bold uppercase tracking-[0.14em] text-white/90 bg-white/10 ring-1 ring-inset ring-white/15 px-3.5 py-1.5 rounded-full backdrop-blur">
-            <Sparkles className="w-3.5 h-3.5" /> AI Social Growth OS
+        <div className="relative max-w-5xl mx-auto px-6 py-24 text-center w-full">
+          <span className="rise inline-flex items-center gap-1.5 text-[0.7rem] font-bold uppercase tracking-[0.16em] px-3.5 py-1.5 rounded-full backdrop-blur"
+            style={{ color: INK, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.14)' }}>
+            <Sparkles className="w-3.5 h-3.5" /> The AI growth studio
           </span>
-          <h1 className="rise rise-2 mt-6 font-display font-semibold tracking-tightest text-[2.7rem] sm:text-6xl md:text-[4.4rem] leading-[1.04] max-w-4xl mx-auto">
-            From your first post to your
-            <br className="hidden sm:block" /> next <span className="italic bg-gradient-to-r from-coral-light via-coral to-warning bg-clip-text text-transparent">paying customer.</span>
+          <h1 className="rise rise-2 mt-6 font-display font-semibold tracking-tightest text-[2.8rem] sm:text-6xl md:text-[4.6rem] leading-[1.03] max-w-4xl mx-auto">
+            Create. Publish. Grow.
+            <br className="hidden sm:block" /> <span className="italic" style={{ color: CORAL }}>One studio.</span>
           </h1>
-          <p className="rise rise-3 mt-6 text-lg text-white/70 max-w-2xl mx-auto leading-relaxed">
-            Plan, create, publish, advertise and convert — from one platform. AI does the heavy lifting across strategy, content, ads and follow-up, while you stay firmly in control.
+          <p className="rise rise-3 mt-6 text-lg max-w-2xl mx-auto leading-relaxed" style={{ color: 'rgba(236,237,239,0.78)' }}>
+            The AI content and growth platform for Indian business — from a single post to a full ad film to real revenue, all in one place.
           </p>
           <div className="rise rise-3 mt-9 flex flex-wrap items-center justify-center gap-3">
-            <Link to="/login" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-[13px] bg-white text-ink font-bold shadow-[0_12px_32px_-8px_rgba(0,0,0,0.5)] hover:-translate-y-0.5 transition-all">
+            <Link to="/login" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-[13px] font-bold transition-all hover:-translate-y-0.5" style={btnPrimary}>
               Start free <ArrowRight className="w-4 h-4" />
             </Link>
-            <Link to="/login" className="inline-flex items-center px-7 py-3.5 rounded-[13px] border border-white/25 text-white font-bold hover:bg-white/10 transition-all backdrop-blur">
+            <Link to="/login" className="inline-flex items-center px-7 py-3.5 rounded-[13px] font-bold transition-all hover:bg-white/10 backdrop-blur" style={btnGhost}>
               Log in
             </Link>
           </div>
-          <p className="rise rise-4 mt-4 text-xs text-white/45">No credit card · Free to start · Cancel anytime</p>
+          <p className="rise rise-4 mt-4 text-xs" style={{ color: FAINT }}>No credit card · Free to start · Cancel anytime</p>
+        </div>
+      </section>
 
-          {/* premium product preview */}
-          <div className="rise rise-4 mt-16 max-w-4xl mx-auto rounded-[20px] ring-1 ring-white/12 bg-white/[0.03] p-2 backdrop-blur"
-               style={{ boxShadow: '0 40px 90px -30px rgba(0,0,0,0.7)' }}>
-            <div className="rounded-2xl border border-hair bg-surface overflow-hidden text-left text-ink">
-              <div className="flex items-center gap-1.5 px-4 h-10 border-b border-hair bg-surface2">
-                <span className="w-2.5 h-2.5 rounded-full bg-error/50" /><span className="w-2.5 h-2.5 rounded-full bg-warning/50" /><span className="w-2.5 h-2.5 rounded-full bg-success/50" />
-                <span className="ml-3 text-xs text-ink-faint font-medium">app.effysocial.in</span>
-              </div>
-              <div className="grid grid-cols-[150px_1fr]">
-                <div className="bg-rail p-3 space-y-1 hidden sm:block">
-                  {['Overview', 'Campaigns', 'AI Studio', 'Calendar', 'Inbox', 'Pipeline', 'Analytics'].map((x, i) => (
-                    <div key={x} className={`text-xs font-semibold px-2.5 py-2 rounded-lg ${i === 0 ? 'bg-coral-btn text-white' : 'text-rail-ink/65'}`}>{x}</div>
-                  ))}
+      {/* ── Continuous white band: AI Studio → Ad Films → Product Shot ──── */}
+      <div style={{ background: '#FFFFFF' }}>
+      {/* ── 2. AI Studio — creatives in a row (light band) ──────────────── */}
+      <section id="studio" style={{ color: '#15161A' }}>
+        <div className="max-w-6xl mx-auto px-6 py-12 sm:py-14">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <span className="inline-flex items-center gap-2 text-[0.72rem] font-bold uppercase tracking-[0.16em]" style={{ color: '#E5484D' }}>
+              <Wand2 className="w-4 h-4" /> AI Studio
+            </span>
+            <h2 className="mt-4 font-display text-[2rem] sm:text-[2.7rem] font-semibold tracking-tightest leading-[1.1]" style={{ color: '#15161A' }}>Every format, on brand, in seconds.</h2>
+            <p className="mt-4 leading-relaxed" style={{ color: 'rgba(21,22,26,0.62)' }}>
+              Product shots, presenters, posts and stories — generated in your brand voice, ready to publish.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6 max-w-4xl mx-auto">
+            {STUDIO_TILES.map((t) => (
+              <div key={t.label} className="flex flex-col">
+                <div className="relative overflow-hidden rounded-2xl"
+                  style={{ aspectRatio: '4 / 5', background: '#0D0E12', border: '1px solid #ececec', boxShadow: '0 18px 44px -26px rgba(0,0,0,0.28)' }}>
+                  <video className="absolute inset-0 w-full h-full object-cover" autoPlay loop muted playsInline poster={t.poster}>
+                    <source src={t.video} type="video/mp4" />
+                  </video>
                 </div>
-                <div className="p-5 bg-canvas">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="font-display text-lg font-semibold">Good morning, Priya ☀️</span>
-                    <span className="text-[0.7rem] font-bold text-coral-ink bg-coral-tint ring-1 ring-inset ring-coral/20 px-2.5 py-1 rounded-full">Live</span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-3 mb-4">
-                    {[['Revenue', '₹4.2L', '↑ 18%'], ['Leads', '342', '↑ 12%'], ['ROAS', '4.2×', '↑ 0.4']].map(([l, v, d]) => (
-                      <div key={l} className="bg-card-sheen border border-hair rounded-xl p-3 shadow-e1">
-                        <div className="text-[0.6rem] text-ink-faint uppercase tracking-wide font-bold">{l}</div>
-                        <div className="text-xl font-extrabold tracking-tightest tabular-nums mt-1">{v}</div>
-                        <div className="text-[0.65rem] font-bold text-success mt-0.5">{d}</div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex items-end gap-1.5 h-24 rounded-xl bg-card-sheen border border-hair p-3 shadow-e1">
-                    {[38, 52, 44, 66, 58, 80, 72, 94, 88].map((h, i) => (
-                      <div key={i} className="flex-1 rounded-t-md bg-aurora" style={{ height: `${h}%`, opacity: 0.55 + i * 0.05 }} />
-                    ))}
-                  </div>
-                </div>
+                <h3 className="mt-4 font-display text-lg font-semibold tracking-tight" style={{ color: '#15161A' }}>{t.label}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed flex-1" style={{ color: 'rgba(21,22,26,0.6)' }}>{t.desc}</p>
+                <Link to="/login" className="mt-3 inline-flex items-center gap-1.5 text-sm font-bold self-start hover:gap-2.5 transition-all" style={{ color: '#15161A' }}>
+                  Try it <ArrowRight className="w-4 h-4" />
+                </Link>
               </div>
+            ))}
+          </div>
+          <div className="text-center mt-9">
+            <Link to="/login" className="inline-flex items-center gap-1.5 text-sm font-bold hover:gap-2.5 transition-all" style={{ color: '#15161A' }}>Explore AI Studio <ArrowRight className="w-4 h-4" /></Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── 3. Ad Films — dedicated, bordered panel ─────────────────────── */}
+      <section id="films" className="max-w-6xl mx-auto px-6 py-8 sm:py-10">
+        <div className="relative overflow-hidden rounded-3xl px-5 sm:px-8 py-8 sm:py-10" style={{ background: '#0E0F12', border: '1px solid #2A2E36' }}>
+          <div className="text-center max-w-2xl mx-auto mb-6">
+            <span className="inline-flex items-center gap-2 text-[0.72rem] font-bold uppercase tracking-[0.16em]" style={{ color: CORAL }}>
+              <Clapperboard className="w-4 h-4" /> Ad Films
+            </span>
+            <h2 className="mt-4 font-display text-[2rem] sm:text-[2.7rem] font-semibold tracking-tightest leading-[1.1]">One brief becomes a finished ad film.</h2>
+            <p className="mt-4 leading-relaxed" style={{ color: MUTED }}>
+              A guided production room — AI script, seed-locked stills, Veo animation, voiceover and a beat-timed mix. One identity, holding steady as the world around it transforms.
+            </p>
+          </div>
+          <MediaFrame kind="video" label="Ad Films demo" poster="/formats/yt_short.jpg" video="/landing/adfilm.mp4" className="max-w-2xl mx-auto" />
+          <div className="text-center mt-6">
+            <Link to="/login" className="inline-flex items-center gap-1.5 text-sm font-bold hover:gap-2.5 transition-all" style={{ color: INK }}>Make a film <ArrowRight className="w-4 h-4" /></Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── 4. Product Shot — green shader bg, white border ─────────────── */}
+      <section id="product" className="max-w-6xl mx-auto px-6 py-8 sm:py-10">
+        <div className="relative overflow-hidden rounded-3xl" style={{ border: '2px solid #FFFFFF' }}>
+          <div className="gshader" />
+          <div className="relative grid items-center gap-10 lg:gap-14 lg:grid-cols-2 px-6 sm:px-12 py-12 sm:py-16">
+            <div className="mx-auto w-full max-w-[280px]">
+              <MediaFrame kind="video" label="Product Shots demo" poster="/formats/ig_carousel.jpg" video="/landing/product.mp4" portrait />
+            </div>
+            <div>
+              <span className="inline-flex items-center gap-2 text-[0.72rem] font-bold uppercase tracking-[0.16em]" style={{ color: '#FFFFFF' }}>
+                <Package className="w-4 h-4" /> Product Shots
+              </span>
+              <h2 className="mt-4 font-display text-[1.9rem] sm:text-[2.4rem] font-semibold tracking-tight leading-[1.1]" style={{ color: '#FFFFFF' }}>One photo becomes a cinematic product video.</h2>
+              <p className="mt-4 text-base leading-relaxed max-w-lg" style={{ color: 'rgba(255,255,255,0.82)' }}>
+                Upload a product shot; keep it perfectly faithful while AI builds the light, the scene and the motion around it. Add music, export any aspect.
+              </p>
+              <Link to="/login" className="mt-6 inline-flex items-center gap-1.5 text-sm font-bold hover:gap-2.5 transition-all" style={{ color: '#FFFFFF' }}>Try it <ArrowRight className="w-4 h-4" /></Link>
             </div>
           </div>
         </div>
-
-        {/* soft transition into cream */}
-        <div className="absolute bottom-0 inset-x-0 h-24 bg-gradient-to-b from-transparent to-canvas" />
       </section>
 
-      {/* Journey */}
-      <section id="journey" className="scroll-mt-24 max-w-5xl mx-auto px-6 py-20">
-        <p className="text-center text-xs font-bold uppercase tracking-[0.14em] text-ink-faint mb-8">One connected journey — not disconnected tools</p>
-        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-3">
-          {JOURNEY.map((s, i) => (
-            <React.Fragment key={s}>
-              <span className={`px-4 py-2 rounded-full text-sm font-bold shadow-e1 ${i === JOURNEY.length - 1 ? 'bg-aurora text-white' : 'bg-card-sheen border border-hair text-ink'}`}>{s}</span>
-              {i < JOURNEY.length - 1 && <ArrowRight className="w-4 h-4 text-coral/50" />}
-            </React.Fragment>
-          ))}
-        </div>
-      </section>
+      </div>{/* end white band */}
 
-      {/* Features */}
-      <section id="features" className="scroll-mt-24 max-w-6xl mx-auto px-6 py-12">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <h2 className="font-display text-[2.4rem] font-semibold tracking-tightest leading-tight">Everything your growth needs</h2>
-          <p className="mt-3 text-ink-soft leading-relaxed">From the first post to your next paying customer — with AI that explains itself and humans in control of spend.</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {FEATURES.map((f) => (
-            <div key={f.title} className="group bg-card-sheen border border-hair rounded-2xl shadow-e2 shadow-sheen p-6 hover:-translate-y-1 hover:shadow-e3 transition-all duration-300">
-              <span className="grid place-items-center w-12 h-12 rounded-2xl bg-coral-tint text-coral-ink ring-1 ring-inset ring-coral/15 mb-4 group-hover:scale-105 transition-transform">
-                <f.icon className="w-5 h-5" strokeWidth={2} />
-              </span>
-              <h3 className="font-display text-lg font-semibold tracking-tight mb-1.5">{f.title}</h3>
-              <p className="text-sm text-ink-soft leading-relaxed">{f.body}</p>
+      {/* ── 5. Performance Marketing — large, major parts ───────────────── */}
+      <section id="pm" className="relative overflow-hidden py-20 sm:py-28" style={{ background: '#0E0F12' }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(70% 55% at 50% 0%, rgba(255,106,92,0.07), transparent 60%)' }} />
+        <div className="relative max-w-6xl mx-auto px-6">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <span className="inline-flex items-center gap-2 text-[0.72rem] font-bold uppercase tracking-[0.16em]" style={{ color: CORAL }}>
+              <BarChart3 className="w-4 h-4" /> Performance Marketing
+            </span>
+            <h2 className="mt-4 font-display text-[2rem] sm:text-[2.8rem] font-semibold tracking-tightest leading-[1.1]">Turn content into customers.</h2>
+            <p className="mt-4 leading-relaxed" style={{ color: MUTED }}>
+              The full growth engine — campaigns, funnels, pipeline and analytics, all in one place, with humans in control of every rupee.
+            </p>
+          </div>
+          {/* Brand Brain — the hub */}
+          <div className="rounded-3xl overflow-hidden mb-5 grid lg:grid-cols-2 items-stretch" style={{ background: '#141619', border: '1px solid #23262D' }}>
+            <div className="relative min-h-[240px]" style={{ background: '#0D0E12' }}>
+              <img src="/landing/pm-brain.jpg" alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
             </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Principles band */}
-      <section className="max-w-6xl mx-auto px-6 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {PRINCIPLES.map((p) => (
-            <div key={p.title} className="text-center px-4">
-              <span className="inline-grid place-items-center w-12 h-12 rounded-2xl bg-aurora text-white shadow-coral mb-4"><p.icon className="w-5 h-5" /></span>
-              <h3 className="font-display text-lg font-semibold tracking-tight mb-2">{p.title}</h3>
-              <p className="text-sm text-ink-soft leading-relaxed max-w-xs mx-auto">{p.body}</p>
+            <div className="p-8 sm:p-10 flex flex-col justify-center">
+              <span className="inline-flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.18em]" style={{ color: CORAL }}>The core</span>
+              <h3 className="mt-3 font-display text-[1.7rem] sm:text-[2rem] font-semibold tracking-tight leading-[1.1]">Brand Brain</h3>
+              <p className="mt-3 text-base leading-relaxed" style={{ color: MUTED }}>
+                Your brand's intelligence — voice, facts, guardrails and assets. Every post, film and campaign is generated from it, so everything you ship sounds unmistakably like you.
+              </p>
             </div>
-          ))}
+          </div>
+          {/* 3 supporting parts, image-led */}
+          <div className="grid sm:grid-cols-3 gap-5">
+            {PM_PARTS.map((part) => (
+              <div key={part.key} className="rounded-2xl overflow-hidden flex flex-col" style={{ background: '#141619', border: '1px solid #23262D' }}>
+                <div className="relative" style={{ aspectRatio: '16 / 10', background: '#0D0E12' }}>
+                  <img src={`/landing/${part.key}.jpg`} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                </div>
+                <div className="p-5 flex-1">
+                  <h3 className="font-display text-lg font-semibold tracking-tight">{part.title}</h3>
+                  <p className="mt-1.5 text-sm leading-relaxed" style={{ color: MUTED }}>{part.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* Who */}
-      <section id="who" className="scroll-mt-24 max-w-5xl mx-auto px-6 py-16 text-center">
-        <h2 className="font-display text-[2rem] font-semibold tracking-tight mb-2">Built for agencies and businesses</h2>
-        <p className="text-ink-soft mb-8 max-w-xl mx-auto leading-relaxed">Local services that live on leads — plus the agencies that grow them. India-first, globally competitive.</p>
-        <div className="flex flex-wrap justify-center gap-2.5">
-          {CLIENTS.map((c) => <span key={c} className="px-4 py-2 rounded-full bg-card-sheen border border-hair shadow-e1 text-sm font-semibold">{c}</span>)}
+      {/* ── 9. Built for Indian SMBs ────────────────────────────────────── */}
+      <section id="who" className="relative overflow-hidden py-24">
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(80% 60% at 50% 0%, rgba(255,106,92,0.08), transparent 60%)' }} />
+        <div className="relative max-w-5xl mx-auto px-6 text-center">
+          <h2 className="font-display text-[2rem] sm:text-[2.6rem] font-semibold tracking-tightest leading-tight">Made for the businesses that run on leads.</h2>
+          <p className="mt-4 max-w-xl mx-auto leading-relaxed" style={{ color: MUTED }}>
+            Salons, clinics, dealers, restaurants and D2C brands — plus the agencies that grow them. India-first, globally competitive.
+          </p>
+          <div className="mt-9 flex flex-wrap justify-center gap-2.5">
+            {CLIENTS.map((c) => (
+              <span key={c} className="px-4 py-2 rounded-full text-sm font-semibold" style={{ background: '#141619', border: '1px solid #23262D', color: INK }}>{c}</span>
+            ))}
+          </div>
+          <div className="mt-12">
+            <div className="max-w-4xl mx-auto rounded-2xl overflow-hidden" style={{ border: '1px solid #23262D', boxShadow: '0 30px 80px -40px rgba(0,0,0,0.9)' }}>
+              <img src="/landing/who-smbs.jpg" alt="Happy Indian small-business owners" loading="lazy" className="w-full h-auto block" />
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* CTA band */}
-      <section className="max-w-6xl mx-auto px-6 pb-20">
-        <div className="relative overflow-hidden rounded-[28px] bg-aurora text-white p-12 md:p-16 text-center shadow-e3">
-          <div className="pointer-events-none absolute inset-0 opacity-[0.08] mix-blend-overlay"
-               style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")" }} />
+      {/* ── 10. Closing CTA ─────────────────────────────────────────────── */}
+      <section className="max-w-6xl mx-auto px-6 pb-24">
+        <div className="relative overflow-hidden rounded-[28px] px-8 py-16 md:py-20 text-center"
+          style={{ background: 'linear-gradient(160deg, #16181D 0%, #121417 60%, #1a1315 100%)', border: '1px solid #24262C' }}>
+          <div className="bloom pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-[36rem] h-[36rem] rounded-full blur-3xl" style={{ background: `radial-gradient(circle, rgba(255,106,92,0.22), transparent 60%)` }} />
           <div className="relative">
-            <h2 className="font-display text-[2.2rem] md:text-[3rem] font-semibold tracking-tightest leading-[1.08] mb-4">Run your growth on autopilot — <span className="italic">with the wheel in your hands.</span></h2>
-            <p className="text-white/85 mb-8 max-w-xl mx-auto leading-relaxed">Connect your channels, build your Brand Brain, and let EffySocial take you from strategy to revenue.</p>
-            <Link to="/login" className="inline-flex items-center gap-2 px-8 py-4 rounded-[14px] bg-white text-ink font-extrabold shadow-[0_14px_36px_-10px_rgba(0,0,0,0.4)] hover:-translate-y-0.5 transition-all">
+            <h2 className="font-display text-[2.2rem] md:text-[3.1rem] font-semibold tracking-tightest leading-[1.08]">
+              Start creating <span className="italic" style={{ color: CORAL }}>today.</span>
+            </h2>
+            <p className="mt-4 max-w-xl mx-auto leading-relaxed" style={{ color: MUTED }}>
+              Connect your channels, build your Brand Brain, and let EffySocial take you from idea to revenue.
+            </p>
+            <Link to="/login" className="mt-8 inline-flex items-center gap-2 px-8 py-4 rounded-[14px] font-extrabold transition-all hover:-translate-y-0.5" style={btnPrimary}>
               Get started free <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>
       </section>
 
-      <footer className="border-t border-hair">
-        <div className="max-w-6xl mx-auto px-6 py-10 flex flex-wrap items-center justify-between gap-3 text-sm text-ink-faint">
-          <span className="flex items-center gap-2 font-display font-semibold text-ink text-base"><span className="grid place-items-center w-6 h-6 rounded-md bg-aurora text-white text-xs">✦</span> EffySocial</span>
+      <footer style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+        <div className="max-w-6xl mx-auto px-6 py-10 flex flex-wrap items-center justify-between gap-3 text-sm" style={{ color: FAINT }}>
+          <img src="/brand/effysocial-logo-trim.png" alt="EffySocial" className="w-auto" style={{ height: 22 }} />
           <span>Powered by EffyBiz · © 2026</span>
         </div>
       </footer>

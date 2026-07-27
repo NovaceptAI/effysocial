@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft, Upload, Sparkles, RefreshCw, Check, Pencil, Film, Mic, Layers,
-  Send, AlertTriangle, ShieldCheck, Play, Download, Lock,
+  Send, AlertTriangle, ShieldCheck, Play, Download, Lock, TrendingUp, ArrowRight,
 } from 'lucide-react';
 import { effyApi } from '../api/effyApi';
 
@@ -67,6 +67,9 @@ function StatusDot({ color }) {
 export default function FilmMaker() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  // Exit back to whichever base we entered from — standalone app or PM suite.
+  const filmsBase = pathname.startsWith('/app/films-app') ? '/app/films-app' : '/app/films';
   const qc = useQueryClient();
   const [lit, setLit] = useState(false); // lights-down transition
   const [stage, setStage] = useState(null); // local view; synced to film.stage
@@ -81,6 +84,9 @@ export default function FilmMaker() {
   const [otherText, setOtherText] = useState('');
   const [sceneCount, setSceneCount] = useState(0);    // 0 = derive from duration
   const [sceneSecs, setSceneSecs] = useState(4);
+  const [showPaste, setShowPaste] = useState(false);  // paste-your-own-script panel
+  const [pasteText, setPasteText] = useState('');
+  const [voEdits, setVoEdits] = useState({});         // sceneId → edited VO line (Voice stage)
 
   useEffect(() => { const t = setTimeout(() => setLit(true), 30); return () => clearTimeout(t); }, []);
 
@@ -159,7 +165,7 @@ export default function FilmMaker() {
         padding: '12px 20px', background: `${T.stage}F2`, borderBottom: `1px solid ${T.border}`,
         backdropFilter: 'blur(8px)',
       }}>
-        <Btn kind="ghost" onClick={() => navigate('/app/films')} style={{ padding: '6px 10px' }}>
+        <Btn kind="ghost" onClick={() => navigate(filmsBase)} style={{ padding: '6px 10px' }}>
           <ArrowLeft size={16} /> Exit
         </Btn>
         <div style={{ minWidth: 0 }}>
@@ -396,6 +402,37 @@ export default function FilmMaker() {
                 </Btn>
                 {scenes.length > 0 && <Btn kind="quiet" onClick={() => goStage(3)}>Continue to stills</Btn>}
               </div>
+
+              {/* Bring your own script — paste the full text and let AI structure it. */}
+              <div style={{ marginTop: 14, borderTop: `1px solid ${T.border}`, paddingTop: 12 }}>
+                {!showPaste ? (
+                  <button type="button" onClick={() => setShowPaste(true)}
+                    style={{ background: 'transparent', color: T.dim, fontSize: 12.5, fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' }}>
+                    Already have a script? Paste it →
+                  </button>
+                ) : (
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: T.dim, letterSpacing: '.05em', marginBottom: 6 }}>PASTE YOUR SCRIPT</div>
+                    <p style={{ fontSize: 12, color: T.dim, marginBottom: 8 }}>
+                      Paste the complete script — AI splits it into scenes (keeping your lines) and drafts a visual for each. Scenes with approved stills are preserved.
+                    </p>
+                    <textarea value={pasteText} onChange={(e) => setPasteText(e.target.value)} rows={10}
+                      placeholder="Paste your complete script here…"
+                      style={{ ...inputStyle, resize: 'vertical', fontSize: 13.5, lineHeight: 1.6, minHeight: 180 }} />
+                    <div style={{ display: 'flex', gap: 10, marginTop: 10, alignItems: 'center' }}>
+                      <Btn disabled={busy === 'import' || pasteText.trim().length < 10}
+                        onClick={() => run('import', async () => {
+                          const f = await effyApi.filmScriptImport(id, { text: pasteText, sceneSeconds: sceneSecs });
+                          qc.setQueryData(['film', id], f);
+                          setShowPaste(false); setPasteText('');
+                        })}>
+                        {busy === 'import' ? <RefreshCw size={15} className="animate-spin" /> : <Sparkles size={15} />} Import script
+                      </Btn>
+                      <Btn kind="quiet" onClick={() => { setShowPaste(false); setPasteText(''); }}>Cancel</Btn>
+                    </div>
+                  </div>
+                )}
+              </div>
             </section>
 
             {/* Roomy per-scene editor — full-width cards, not a cramped table */}
@@ -421,18 +458,32 @@ export default function FilmMaker() {
                 </div>
                 <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)' }}>
                   <div>
-                    <div style={{ fontSize: 10.5, fontWeight: 700, color: T.dim, letterSpacing: '.06em', marginBottom: 6 }}>
-                      VOICEOVER LINE <span style={{ fontWeight: 400 }}>(~{Math.round(s.seconds * 2.3)} words fills {s.seconds}s)</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                      <div style={{ fontSize: 10.5, fontWeight: 700, color: T.dim, letterSpacing: '.06em' }}>
+                        VOICEOVER LINE <span style={{ fontWeight: 400 }}>(~{Math.round(s.seconds * 2.3)} words fills {s.seconds}s)</span>
+                      </div>
+                      <Btn kind="quiet" disabled={busy === `rl${s.id}`} style={{ padding: '2px 8px', fontSize: 11 }}
+                        title="Regenerate this line with AI"
+                        onClick={() => run(`rl${s.id}`, async () => { await effyApi.filmSceneRedraft(id, s.id, 'line'); await refetch(); })}>
+                        {busy === `rl${s.id}` ? <RefreshCw size={12} className="animate-spin" /> : <Sparkles size={12} />} AI
+                      </Btn>
                     </div>
-                    <textarea defaultValue={s.line} rows={4}
+                    <textarea key={`l${s.id}:${s.line}`} defaultValue={s.line} rows={4}
                       onBlur={(e) => e.target.value !== s.line &&
                         run('scene', async () => { await effyApi.filmSceneUpdate(id, s.id, { line: e.target.value }); refetch(); })}
                       style={{ ...inputStyle, fontSize: 14.5, lineHeight: 1.6, resize: 'vertical', minHeight: 96 }} />
                   </div>
                   <div style={{ display: 'grid', gap: 10, gridTemplateRows: 'auto 1fr' }}>
                     <div>
-                      <div style={{ fontSize: 10.5, fontWeight: 700, color: T.dim, letterSpacing: '.06em', marginBottom: 6 }}>VISUAL</div>
-                      <textarea defaultValue={s.visual} rows={2}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                        <div style={{ fontSize: 10.5, fontWeight: 700, color: T.dim, letterSpacing: '.06em' }}>VISUAL</div>
+                        <Btn kind="quiet" disabled={busy === `rv${s.id}`} style={{ padding: '2px 8px', fontSize: 11 }}
+                          title="Regenerate this visual with AI"
+                          onClick={() => run(`rv${s.id}`, async () => { await effyApi.filmSceneRedraft(id, s.id, 'visual'); await refetch(); })}>
+                          {busy === `rv${s.id}` ? <RefreshCw size={12} className="animate-spin" /> : <Sparkles size={12} />} AI
+                        </Btn>
+                      </div>
+                      <textarea key={`v${s.id}:${s.visual}`} defaultValue={s.visual} rows={2}
                         onBlur={(e) => e.target.value !== s.visual &&
                           run('scene', async () => { await effyApi.filmSceneUpdate(id, s.id, { visual: e.target.value }); refetch(); })}
                         style={{ ...inputStyle, fontSize: 12.5, lineHeight: 1.5, resize: 'vertical' }} />
@@ -628,6 +679,7 @@ export default function FilmMaker() {
               <Btn disabled={busy === 'vo' || !scenes.length} onClick={() => run('vo', async () => {
                 const r = await effyApi.filmVo(id, { voice: film.voice });
                 qc.setQueryData(['film', id], r.film);
+                setVoEdits({});
                 const msgs = [];
                 if (r.overruns?.length) msgs.push(`Scene ${r.overruns.map((o) => o.idx + 1).join(', ')} runs LONG — shorten the line or it crowds the next beat.`);
                 if (r.underruns?.length) msgs.push(`Scene ${r.underruns.map((o) => `${o.idx + 1} (${o.seconds}s of ${o.window}s)`).join(', ')} runs SHORT — add words toward ~${r.underruns[0].targetWords} per line so the voice fills the scene.`);
@@ -674,9 +726,21 @@ export default function FilmMaker() {
                 {scenes.map((s) => s.vo && (
                   <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10, background: T.raised, borderRadius: 10, padding: '8px 12px' }}>
                     <span style={{ fontSize: 12, color: T.dim, width: 18 }}>{s.idx + 1}</span>
-                    <span style={{ fontSize: 12.5, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.line}</span>
-                    <span style={{ fontSize: 11.5, color: (s.voSeconds > s.seconds + 0.4 || s.voSeconds < s.seconds * 0.55) ? T.amber : T.green }}>{s.voSeconds?.toFixed(1)}s / {s.seconds}s</span>
-                    <audio src={s.voUrl} controls style={{ height: 28, width: 190 }} />
+                    <input value={voEdits[s.id] ?? s.line}
+                      onChange={(e) => setVoEdits((v) => ({ ...v, [s.id]: e.target.value }))}
+                      onBlur={(e) => { const val = e.target.value; if (val !== s.line) run(`ln${s.id}`, async () => { await effyApi.filmSceneUpdate(id, s.id, { line: val }); await refetch(); }); }}
+                      title="Edit the line — fix a mispronounced word, then Regenerate"
+                      style={{ ...inputStyle, flex: 1, minWidth: 0, fontSize: 12.5, padding: '5px 8px' }} />
+                    <span style={{ fontSize: 11.5, whiteSpace: 'nowrap', color: (s.voSeconds > s.seconds + 0.4 || s.voSeconds < s.seconds * 0.55) ? T.amber : T.green }}>{s.voSeconds?.toFixed(1)}s / {s.seconds}s</span>
+                    <audio src={s.voUrl} controls style={{ height: 28, width: 170 }} />
+                    <Btn kind="quiet" disabled={busy === `vo${s.id}`} style={{ padding: '4px 9px', fontSize: 11.5 }}
+                      title="Regenerate this line's audio"
+                      onClick={() => run(`vo${s.id}`, async () => {
+                        await effyApi.filmSceneVo(id, s.id, { line: voEdits[s.id] ?? s.line });
+                        await refetch();
+                      })}>
+                      <RefreshCw size={12} className={busy === `vo${s.id}` ? 'animate-spin' : undefined} /> Regenerate
+                    </Btn>
                   </div>
                 ))}
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6 }}>
@@ -776,6 +840,19 @@ export default function FilmMaker() {
                     )
                   ))}
                 </div>
+
+                {film.status === 'delivered' && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: T.raised, borderRadius: 12, padding: '12px 14px', marginTop: 16 }}>
+                    <span style={{ display: 'grid', placeItems: 'center', width: 32, height: 32, borderRadius: 9, background: T.coral, color: '#fff', flexShrink: 0 }}>
+                      <TrendingUp size={16} />
+                    </span>
+                    <span style={{ flex: 1, fontSize: 12.5, color: T.text }}>Film delivered. Schedule it and run it as a campaign in Performance Marketing.</span>
+                    <button type="button" onClick={() => navigate('/app/home')}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 700, color: T.stage, background: T.coral, borderRadius: 999, padding: '6px 12px', flexShrink: 0 }}>
+                      Open Performance Marketing <ArrowRight size={13} />
+                    </button>
+                  </div>
+                )}
 
                 {/* Dealer personalization: scene renders are reused — each
                     variant only rebuilds the end card, so extra dealers are free. */}

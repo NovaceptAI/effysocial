@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  Wand2, ArrowRight, ArrowLeft, Flame, Plus, Trash2, Lightbulb, Swords,
+  Wand2, ArrowRight, ArrowLeft, Flame, Plus, Trash2, Lightbulb, Swords, Sparkles, Loader2, Check, X,
 } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
@@ -20,6 +20,7 @@ const SOURCE_META = {
   competitor: { label: 'Competitor', icon: Swords, tone: 'info' },
   inbox: { label: 'Inbox', icon: Lightbulb, tone: 'default' },
   manual: { label: 'Idea', icon: Lightbulb, tone: 'default' },
+  ai: { label: 'AI', icon: Sparkles, tone: 'coral' },
 };
 
 export default function Ideas() {
@@ -27,6 +28,9 @@ export default function Ideas() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [title, setTitle] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const [genBusy, setGenBusy] = useState(false);
+  const [genError, setGenError] = useState('');
 
   const key = ['ideas', workspace?.id];
   const { data: ideas = [], isLoading } = useQuery({
@@ -47,6 +51,20 @@ export default function Ideas() {
     onSuccess: invalidate,
   });
 
+  const generate = async () => {
+    setGenBusy(true); setGenError('');
+    try { setSuggestions(await effyApi.generateIdeas(workspace.id)); }
+    catch (e) { setGenError(e.message || 'Could not generate ideas.'); }
+    finally { setGenBusy(false); }
+  };
+  const addSuggestion = useMutation({
+    mutationFn: (s) => effyApi.createIdea({
+      workspace: workspace.id, title: s.title, source: 'ai',
+      notes: [s.angle, s.format && `Format: ${s.format}`].filter(Boolean).join(' · '),
+    }),
+    onSuccess: (_d, s) => { setSuggestions((prev) => prev.filter((x) => x !== s)); invalidate(); },
+  });
+
   const createInStudio = (idea) => {
     const topic = idea.notes ? `${idea.title} — ${idea.notes}` : idea.title;
     navigate(`/app/studio?topic=${encodeURIComponent(topic)}`);
@@ -59,8 +77,42 @@ export default function Ideas() {
       <PageHeader
         title="Ideas"
         subtitle="Capture ideas, shape them, and send the best to Studio."
-        actions={<Button variant="secondary" onClick={() => navigate('/app/trends')}><Flame className="w-4 h-4" /> Browse trends</Button>}
+        actions={
+          <div className="flex items-center gap-2">
+            <Button variant="spark" onClick={generate} disabled={genBusy}>
+              {genBusy ? <><Loader2 className="w-4 h-4 animate-spin" /> Thinking…</> : <><Sparkles className="w-4 h-4" /> Generate with AI</>}
+            </Button>
+            <Button variant="secondary" onClick={() => navigate('/app/trends')}><Flame className="w-4 h-4" /> Browse trends</Button>
+          </div>
+        }
       />
+
+      {/* AI suggestions — grounded in Brand Brain; save the ones you like */}
+      {(suggestions.length > 0 || genError) && (
+        <div className="rounded-2xl border border-coral/20 bg-coral-tint/50 p-4 mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-bold text-ink flex items-center gap-2"><Sparkles className="w-4 h-4 text-coral-ink" /> Brand-Brain ideas</h3>
+            {suggestions.length > 0 && (
+              <button onClick={() => setSuggestions([])} className="text-xs font-bold text-ink-soft bg-transparent hover:text-ink inline-flex items-center gap-1"><X className="w-3.5 h-3.5" /> Dismiss</button>
+            )}
+          </div>
+          {genError && <p className="text-sm text-error mb-2">{genError}</p>}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+            {suggestions.map((s, i) => (
+              <div key={i} className="bg-surface rounded-xl shadow-e1 p-3.5 flex flex-col">
+                <div className="text-sm font-semibold text-ink leading-snug mb-1">{s.title}</div>
+                {s.angle && <p className="text-xs text-ink-soft leading-relaxed mb-2 flex-1">{s.angle}</p>}
+                <div className="flex items-center justify-between gap-2 mt-auto">
+                  {s.format ? <Badge tone="default">{s.format}</Badge> : <span />}
+                  <Button size="sm" variant="primary" onClick={() => addSuggestion.mutate(s)} disabled={addSuggestion.isPending}>
+                    <Check className="w-3.5 h-3.5" /> Add
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* quick capture */}
       <form

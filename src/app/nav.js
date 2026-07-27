@@ -9,9 +9,19 @@ import {
   Building2, Users, Plug, CreditCard, Settings, Rocket , Workflow, ShieldCheck, Clapperboard } from 'lucide-react';
 
 // phase: 1 available now, 2/3/4 = labelled "soon" but navigable to a placeholder.
+// One platform, one menu — Content leads (creation first), then Strategy.
 export const NAV = [
   { group: 'Overview', items: [
     { label: 'Home', to: '/app', icon: Home, phase: 1, end: true },
+  ]},
+  { group: 'Content', items: [
+    { label: 'AI Studio', to: '/app/studio', icon: Wand2, phase: 1 },
+    { label: 'Ad Films', to: '/app/films', icon: Clapperboard, phase: 1 },
+    { label: 'Brand Brain', to: '/app/brand', icon: Brain, phase: 1 },
+    { label: 'Playbooks', to: '/app/playbooks', icon: Rocket, phase: 1 },
+    { label: 'Ideas', to: '/app/ideas', icon: Lightbulb, phase: 1 },
+    { label: 'Media Library', to: '/app/media', icon: Images, phase: 1 },
+    { label: 'Templates', to: '/app/templates', icon: LayoutTemplate, phase: 1 },
   ]},
   { group: 'Strategy', items: [
     { label: 'Marketing Plan', to: '/app/plan', icon: ClipboardList, phase: 1 },
@@ -20,15 +30,6 @@ export const NAV = [
     { label: 'Trends', to: '/app/trends', icon: TrendingUp, phase: 1 },
     { label: 'Competitors', to: '/app/competitors', icon: Swords, phase: 1 },
     { label: 'Social Listening', to: '/app/listening', icon: Radio, phase: 1 },
-  ]},
-  { group: 'Content', items: [
-    { label: 'Playbooks', to: '/app/playbooks', icon: Rocket, phase: 1 },
-    { label: 'Ideas', to: '/app/ideas', icon: Lightbulb, phase: 1 },
-    { label: 'AI Studio', to: '/app/studio', icon: Wand2, phase: 1 },
-    { label: 'Ad Films', to: '/app/films', icon: Clapperboard, phase: 1 },
-    { label: 'Media Library', to: '/app/media', icon: Images, phase: 1 },
-    { label: 'Templates', to: '/app/templates', icon: LayoutTemplate, phase: 1 },
-    { label: 'Brand Brain', to: '/app/brand', icon: Brain, phase: 1 },
   ]},
   { group: 'Publish', items: [
     { label: 'Calendar', to: '/app/calendar', icon: Calendar, phase: 1 },
@@ -46,6 +47,7 @@ export const NAV = [
     { label: 'Campaigns', to: '/app/ads', icon: Target, phase: 1 },
   ]},
   { group: 'Convert', items: [
+    { label: 'Websites', to: '/app/sites', icon: Globe, phase: 1 },
     { label: 'Landing Pages', to: '/app/landing', icon: Globe, phase: 1 },
     { label: 'Link-in-bio', to: '/app/bio', icon: AtSign, phase: 1 },
     { label: 'Forms', to: '/app/forms', icon: FileInput, phase: 1 },

@@ -119,7 +119,7 @@ export default function MediaLibrary() {
                         <div className="grid grid-cols-2 gap-1.5">
                           {MOTIONS.map((mo) => (
                             <button key={mo.key} onClick={() => animate.mutate({ m, motion: mo.key })}
-                              className="inline-flex items-center gap-1.5 rounded-lg bg-white/90 text-ink text-xs font-semibold px-2 py-1.5 hover:bg-white">
+                              className="inline-flex items-center gap-1.5 rounded-lg bg-white/90 text-black text-xs font-semibold px-2 py-1.5 hover:bg-white">
                               <mo.icon className="w-3.5 h-3.5" /> {mo.label}
                             </button>
                           ))}
@@ -135,10 +135,10 @@ export default function MediaLibrary() {
                       className="grid place-items-center w-8 h-8 rounded-lg bg-white/90 text-coral-ink hover:bg-white"><Film className="w-3.5 h-3.5" /></button>
                   )}
                   <button onClick={() => reuse(m)} title="Reuse in Studio"
-                    className="flex-1 inline-flex items-center justify-center gap-1 rounded-lg bg-white/90 text-ink text-xs font-bold py-1.5 hover:bg-white">
+                    className="flex-1 inline-flex items-center justify-center gap-1 rounded-lg bg-white/90 text-black text-xs font-bold py-1.5 hover:bg-white">
                     <Wand2 className="w-3.5 h-3.5" /> Reuse
                   </button>
-                  <a href={m.url} download title="Download" className="grid place-items-center w-8 h-8 rounded-lg bg-white/90 text-ink hover:bg-white"><Download className="w-3.5 h-3.5" /></a>
+                  <a href={m.url} download title="Download" className="grid place-items-center w-8 h-8 rounded-lg bg-white/90 text-black hover:bg-white"><Download className="w-3.5 h-3.5" /></a>
                   <button onClick={() => remove.mutate(m.id)} title="Delete" className="grid place-items-center w-8 h-8 rounded-lg bg-white/90 text-error hover:bg-white"><Trash2 className="w-3.5 h-3.5" /></button>
                 </div>
               </div>

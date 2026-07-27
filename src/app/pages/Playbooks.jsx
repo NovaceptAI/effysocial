@@ -24,14 +24,20 @@ const OTHER_PLAYBOOKS = [
 function buildAngles(ctx, trends) {
   if (!ctx) return [];
   const cards = [];
-  (ctx.trends || []).slice(0, 3).forEach((t) => {
+  // Prefer brand-molded Trends (grounded in the Brand Brain) over the generic list.
+  const trendItems = (trends?.trending?.length ? trends.trending : ctx.trends) || [];
+  trendItems.slice(0, 3).forEach((t) => {
     cards.push({
       trend: t.topic, heat: t.heat,
-      angle: `A ${t.heat === 'hot' ? 'timely' : 'fresh'} take on "${t.topic}" in your brand voice.`,
+      angle: t.why || `A ${t.heat === 'hot' ? 'timely' : 'fresh'} take on "${t.topic}" in your brand voice.`,
       topic: t.topic,
     });
   });
-  (ctx.competitorAngles || []).slice(0, 2).forEach((a) => {
+  // Product-grounded angles — name the brand's real products/services.
+  ((ctx.brand && ctx.brand.products) || []).slice(0, 2).forEach((p) => {
+    cards.push({ trend: 'Your offering', heat: 'warm', angle: `Show how "${p}" solves a real customer problem.`, topic: p });
+  });
+  (ctx.competitorAngles || []).slice(0, 1).forEach((a) => {
     cards.push({ trend: 'Differentiation', heat: 'warm', angle: a, topic: a });
   });
   (trends?.gaps || []).slice(0, 2).forEach((g) => {

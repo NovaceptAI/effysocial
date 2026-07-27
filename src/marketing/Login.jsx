@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ArrowRight, MailCheck } from 'lucide-react';
 import { useAppAuth } from '../app/context/AppAuth';
-import FluidBackground from '../components/FluidBackground';
 
 export default function Login() {
   const { login, register, resendPublic } = useAppAuth();
@@ -42,14 +41,17 @@ export default function Login() {
 
   return (
     <div className="min-h-dvh bg-canvas text-ink font-sans grid lg:grid-cols-2">
-      {/* brand panel */}
-      <div className="relative hidden lg:flex flex-col justify-between p-12 bg-rail text-white overflow-hidden">
-        <FluidBackground className="absolute inset-0 w-full h-full opacity-40" />
-        <Link to="/" className="relative flex items-center gap-2.5 font-extrabold text-lg">
-          <span className="grid place-items-center w-8 h-8 rounded-[9px] bg-coral text-white">✦</span> EffySocial
+      {/* brand panel — cinematic shader video */}
+      <div className="relative hidden lg:flex flex-col justify-between p-12 overflow-hidden" style={{ background: '#0B0C0E', color: '#fff' }}>
+        <video className="absolute inset-0 w-full h-full object-cover" autoPlay loop muted playsInline preload="auto" style={{ opacity: 0.75 }}>
+          <source src="/landing/hero.mp4" type="video/mp4" />
+        </video>
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(11,12,14,0.45) 0%, rgba(11,12,14,0.5) 45%, rgba(11,12,14,0.85) 100%)' }} />
+        <Link to="/" className="relative flex items-center">
+          <img src="/brand/effysocial-logo-trim.png" alt="EffySocial" className="w-auto" style={{ height: 26 }} />
         </Link>
         <div className="relative">
-          <h2 className="text-3xl font-extrabold leading-tight max-w-sm">Plan, create, publish, advertise and convert — in one place.</h2>
+          <h2 className="font-display text-[2rem] font-semibold leading-[1.15] tracking-tight max-w-sm">Plan, create, publish, advertise and convert — in one place.</h2>
           <p className="mt-3 text-white/70 max-w-sm">Your AI-powered social growth operating system.</p>
         </div>
         <span className="relative text-sm text-white/50">Powered by EffyBiz</span>
@@ -112,9 +114,11 @@ export default function Login() {
             Continue with Google
           </button>
 
-          <p className="text-center text-sm text-ink-soft mt-6">
-            New to EffySocial? <button type="button" onClick={getStarted} className="text-coral-ink font-bold">Get started free</button>
-          </p>
+          <p className="text-center text-xs font-semibold uppercase tracking-wide text-ink-faint mt-6 mb-2.5">New to EffySocial?</p>
+          <button type="button" onClick={getStarted} disabled={busy}
+            className="w-full flex items-center justify-center gap-2 rounded-lg border border-coral/40 bg-coral-tint text-coral-ink font-bold py-3 text-sm hover:bg-coral hover:text-white hover:border-coral transition disabled:opacity-60">
+            Create your free account <ArrowRight className="w-4 h-4" />
+          </button>
         </div>
         )}
       </div>

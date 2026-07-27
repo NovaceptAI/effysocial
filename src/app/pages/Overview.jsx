@@ -93,7 +93,7 @@ function HeroCard({ className = '', image, eyebrow, title, body, to, cta, icon: 
           <p className="mt-3 max-w-lg text-sm leading-relaxed text-white/75 sm:text-[0.95rem]">{body}</p>
           <Link
             to={to}
-            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-ink shadow-lg transition hover:-translate-y-0.5 hover:bg-white/95"
+            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-[#201a17] shadow-lg transition hover:-translate-y-0.5 hover:bg-white/95"
           >
             {cta} <ArrowRight className="h-4 w-4" />
           </Link>

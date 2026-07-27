@@ -1,9 +1,10 @@
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WorkspaceProvider } from './context/WorkspaceContext';
 import { NAV_ITEMS } from './nav';
 import AppShell from './shell/AppShell';
+import AppLauncher from './pages/AppLauncher';
 import Overview from './pages/Overview';
 import Clients from './pages/Clients';
 import Campaigns from './pages/Campaigns';
@@ -41,6 +42,7 @@ import WorkflowRunner from './pages/WorkflowRunner';
 import Admin from './pages/Admin';
 import CampaignLaunch from './pages/CampaignLaunch';
 import LandingPages from './pages/LandingPages';
+import SiteBuilder from './pages/SiteBuilder';
 import Films from './pages/Films';
 import FilmMaker from './pages/FilmMaker';
 import Tracking from './pages/Tracking';
@@ -57,7 +59,7 @@ const queryClient = new QueryClient();
 
 // Routes that are fully built (override the auto-generated placeholders).
 const BUILT = new Set([
-  '/app', '/app/clients', '/app/campaigns', '/app/brand', '/app/studio',
+  '/app', '/app/home', '/app/clients', '/app/campaigns', '/app/brand', '/app/studio',
   '/app/calendar', '/app/scheduled', '/app/approvals', '/app/published',
   '/app/inbox', '/app/reviews', '/app/analytics/organic', '/app/reports',
   '/app/integrations', '/app/team',
@@ -78,14 +80,23 @@ export default function AppRoot() {
     <QueryClientProvider client={queryClient}>
       <WorkspaceProvider>
         <Routes>
+          {/* One platform, one shell. The dashboard (/app) is home — four
+              video cards that are simply entry points into the same menu:
+              AI Studio, Ad Films, Brand Brain, Performance Marketing. */}
+          <Route path="apps" element={<Navigate to="/app" replace />} />
+          <Route path="studio-app" element={<Navigate to="/app/studio" replace />} />
+          <Route path="films-app" element={<Navigate to="/app/films" replace />} />
+          <Route path="films-app/:id" element={<Navigate to="/app/films" replace />} />
+
           <Route element={<AppShell />}>
-            <Route index element={<Overview />} />
+            <Route index element={<AppLauncher />} />
+            <Route path="studio" element={<AIStudio />} />
+            <Route path="films" element={<Films />} />
+            <Route path="home" element={<Overview />} />
             <Route path="clients" element={<Clients />} />
             <Route path="campaigns" element={<Campaigns />} />
             <Route path="campaigns/:id" element={<CampaignWorkspace />} />
             <Route path="brand" element={<BrandBrain />} />
-            <Route path="studio" element={<AIStudio />} />
-            <Route path="films" element={<Films />} />
             <Route path="calendar" element={<Calendar />} />
             <Route path="scheduled" element={<Scheduled />} />
             <Route path="approvals" element={<Approvals />} />
@@ -117,6 +128,7 @@ export default function AppRoot() {
             <Route path="admin" element={<Admin />} />
             <Route path="launch" element={<CampaignLaunch />} />
             <Route path="landing" element={<LandingPages />} />
+            <Route path="sites" element={<SiteBuilder />} />
             <Route path="tracking" element={<Tracking />} />
             <Route path="followups" element={<Followups />} />
             <Route path="bio" element={<BioPages />} />
@@ -130,6 +142,7 @@ export default function AppRoot() {
             ))}
             <Route path="*" element={<ModulePlaceholder />} />
           </Route>
+          {/* The film Maker is a deliberate full-screen theatre takeover. */}
           <Route path="films/:id" element={<FilmMaker />} />
         </Routes>
       </WorkspaceProvider>

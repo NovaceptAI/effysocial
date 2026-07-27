@@ -11,6 +11,8 @@ async function http(path, opts = {}) {
 
 export const effyApi = {
   listCampaigns: (workspaceId) => http(`/campaigns?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.campaigns),
+  suggestCampaigns: (workspaceId) =>
+    http('/campaigns/suggest', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId }) }).then((d) => d.campaigns),
   getCampaign: (id) => http(`/campaigns/${id}`).then((d) => d.campaign),
   createCampaign: (payload) =>
     http('/campaigns', {
@@ -28,6 +30,25 @@ export const effyApi = {
     http('/brand/fact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
   testBrandVoice: (workspaceId, prompt) =>
     http('/brand/test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId, prompt }) }),
+  // Site Builder
+  listSites: (workspaceId) => http(`/sites?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.sites),
+  getSite: (id) => http(`/sites/${id}`).then((d) => d.site),
+  generateSite: (workspaceId, template, style) =>
+    http('/sites/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId, template, style }) }).then((d) => d.site),
+  updateSite: (id, payload) =>
+    http(`/sites/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.site),
+  deleteSite: (id) => http(`/sites/${id}`, { method: 'DELETE' }),
+  publicSite: (slug) => http(`/public/site/${encodeURIComponent(slug)}`).then((d) => d.site),
+
+  suggestBrandSection: (workspaceId, section) =>
+    http('/brand/suggest', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId, section }) }).then((d) => d.suggestion),
+  uploadBrandLogo: (workspaceId, file) => {
+    const fd = new FormData();
+    fd.append('workspace', workspaceId);
+    fd.append('file', file);
+    // No Content-Type header — the browser sets the multipart boundary.
+    return http('/brand/logo', { method: 'POST', body: fd });
+  },
 
   // AI Studio
   generateStudio: (payload) =>
@@ -112,6 +133,12 @@ export const effyApi = {
     http(`/films/${id}/script`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload || {}) }).then((d) => d.film),
   filmSceneUpdate: (id, sceneId, payload) =>
     http(`/films/${id}/scenes/${sceneId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.scene),
+  filmSceneRedraft: (id, sceneId, field) =>
+    http(`/films/${id}/scenes/${sceneId}/redraft`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ field }) }).then((d) => d.scene),
+  filmScriptImport: (id, payload) =>
+    http(`/films/${id}/script/import`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.film),
+  filmSceneVo: (id, sceneId, payload) =>
+    http(`/films/${id}/scenes/${sceneId}/vo`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload || {}) }),
   filmStill: (id, sceneId, payload) =>
     http(`/films/${id}/scenes/${sceneId}/still`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload || {}) }),
   filmApprove: (id, sceneId, approved) =>
@@ -129,6 +156,40 @@ export const effyApi = {
     http(`/films/${id}/voice-adopt`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.film),
   filmPersonalize: (id, dealers) =>
     http(`/films/${id}/personalize`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dealers }) }),
+
+  // Product Shot Video Builder
+  listProductShots: (workspaceId) => http(`/product-shots?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.shots),
+  createProductShot: (payload) =>
+    http('/product-shots', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.shot),
+  getProductShot: (id) => http(`/product-shots/${id}`).then((d) => d.shot),
+  updateProductShot: (id, payload) =>
+    http(`/product-shots/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.shot),
+  deleteProductShot: (id) => http(`/product-shots/${id}`, { method: 'DELETE' }),
+  productShotSource: (id, file) => {
+    const fd = new FormData();
+    fd.append('photo', file);
+    return http(`/product-shots/${id}/source`, { method: 'POST', body: fd }).then((d) => d.shot);
+  },
+  productShotFrameAdd: (id, payload) =>
+    http(`/product-shots/${id}/frames`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload || {}) }).then((d) => d.shot),
+  productShotFrameUpdate: (id, frameId, payload) =>
+    http(`/product-shots/${id}/frames/${frameId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.frame),
+  productShotFrameDelete: (id, frameId) =>
+    http(`/product-shots/${id}/frames/${frameId}`, { method: 'DELETE' }).then((d) => d.shot),
+  productShotStill: (id, frameId) =>
+    http(`/product-shots/${id}/frames/${frameId}/still`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }),
+  productShotApprove: (id, frameId, approved) =>
+    http(`/product-shots/${id}/frames/${frameId}/approve`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ approved }) }).then((d) => d.frame),
+  productShotAnimate: (id, frameId) =>
+    http(`/product-shots/${id}/frames/${frameId}/animate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }),
+  productShotAnimateStatus: (id, frameId) =>
+    http(`/product-shots/${id}/frames/${frameId}/animate/status`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }),
+  productShotMusicUpload: (id, file) => {
+    const fd = new FormData();
+    fd.append('music', file);
+    return http(`/product-shots/${id}/music`, { method: 'POST', body: fd }).then((d) => d.shot);
+  },
+  productShotBuild: (id) => http(`/product-shots/${id}/build`, { method: 'POST' }).then((d) => d.shot),
 
   publishReelStart: (payload) =>
     http('/publish/instagram-reel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
@@ -148,6 +209,7 @@ export const effyApi = {
     http('/studio/send-to-approval', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
 
   // Admin (platform owner only)
+  billingCredits: (workspaceId) => http(`/billing/credits?workspace=${encodeURIComponent(workspaceId)}`),
   adminUsage: () => http('/admin/usage'),
   adminSettings: () => http('/admin/settings').then((d) => d.settings),
   adminSetSettings: (payload) =>
@@ -176,6 +238,8 @@ export const effyApi = {
 
   // Ideas — content backlog
   listIdeas: (workspaceId) => http(`/ideas?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.ideas),
+  generateIdeas: (workspaceId) =>
+    http('/ideas/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId }) }).then((d) => d.ideas),
   createIdea: (payload) =>
     http('/ideas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.idea),
   updateIdea: (id, payload) =>

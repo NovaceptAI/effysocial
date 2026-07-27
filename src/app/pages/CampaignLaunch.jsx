@@ -19,6 +19,26 @@ export default function CampaignLaunch() {
   const [name, setName] = useState('');
   const [objective, setObjective] = useState(OBJECTIVES[0]);
   const [budget, setBudget] = useState(40000);
+  const [pillar, setPillar] = useState('');
+  const [channels, setChannels] = useState([]);
+  // brand-brain suggestions
+  const [suggestions, setSuggestions] = useState([]);
+  const [suggBusy, setSuggBusy] = useState(false);
+  const [suggErr, setSuggErr] = useState('');
+
+  const suggest = async () => {
+    setSuggBusy(true); setSuggErr('');
+    try { setSuggestions(await effyApi.suggestCampaigns(workspace.id)); }
+    catch (e) { setSuggErr(e.message || 'Could not suggest campaigns.'); }
+    finally { setSuggBusy(false); }
+  };
+  const pickSuggestion = (s) => {
+    setName(s.name || '');
+    if (OBJECTIVES.includes(s.objective)) setObjective(s.objective);
+    setPillar(s.pillar || '');
+    setChannels(s.channels || []);
+    setSuggestions([]);
+  };
 
   const { data: assembly, refetch } = useQuery({
     queryKey: ['assembly', campaign?.id],
@@ -30,7 +50,7 @@ export default function CampaignLaunch() {
     if (!name.trim()) return;
     setBusy('campaign');
     try {
-      const c = await effyApi.createCampaign({ workspace: workspace.id, name: name.trim(), objective, budget: Number(budget) });
+      const c = await effyApi.createCampaign({ workspace: workspace.id, name: name.trim(), objective, budget: Number(budget), pillar, channels });
       setCampaign(c);
       setStep(2);
     } finally { setBusy(''); }
@@ -91,7 +111,33 @@ export default function CampaignLaunch() {
       {/* STEP 1 — basics */}
       {step === 1 && (
         <Card className="p-6">
-          <h3 className="font-display text-lg font-semibold tracking-tight mb-4 flex items-center gap-2"><Rocket className="w-5 h-5 text-coral-ink" /> Campaign basics</h3>
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <h3 className="font-display text-lg font-semibold tracking-tight flex items-center gap-2"><Rocket className="w-5 h-5 text-coral-ink" /> Campaign basics</h3>
+            <Button size="sm" variant="spark" onClick={suggest} disabled={suggBusy}>
+              {suggBusy ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Thinking…</> : <><Sparkles className="w-3.5 h-3.5" /> Suggest from Brand Brain</>}
+            </Button>
+          </div>
+
+          {(suggestions.length > 0 || suggErr) && (
+            <div className="rounded-xl border border-coral/20 bg-coral-tint/50 p-3 mb-4">
+              {suggErr && <p className="text-sm text-error">{suggErr}</p>}
+              <div className="space-y-2">
+                {suggestions.map((s, i) => (
+                  <button key={i} onClick={() => pickSuggestion(s)}
+                    className="w-full text-left p-3 rounded-lg bg-surface hover:border-coral border border-line transition">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-bold text-ink">{s.name}</span>
+                      <Badge tone="default">{s.objective}</Badge>
+                      {(s.channels || []).map((ch) => <Badge key={ch} tone="info">{ch}</Badge>)}
+                    </div>
+                    {s.angle && <p className="text-xs text-ink-soft mt-1">{s.angle}</p>}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-ink-faint mt-2">Pick one to prefill — then edit and continue.</p>
+            </div>
+          )}
+
           <label className="block text-xs font-bold text-ink-soft mb-1">Campaign name</label>
           <input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Monsoon Checkup Drive"
             className="w-full rounded-lg border border-line bg-surface px-3.5 py-2.5 text-sm mb-4" />

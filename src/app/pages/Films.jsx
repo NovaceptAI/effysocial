@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Clapperboard, Palette, FileText, Image as ImageIcon, Film, Mic, Layers,
@@ -40,6 +40,10 @@ const STATUS_BADGE = {
 export default function Films() {
   const { workspace } = useWorkspace();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  // Ad Films runs both as a standalone app (/app/films-app) and inside the PM
+  // suite (/app/films). Keep the maker on whichever base we came from.
+  const filmsBase = pathname.startsWith('/app/films-app') ? '/app/films-app' : '/app/films';
   const qc = useQueryClient();
   const [creating, setCreating] = useState(false);
   const [title, setTitle] = useState('');
@@ -60,7 +64,7 @@ export default function Films() {
     }),
     onSuccess: (film) => {
       qc.invalidateQueries({ queryKey: ['films', workspace?.id] });
-      navigate(`/app/films/${film.id}`);
+      navigate(`${filmsBase}/${film.id}`);
     },
   });
 
@@ -76,61 +80,7 @@ export default function Films() {
         subtitle="Create your own ad film — a guided production room, from brief to delivered film."
       />
 
-      {/* The journey — a dark cinematic band; each card lifts and reveals its
-          craft details on hover. This is the shop window, not a checklist. */}
-      <div className="rounded-3xl mb-8 p-6 md:p-8" style={{ background: 'linear-gradient(135deg, #0D0E12 0%, #16181D 55%, #1a141a 100%)' }}>
-        <div className="flex items-end justify-between flex-wrap gap-3 mb-6">
-          <div>
-            <div className="text-[11px] font-extrabold tracking-[0.22em] text-[#FF6A5C] mb-1.5">THE PRODUCTION ROOM</div>
-            <h2 className="font-display text-2xl md:text-[1.7rem] font-semibold tracking-tight text-white">
-              From brief to broadcast-ready, in seven acts
-            </h2>
-          </div>
-          <p className="text-[13px] text-white/50 max-w-xs leading-snug">
-            Money only moves at two gates — and never before you've approved every frame.
-          </p>
-        </div>
-        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
-          {STEPS.map((s, i) => (
-            <div key={s.title}
-              className="group relative rounded-2xl p-5 cursor-default transition-all duration-300 hover:-translate-y-1.5"
-              style={{ background: '#16181D', border: '1px solid #2A2E36' }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#FF6A5C66'; e.currentTarget.style.boxShadow = '0 18px 40px -18px rgba(255,106,92,0.35)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#2A2E36'; e.currentTarget.style.boxShadow = 'none'; }}>
-              <div className="flex items-start justify-between mb-4">
-                <span className="grid place-items-center w-11 h-11 rounded-xl text-white transition-transform duration-300 group-hover:scale-110"
-                  style={{ background: 'linear-gradient(135deg, #FF6A5C, #E5484D)' }}>
-                  <s.icon className="w-5 h-5" />
-                </span>
-                <span className="font-display text-3xl font-bold leading-none select-none transition-colors duration-300 text-white/10 group-hover:text-[#FF6A5C]/40">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-              </div>
-              <div className="font-display font-semibold text-[15px] text-white leading-tight">{s.title}</div>
-              <div className="text-[11.5px] text-white/40 mt-1 mb-3">{s.tag}</div>
-              <ul className="space-y-1.5 mb-3">
-                {s.details.map((dd) => (
-                  <li key={dd} className="flex items-start gap-2 text-[11.5px] leading-snug text-white/60">
-                    <span className="mt-[5px] w-1 h-1 rounded-full shrink-0 bg-[#FF6A5C]/70" />
-                    {dd}
-                  </li>
-                ))}
-              </ul>
-              <div className={`inline-block text-[10.5px] font-bold tracking-wide px-2.5 py-1 rounded-full ${s.cost === 'free'
-                ? 'bg-white/5 text-white/45'
-                : 'text-[#FFB020]'}`}
-                style={s.cost !== 'free' ? { background: 'rgba(255,176,32,0.12)' } : undefined}>
-                {s.cost === 'free' ? 'INCLUDED' : s.cost.toUpperCase()}
-              </div>
-              {i < STEPS.length - 1 && (
-                <span className="hidden xl:block absolute top-1/2 -right-[13px] w-[10px] border-t border-dashed border-white/15" />
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Create */}
+      {/* Start a new film — the primary action, at the top of the room */}
       <Card className="p-6 mb-8">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-start gap-3">
@@ -174,6 +124,60 @@ export default function Films() {
         )}
       </Card>
 
+      {/* The journey — a dark cinematic band; each card lifts and reveals its
+          craft details on hover. This is the shop window, not a checklist. */}
+      <div className="rounded-3xl mb-8 p-6 md:p-8" style={{ background: 'linear-gradient(135deg, #0D0E12 0%, #16181D 55%, #1a141a 100%)' }}>
+        <div className="flex items-end justify-between flex-wrap gap-3 mb-6">
+          <div>
+            <div className="text-[11px] font-extrabold tracking-[0.22em] text-[#FF6A5C] mb-1.5">THE PRODUCTION ROOM</div>
+            <h2 className="font-display text-2xl md:text-[1.7rem] font-semibold tracking-tight text-white">
+              From brief to broadcast-ready, in seven acts
+            </h2>
+          </div>
+          <p className="text-[13px] text-white/50 max-w-xs leading-snug">
+            Money only moves at two gates — and never before you've approved every frame.
+          </p>
+        </div>
+        <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
+          {STEPS.map((s, i) => (
+            <div key={s.title}
+              className="group relative rounded-2xl p-5 cursor-default transition-all duration-300 hover:-translate-y-1.5"
+              style={{ background: '#16181D', border: '1px solid #2A2E36' }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#FF6A5C66'; e.currentTarget.style.boxShadow = '0 18px 40px -18px rgba(255,106,92,0.35)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#2A2E36'; e.currentTarget.style.boxShadow = 'none'; }}>
+              <div className="flex items-start justify-between mb-4">
+                <span className="grid place-items-center w-11 h-11 rounded-xl text-white transition-transform duration-300 group-hover:scale-110"
+                  style={{ background: 'linear-gradient(135deg, #FF6A5C, #E5484D)' }}>
+                  <s.icon className="w-5 h-5" />
+                </span>
+                <span className="font-display text-3xl font-bold leading-none select-none transition-colors duration-300 text-white/10 group-hover:text-[#FF6A5C]/40">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+              </div>
+              <div className="font-display font-semibold text-[15px] text-white leading-tight">{s.title}</div>
+              <div className="text-[11.5px] text-white/40 mt-1 mb-3">{s.tag}</div>
+              <ul className="space-y-1.5 mb-3">
+                {s.details.map((dd) => (
+                  <li key={dd} className="flex items-start gap-2 text-[11.5px] leading-snug text-white/60">
+                    <span className="mt-[5px] w-1 h-1 rounded-full shrink-0 bg-[#FF6A5C]/70" />
+                    {dd}
+                  </li>
+                ))}
+              </ul>
+              <div className={`inline-block text-[10.5px] font-bold tracking-wide px-2.5 py-1 rounded-full ${s.cost === 'free'
+                ? 'bg-white/5 text-white/45'
+                : 'text-[#FFB020]'}`}
+                style={s.cost !== 'free' ? { background: 'rgba(255,176,32,0.12)' } : undefined}>
+                {s.cost === 'free' ? 'INCLUDED' : s.cost.toUpperCase()}
+              </div>
+              {i < STEPS.length - 1 && (
+                <span className="hidden xl:block absolute top-1/2 -right-[13px] w-[10px] border-t border-dashed border-white/15" />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Your films */}
       <h3 className="font-display text-lg font-semibold tracking-tight mb-3">Your films</h3>
       {isLoading ? (
@@ -189,7 +193,7 @@ export default function Films() {
             const master = f.renders?.master;
             return (
               <Card key={f.id} className="overflow-hidden group">
-                <button type="button" onClick={() => navigate(`/app/films/${f.id}`)}
+                <button type="button" onClick={() => navigate(`${filmsBase}/${f.id}`)}
                   className="block w-full text-left bg-transparent">
                   <div className="relative h-36 bg-[#0D0E12] grid place-items-center overflow-hidden">
                     {f.posterUrl ? (
@@ -199,7 +203,7 @@ export default function Films() {
                     )}
                     {f.status === 'delivered' && master && (
                       <span className="absolute inset-0 grid place-items-center bg-black/30">
-                        <span className="grid place-items-center w-11 h-11 rounded-full bg-white/90"><Play className="w-5 h-5 ml-0.5 text-ink" /></span>
+                        <span className="grid place-items-center w-11 h-11 rounded-full bg-white/90"><Play className="w-5 h-5 ml-0.5 text-black" /></span>
                       </span>
                     )}
                   </div>
@@ -216,7 +220,7 @@ export default function Films() {
                   </div>
                 </button>
                 <div className="px-4 pb-3 flex items-center gap-2">
-                  <Button size="sm" variant="ghost" onClick={() => navigate(`/app/films/${f.id}`)}>
+                  <Button size="sm" variant="ghost" onClick={() => navigate(`${filmsBase}/${f.id}`)}>
                     {f.status === 'delivered' ? 'Open' : 'Resume'}
                   </Button>
                   {f.status === 'delivered' && master && (

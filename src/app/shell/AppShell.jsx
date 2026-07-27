@@ -33,6 +33,17 @@ function VerifyBanner() {
 // Routes that want the full viewport width (editor-style, no page gutter/cap).
 const FULL_BLEED = new Set(['/app/studio']);
 
+// Performance Marketing is open to everyone but still actively being built —
+// an honest heads-up, not a locked-door message.
+function DevBanner() {
+  return (
+    <div className="flex items-center gap-2.5 px-5 sm:px-8 py-2 bg-amber-500/15 border-b border-amber-500/20 text-sm text-ink">
+      <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 shrink-0">New</span>
+      <span className="text-ink-soft">Performance Marketing is rolling out — some areas are still being finished.</span>
+    </div>
+  );
+}
+
 // Shown until the workspace has at least one connected channel — the product
 // runs on real integrations, so connecting is step one for a fresh account.
 function ConnectBanner() {
@@ -58,24 +69,15 @@ function ConnectBanner() {
 
 export default function AppShell() {
   const { pathname } = useLocation();
+  const { loading } = useAppAuth();
   const fullBleed = FULL_BLEED.has(pathname);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
-  const [railHidden, setRailHidden] = useState(() => {
-    try {
-      const saved = localStorage.getItem('effy.rail.collapsed');
-      return saved == null ? true : saved === '1';
-    } catch { return true; }
-  });
-  const toggleRail = () => setRailHidden((v) => {
-    const next = !v;
-    try { localStorage.setItem('effy.rail.collapsed', next ? '1' : '0'); } catch { /* noop */ }
-    return next;
-  });
+  if (loading) return <div style={{ minHeight: '100dvh', background: '#0B0C0E', color: 'rgba(236,237,239,0.6)', display: 'grid', placeItems: 'center', fontFamily: 'Manrope, system-ui, sans-serif', fontSize: 13 }}>Loading…</div>;
   return (
     <div className="app-root flex min-h-dvh bg-canvas text-ink">
-      <NavRail mobileOpen={navOpen} onNavigate={() => setNavOpen(false)} desktopCollapsed={railHidden} />
+      <NavRail mobileOpen={navOpen} onNavigate={() => setNavOpen(false)} />
       {/* Mobile drawer backdrop */}
       {navOpen && (
         <div className="fixed inset-0 z-40 bg-ink/40 backdrop-blur-sm md:hidden" onClick={() => setNavOpen(false)} />
@@ -85,9 +87,8 @@ export default function AppShell() {
           onOpenPalette={() => setPaletteOpen(true)}
           onOpenAssistant={() => setAssistantOpen(true)}
           onOpenNav={() => setNavOpen(true)}
-          onToggleRail={toggleRail}
-          railHidden={railHidden}
         />
+        <DevBanner />
         <VerifyBanner />
         <ConnectBanner />
         <main className={fullBleed

@@ -110,15 +110,24 @@ export default function CharactersStudio({ onBack }) {
 
   const CharCard = ({ ch }) => {
     const isActive = active && ((ch.kind === 'preset' && ch.key === active.key) || (ch.kind === 'custom' && ch.id === active.id));
+    const vidRef = useRef(null);
+    const canPlay = ch.ready && ch.previewUrl;
+    const playHover = () => { const v = vidRef.current; if (v) v.play().catch(() => {}); };
+    const stopHover = () => { const v = vidRef.current; if (v) { v.pause(); v.currentTime = 0; } };
     return (
       <button type="button" onClick={() => pick(ch)}
+        onMouseEnter={canPlay ? playHover : undefined} onMouseLeave={canPlay ? stopHover : undefined}
         className={cn(
           'group relative rounded-2xl overflow-hidden text-left transition-all duration-300 bg-transparent',
           ch.ready ? 'cursor-pointer hover:-translate-y-1' : 'cursor-not-allowed',
           isActive ? 'ring-2 ring-coral shadow-coral' : 'ring-1 ring-black/10',
         )}
         style={{ aspectRatio: '3 / 4', background: '#0D0E12' }}>
-        {ch.portraitUrl ? (
+        {canPlay ? (
+          <video ref={vidRef} src={ch.previewUrl} poster={ch.portraitUrl || undefined}
+            muted loop playsInline preload="none"
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+        ) : ch.portraitUrl ? (
           <img src={ch.portraitUrl} alt={ch.name} loading="lazy"
             className={cn('absolute inset-0 w-full h-full object-cover transition-transform duration-500',
               ch.ready && 'group-hover:scale-105', !ch.ready && 'opacity-45 grayscale-[35%]')} />
