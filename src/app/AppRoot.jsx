@@ -43,12 +43,19 @@ import Admin from './pages/Admin';
 import CampaignLaunch from './pages/CampaignLaunch';
 import LandingPages from './pages/LandingPages';
 import SiteBuilder from './pages/SiteBuilder';
+import Blog from './pages/Blog';
+import WhatsNew from './pages/WhatsNew';
+import PricingApp from './pages/PricingApp';
 import Films from './pages/Films';
 import FilmMaker from './pages/FilmMaker';
 import Tracking from './pages/Tracking';
 import Followups from './pages/Followups';
 import BioPages from './pages/BioPages';
 import AdsDashboard from './pages/AdsDashboard';
+import Creatives from './pages/Creatives';
+import Audiences from './pages/Audiences';
+import Budgets from './pages/Budgets';
+import Rules from './pages/Rules';
 import AdsAnalytics from './pages/AdsAnalytics';
 import LeadAnalytics from './pages/LeadAnalytics';
 import RevenueAnalytics from './pages/RevenueAnalytics';
@@ -66,7 +73,8 @@ const BUILT = new Set([
   '/app/plan', '/app/trends', '/app/competitors', '/app/listening',
   '/app/ideas', '/app/media', '/app/templates', '/app/films',
   '/app/billing', '/app/settings', '/app/comments', '/app/engage-leads',
-  '/app/pipeline', '/app/forms', '/app/ads', '/app/playbooks', '/app/launch', '/app/landing', '/app/tracking',
+  '/app/pipeline', '/app/forms', '/app/ads', '/app/creatives', '/app/audiences', '/app/budgets', '/app/rules',
+  '/app/playbooks', '/app/launch', '/app/landing', '/app/tracking',
   '/app/followups', '/app/bio',
   '/app/analytics/ads', '/app/analytics/leads', '/app/analytics/revenue',
   '/app/analytics/creative',
@@ -113,6 +121,9 @@ export default function AppRoot() {
             <Route path="listening" element={<SocialListening />} />
             <Route path="ideas" element={<Ideas />} />
             <Route path="media" element={<MediaLibrary />} />
+            <Route path="blog" element={<Blog />} />
+            <Route path="whats-new" element={<WhatsNew />} />
+            <Route path="pricing" element={<PricingApp />} />
             <Route path="templates" element={<Templates />} />
             <Route path="billing" element={<Billing />} />
             <Route path="settings" element={<Settings />} />
@@ -133,6 +144,10 @@ export default function AppRoot() {
             <Route path="followups" element={<Followups />} />
             <Route path="bio" element={<BioPages />} />
             <Route path="ads" element={<AdsDashboard />} />
+            <Route path="creatives" element={<Creatives />} />
+            <Route path="audiences" element={<Audiences />} />
+            <Route path="budgets" element={<Budgets />} />
+            <Route path="rules" element={<Rules />} />
             <Route path="analytics/ads" element={<AdsAnalytics />} />
             <Route path="analytics/leads" element={<LeadAnalytics />} />
             <Route path="analytics/revenue" element={<RevenueAnalytics />} />

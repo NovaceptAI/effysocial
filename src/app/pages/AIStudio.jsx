@@ -6,6 +6,7 @@ import {
   Check, FileText, Film, Images, Square, MessageCircle, Video, Briefcase,
   CalendarPlus, Send, Flame, Swords, X, ArrowRight, ArrowLeft, PenLine, Palette,
   SlidersHorizontal, Search, Clapperboard, Mic, Layers, UserSquare, Users, Package,
+  UserRoundPlus,
 } from 'lucide-react';
 import Storyboard from '../components/Storyboard';
 import ShareRow from '../components/ShareRow';
@@ -162,16 +163,17 @@ export default function AIStudio() {
 
   // Deep-linked from a playbook, workflow or Media Library? Skip the chooser.
   const reusedImage = params.get('image') || '';
+  const reusedVideo = params.get('video') || '';
   const campaignId = params.get('campaign') ? Number(params.get('campaign')) : null;
-  const seeded = params.get('trend') || params.get('angle') || params.get('topic') || reusedImage || campaignId;
-  const [format, setFormat] = useState(seeded ? FORMATS[0] : null);
+  const seeded = params.get('trend') || params.get('angle') || params.get('topic') || reusedImage || reusedVideo || campaignId;
+  const [format, setFormat] = useState(seeded ? (reusedVideo ? FORMATS.find((f) => f.video) || FORMATS[0] : FORMATS[0]) : null);
 
   const [panel, setPanel] = useState('brief');   // open tool panel (or null)
   const [topic, setTopic] = useState(params.get('topic') || '');
   const [lang, setLang] = useState('English');
   const [busy, setBusy] = useState(false);
-  // A reused image opens straight into the preview with an empty draft to fill.
-  const [result, setResult] = useState(reusedImage ? { caption: '', hashtags: [], scores: [], hook: '', cta: '', cited: [] } : null);
+  // A reused asset opens straight into the preview with an empty draft to fill.
+  const [result, setResult] = useState((reusedImage || reusedVideo) ? { caption: '', hashtags: [], scores: [], hook: '', cta: '', cited: [] } : null);
   const [preview, setPreview] = useState('mobile');
   const [trend, setTrend] = useState(params.get('trend') || '');
   const [angle, setAngle] = useState(params.get('angle') || '');
@@ -179,9 +181,24 @@ export default function AIStudio() {
   const [showScores, setShowScores] = useState(true);
   const [image, setImage] = useState(reusedImage);       // generated/reused visual URL
   const [imgBusy, setImgBusy] = useState(false);
-  const [video, setVideo] = useState('');       // generated video URL (Veo)
+  const [embedOpen, setEmbedOpen] = useState(false);
+  const [agentFile, setAgentFile] = useState(null);
+  const [agentPlacement, setAgentPlacement] = useState('right side');
+  const [agentDirection, setAgentDirection] = useState('');
+  const [embedBusy, setEmbedBusy] = useState(false);
+  const [embedMsg, setEmbedMsg] = useState('');
+  const [video, setVideo] = useState(reusedVideo); // generated/reused video URL
   const [vidBusy, setVidBusy] = useState(false);
   const [vidMsg, setVidMsg] = useState('');     // progress/error line for video
+  const [vidPrompt, setVidPrompt] = useState(''); // shot description sent to Veo
+  const [outroOpen, setOutroOpen] = useState(false);
+  const [outroMode, setOutroMode] = useState('existing');
+  const [outroCharacter, setOutroCharacter] = useState('');
+  const [outroPhoto, setOutroPhoto] = useState(null);
+  const [outroName, setOutroName] = useState('My agent');
+  const [outroScript, setOutroScript] = useState('Ready to grow? Talk to our team today.');
+  const [outroBusy, setOutroBusy] = useState(false);
+  const [outroMsg, setOutroMsg] = useState('');
   const [voiceOn, setVoiceOn] = useState(false);
   const [voice, setVoice] = useState('');
   const [music, setMusic] = useState('');
@@ -198,6 +215,11 @@ export default function AIStudio() {
     enabled: !!workspace,
   });
   const { data: audioOpts } = useQuery({ queryKey: ['studio-voices'], queryFn: () => effyApi.studioVoices() });
+  const { data: characterData, refetch: refetchCharacters } = useQuery({
+    queryKey: ['characters', workspace?.id],
+    queryFn: () => effyApi.listCharacters(workspace.id),
+    enabled: !!workspace && !!video,
+  });
   const voices = audioOpts?.voices || [];
   const musicOpts = audioOpts?.music || [{ key: '', name: 'None' }];
 
@@ -266,15 +288,30 @@ export default function AIStudio() {
       if (d.imageUrl) setImage(d.imageUrl);
     } finally { setImgBusy(false); }
   };
+  const embedAgent = async () => {
+    if (!workspace || !image || !agentFile) return;
+    const baseName = decodeURIComponent(image.split('?')[0].split('/').pop() || '');
+    setEmbedBusy(true); setEmbedMsg('Blending your agent into the creative…');
+    try {
+      const d = await effyApi.studioEmbedImage(workspace.id, {
+        baseName, agent: agentFile, placement: agentPlacement, direction: agentDirection,
+      });
+      setImage(d.imageUrl); setEmbedOpen(false); setAgentFile(null); setAgentDirection('');
+      setEmbedMsg('Agent added — the final image is saved in Media Library.');
+    } catch (e) {
+      setEmbedMsg(e.message || 'Could not add the agent to this image.');
+    } finally { setEmbedBusy(false); }
+  };
   // Veo video — long-running: start, then poll every 8s (Veo takes ~1–3 min).
   const genVideo = async () => {
     if (!workspace || !format) return;
-    setVidBusy(true); setVideo(''); setVidMsg('Starting render…');
+    setVidBusy(true); setVideo(''); setVidMsg('Starting render…'); setVidPrompt('');
     try {
-      const { op } = await effyApi.studioVideoStart({
+      const { op, prompt } = await effyApi.studioVideoStart({
         workspace: workspace.id, topic: topic || trend || angle, trend, aspect: format.aspect,
         voiceover: voiceOn, voice, music, language: lang, script: result?.caption || topic || trend || angle,
       });
+      if (prompt) setVidPrompt(prompt);
       setVidMsg('Rendering video…');
       for (let i = 0; i < 60; i += 1) {
         const st = await effyApi.studioVideoStatus({ workspace: workspace.id, op });
@@ -286,6 +323,59 @@ export default function AIStudio() {
     } catch (e) {
       setVidMsg(e.message || 'Video generation failed.');
     } finally { setVidBusy(false); }
+  };
+  const addAgentOutro = async () => {
+    const words = outroScript.trim().split(/\s+/).filter(Boolean);
+    if (!workspace || !video || !words.length || words.length > 16) return;
+    if (outroMode === 'upload' && !outroPhoto) return;
+    if (outroMode === 'existing' && !outroCharacter) return;
+    setOutroBusy(true); setOutroMsg('Preparing your EffyCharacter…');
+    try {
+      let character = outroCharacter;
+      if (outroMode === 'upload') {
+        let created = await effyApi.createCharacter(workspace.id, {
+          photo: outroPhoto, name: outroName.trim() || 'My agent',
+        });
+        for (let i = 0; created.status !== 'ready' && i < 60; i += 1) {
+          setOutroMsg('Turning the photo into an EffyCharacter…');
+          await new Promise((r) => setTimeout(r, 8000));
+          // eslint-disable-next-line no-await-in-loop
+          const st = await effyApi.characterStatus(created.id);
+          if (st.status === 'error') throw new Error(st.message || 'Character creation failed.');
+          if (st.character) created = st.character;
+        }
+        if (created.status !== 'ready') throw new Error('Character is still rendering — try again shortly.');
+        character = `custom:${created.id}`;
+        refetchCharacters();
+      }
+
+      const [kind, key] = character.split(':');
+      setOutroMsg('Making your agent speak…');
+      const { job } = await effyApi.characterSpeak({
+        workspace: workspace.id, script: words.join(' '), language: lang,
+        ...(kind === 'preset' ? { preset: key } : { characterId: Number(key) }),
+      });
+      let clip = null;
+      for (let i = 0; i < 60; i += 1) {
+        await new Promise((r) => setTimeout(r, 8000));
+        // eslint-disable-next-line no-await-in-loop
+        const st = await effyApi.avatarStatus({ workspace: workspace.id, job });
+        if (st.status === 'ready') { clip = st; break; }
+        if (st.status === 'error') throw new Error(st.message || 'Agent speech render failed.');
+        setOutroMsg('Lip-syncing your agent’s lines…');
+      }
+      if (!clip?.name) throw new Error('Agent clip is still rendering — try again shortly.');
+
+      setOutroMsg('Attaching the agent to the end of your ad…');
+      const videoName = decodeURIComponent(video.split('?')[0].split('/').pop() || '');
+      const final = await effyApi.studioStitchAgentOutro({
+        workspace: workspace.id, videoName, outroName: clip.name,
+      });
+      setVideo(final.videoUrl); setOutroOpen(false); setOutroPhoto(null);
+      setOutroMsg('Done — your ad with agent outro is saved in Media Library.');
+    } catch (e) {
+      setOutroMsg(e.message || 'Could not create the agent outro.');
+    } finally { setOutroBusy(false); }
   };
 
   if (!format) {
@@ -489,9 +579,9 @@ export default function AIStudio() {
                       : image
                         ? <img src={image} alt="Generated visual" className="absolute inset-0 w-full h-full object-cover" />
                         : <div className="absolute inset-0 bg-aurora" />}
-                    {(imgBusy || vidBusy) && (
+                    {(imgBusy || vidBusy || embedBusy) && (
                       <div className="absolute inset-0 grid place-items-center bg-ink/40 backdrop-blur-sm text-white text-xs font-semibold px-4 text-center">
-                        <span className="inline-flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> {vidBusy ? (vidMsg || 'Rendering video…') : 'Painting…'}</span>
+                        <span className="inline-flex items-center gap-1.5"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> {embedBusy ? embedMsg : vidBusy ? (vidMsg || 'Rendering video…') : 'Painting…'}</span>
                       </div>
                     )}
                   </div>
@@ -502,14 +592,83 @@ export default function AIStudio() {
                   <Button variant="secondary" onClick={genImage} disabled={imgBusy || vidBusy}>
                     <ImageIcon className="w-4 h-4" /> {imgBusy ? 'Generating…' : image ? 'Regenerate image' : 'Generate image'}
                   </Button>
+                  {image && !video && (
+                    <Button variant="secondary" onClick={() => setEmbedOpen((v) => !v)} disabled={imgBusy || embedBusy}>
+                      <UserRoundPlus className="w-4 h-4" /> Add your agent
+                    </Button>
+                  )}
                   {format.video && (
                     <Button variant="secondary" onClick={genVideo} disabled={vidBusy || imgBusy}>
                       <Film className="w-4 h-4" /> {vidBusy ? 'Rendering…' : video ? 'Regenerate video' : 'Generate video'}
                     </Button>
                   )}
+                  {video && (
+                    <Button variant="secondary" onClick={() => setOutroOpen((v) => !v)} disabled={outroBusy}>
+                      <UserRoundPlus className="w-4 h-4" /> Add agent outro
+                    </Button>
+                  )}
                 </div>
+                {embedOpen && image && !video && (
+                  <div className="mt-3 w-full rounded-xl bg-surface2/60 p-3 space-y-2.5">
+                    <div className="text-xs font-bold text-ink">Embed an agent into this image</div>
+                    <input type="file" accept="image/jpeg,image/png,image/webp"
+                      onChange={(e) => setAgentFile(e.target.files?.[0] || null)}
+                      className="block w-full text-xs text-ink-soft file:mr-3 file:rounded-lg file:border-0 file:bg-surface file:px-3 file:py-2 file:text-xs file:font-bold" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <select value={agentPlacement} onChange={(e) => setAgentPlacement(e.target.value)}
+                        className="rounded-lg bg-surface px-2.5 py-2 text-xs font-semibold">
+                        <option>right side</option><option>left side</option><option>centre foreground</option><option>background</option>
+                      </select>
+                      <input value={agentDirection} onChange={(e) => setAgentDirection(e.target.value)}
+                        placeholder="Optional: holding the product…" maxLength={240}
+                        className="rounded-lg bg-surface px-2.5 py-2 text-xs" />
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[0.68rem] text-ink-faint">Use a clear, well-lit photo. Existing logos and text are preserved.</p>
+                      <Button size="sm" onClick={embedAgent} disabled={!agentFile || embedBusy}>{embedBusy ? 'Embedding…' : 'Create final image'}</Button>
+                    </div>
+                  </div>
+                )}
+                {embedMsg && !embedBusy && <p className="mt-2 text-xs text-ink-faint text-center">{embedMsg}</p>}
                 {vidMsg && !vidBusy && <p className="mt-2 text-xs text-ink-faint text-center">{vidMsg}</p>}
+                {vidPrompt && (video || vidBusy) && (
+                  <details className="mt-2 w-full rounded-xl bg-surface2/60 px-3 py-2">
+                    <summary className="text-[0.68rem] font-semibold text-ink-soft cursor-pointer select-none">Shot description sent to the video model</summary>
+                    <p className="mt-1.5 text-[0.68rem] leading-relaxed text-ink-faint">{vidPrompt}</p>
+                  </details>
+                )}
                 {video && <ShareRow videoUrl={video} caption={result?.caption || topic} />}
+                {outroOpen && video && (
+                  <div className="mt-3 w-full rounded-xl bg-surface2/60 p-3 space-y-3">
+                    <div>
+                      <div className="text-xs font-bold text-ink">Add a speaking agent at the end</div>
+                      <p className="text-[0.68rem] text-ink-faint mt-0.5">A short 5-second CTA works best — maximum 16 words.</p>
+                    </div>
+                    <div className="flex gap-1 rounded-lg bg-surface p-1">
+                      <button onClick={() => setOutroMode('existing')} className={cn('flex-1 rounded-md px-2 py-1.5 text-xs font-bold', outroMode === 'existing' && 'bg-coral-soft text-coral-ink')}>Existing character</button>
+                      <button onClick={() => setOutroMode('upload')} className={cn('flex-1 rounded-md px-2 py-1.5 text-xs font-bold', outroMode === 'upload' && 'bg-coral-soft text-coral-ink')}>Upload agent photo</button>
+                    </div>
+                    {outroMode === 'existing' ? (
+                      <select value={outroCharacter} onChange={(e) => setOutroCharacter(e.target.value)} className="w-full rounded-lg bg-surface px-2.5 py-2 text-xs font-semibold">
+                        <option value="">Choose an EffyCharacter…</option>
+                        {(characterData?.presets || []).filter((c) => c.ready).map((c) => <option key={c.key} value={`preset:${c.key}`}>{c.name} · {c.role}</option>)}
+                        {(characterData?.custom || []).filter((c) => c.ready).map((c) => <option key={c.id} value={`custom:${c.id}`}>{c.name} · Custom</option>)}
+                      </select>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <input value={outroName} onChange={(e) => setOutroName(e.target.value)} maxLength={80} placeholder="Agent name" className="rounded-lg bg-surface px-2.5 py-2 text-xs" />
+                        <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => setOutroPhoto(e.target.files?.[0] || null)} className="block w-full text-xs text-ink-soft file:mr-2 file:rounded-md file:border-0 file:bg-surface file:px-2 file:py-1.5 file:text-xs file:font-bold" />
+                      </div>
+                    )}
+                    <textarea value={outroScript} onChange={(e) => setOutroScript(e.target.value)} rows={2} placeholder="What should your agent say?" className="w-full resize-none rounded-lg bg-surface px-2.5 py-2 text-xs" />
+                    <div className="flex items-center justify-between gap-2">
+                      <span className={cn('text-[0.68rem]', outroScript.trim().split(/\s+/).filter(Boolean).length > 16 ? 'text-error' : 'text-ink-faint')}>{outroScript.trim().split(/\s+/).filter(Boolean).length}/16 words</span>
+                      <Button size="sm" onClick={addAgentOutro} disabled={outroBusy || !outroScript.trim() || outroScript.trim().split(/\s+/).filter(Boolean).length > 16 || (outroMode === 'existing' ? !outroCharacter : !outroPhoto)}>{outroBusy ? 'Creating outro…' : 'Create final video'}</Button>
+                    </div>
+                    {outroMsg && <p className="text-xs text-ink-faint">{outroMsg}</p>}
+                  </div>
+                )}
+                {outroMsg && !outroOpen && !outroBusy && <p className="mt-2 text-xs text-ink-faint text-center">{outroMsg}</p>}
                 {format.video && (
                   <div className="mt-3 w-full rounded-xl bg-surface2/60 p-3">
                     <div className="flex items-center justify-between">

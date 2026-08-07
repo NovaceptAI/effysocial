@@ -56,12 +56,23 @@ export const effyApi = {
   studioContext: (workspaceId) => http(`/studio/context?workspace=${encodeURIComponent(workspaceId)}`),
   studioImage: (payload) =>
     http('/studio/image', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
+  studioEmbedImage: (workspaceId, { baseName, agent, placement, direction }) => {
+    const fd = new FormData();
+    fd.append('workspace', workspaceId);
+    fd.append('baseName', baseName);
+    fd.append('agent', agent);
+    fd.append('placement', placement);
+    if (direction) fd.append('direction', direction);
+    return http('/studio/embed/image', { method: 'POST', body: fd });
+  },
   studioRefine: (payload) =>
     http('/studio/refine', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
   studioVideoStart: (payload) =>
     http('/studio/video/start', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
   studioVideoStatus: (payload) =>
     http('/studio/video/status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
+  studioStitchAgentOutro: (payload) =>
+    http('/studio/embed/video/stitch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
   studioVoices: () => http('/studio/voices'),
   avatarSubmit: (workspaceId, { video, template, audioFile, script, voice, language }) => {
     const fd = new FormData();
@@ -275,10 +286,29 @@ export const effyApi = {
 
   // Analytics
   organicAnalytics: (workspaceId) => http(`/analytics/organic?workspace=${encodeURIComponent(workspaceId)}`),
+  instagramInsights: (workspaceId) => http(`/insights/instagram?workspace=${encodeURIComponent(workspaceId)}`),
   leadAnalytics: (workspaceId) => http(`/analytics/leads?workspace=${encodeURIComponent(workspaceId)}`),
   revenueAnalytics: (workspaceId) => http(`/analytics/revenue?workspace=${encodeURIComponent(workspaceId)}`),
   creativeAnalytics: (workspaceId) => http(`/analytics/creative?workspace=${encodeURIComponent(workspaceId)}`),
   adsDashboard: (workspaceId) => http(`/ads/dashboard?workspace=${encodeURIComponent(workspaceId)}`),
+  adsCreatives: (workspaceId) => http(`/ads/creatives?workspace=${encodeURIComponent(workspaceId)}`),
+  adsAudiences: (workspaceId) => http(`/ads/audiences?workspace=${encodeURIComponent(workspaceId)}`),
+  adsBudgets: (workspaceId) => http(`/ads/budgets?workspace=${encodeURIComponent(workspaceId)}`),
+  adsSetStatus: (campaignId, workspaceId, status) =>
+    http(`/ads/campaigns/${campaignId}/status`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId, status }) }),
+  adsSetBudget: (campaignId, workspaceId, budget) =>
+    http(`/ads/campaigns/${campaignId}/budget`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId, budget }) }),
+  adsSandbox: (workspaceId, enabled) =>
+    http('/ads/sandbox', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId, enabled }) }),
+  adsRules: (workspaceId) => http(`/ads/rules?workspace=${encodeURIComponent(workspaceId)}`),
+  adsCreateRule: (workspaceId, rule) =>
+    http('/ads/rules', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId, ...rule }) }),
+  adsToggleRule: (ruleId, workspaceId, enabled) =>
+    http(`/ads/rules/${ruleId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId, enabled }) }),
+  adsDeleteRule: (ruleId, workspaceId) =>
+    http(`/ads/rules/${ruleId}?workspace=${encodeURIComponent(workspaceId)}`, { method: 'DELETE' }),
+  adsRulesDryRun: (workspaceId) =>
+    http('/ads/rules/dry-run', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId }) }),
 
   // Effy AI assistant
   assistantChat: (workspaceId, message, history = []) =>

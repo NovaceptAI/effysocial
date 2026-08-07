@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
-import { Plug, AlertTriangle, Check, KeyRound, Loader2, X } from 'lucide-react';
+import { Plug, AlertTriangle, Check, KeyRound, Loader2, X, FlaskConical } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
 import { useInvalidatingMutation } from '../api/hooks';
@@ -42,6 +42,10 @@ export default function Integrations() {
   });
   const disconnect = useInvalidatingMutation(
     (provider) => effyApi.disconnectIntegration(provider, workspace.id),
+    () => ['integrations', workspace?.id],
+  );
+  const enableSandbox = useInvalidatingMutation(
+    () => effyApi.adsSandbox(workspace.id, true),
     () => ['integrations', workspace?.id],
   );
   const connectIgToken = async () => {
@@ -117,7 +121,8 @@ export default function Integrations() {
               <h3 className="text-xs font-bold uppercase tracking-wider text-ink-faint mb-2.5">{cat}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                 {items.filter((i) => i.category === cat).map((it) => {
-                  const s = STATE[it.state] || STATE.disconnected;
+                  const isSandbox = it.state === 'connected' && it.account === 'Sandbox ad account';
+                  const s = isSandbox ? { tone: 'warning', label: 'Sandbox', dot: 'bg-warning' } : (STATE[it.state] || STATE.disconnected);
                   const isConnected = it.state === 'connected';
                   return (
                     <Card key={it.provider} className="p-4">
@@ -142,6 +147,20 @@ export default function Integrations() {
                             <Button size="sm" variant="ghost" onClick={() => disconnect.mutate(it.provider)} disabled={disconnect.isPending}>
                               <X className="w-3.5 h-3.5" /> Disconnect
                             </Button>
+                          </div>
+                        ) : it.provider === 'meta_ads' ? (
+                          <div className="flex gap-1.5">
+                            {/* Testing-only: deterministic sandbox data via the real adapter path. */}
+                            <Button size="sm" variant="secondary" onClick={() => enableSandbox.mutate()} disabled={enableSandbox.isPending}>
+                              <FlaskConical className="w-3.5 h-3.5" /> {enableSandbox.isPending ? 'Enabling…' : 'Sandbox'}
+                            </Button>
+                            {it.state === 'pending_credentials' ? (
+                              <Button size="sm" variant="secondary" onClick={() => connect(it.provider)}><KeyRound className="w-3.5 h-3.5" /> Setup</Button>
+                            ) : (
+                              <Button size="sm" onClick={() => connect(it.provider)} disabled={busy === it.provider}>
+                                {busy === it.provider ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Connect'}
+                              </Button>
+                            )}
                           </div>
                         ) : it.provider === 'instagram' ? (
                           <div className="flex gap-1.5">

@@ -196,3 +196,21 @@ input:focus, select:focus, textarea:focus {
 }
 .app-root *::-webkit-scrollbar-thumb:hover { background: #d0c2b0; background-clip: content-box; }
 .app-root *::-webkit-scrollbar-track { background: transparent; }
+
+/* Logo easter-egg sparkle — zero cost when idle (rendered only on click).
+   Pure GPU transform/opacity; elements are removed after ~2s. */
+@keyframes effy-sparkle-pop {
+  0%   { transform: translate(-50%, -50%) scale(0) rotate(0deg); opacity: 0; }
+  25%  { transform: translate(-50%, -50%) scale(1) rotate(20deg); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(0.15) rotate(90deg); opacity: 0; }
+}
+.effy-sparkle {
+  position: absolute;
+  display: inline-block;
+  line-height: 1;
+  transform: translate(-50%, -50%) scale(0);
+  animation: effy-sparkle-pop 1.5s cubic-bezier(.22,.61,.36,1) forwards;
+  text-shadow: 0 0 10px currentColor, 0 0 3px currentColor;
+  will-change: transform, opacity;
+}
+@media (prefers-reduced-motion: reduce) { .effy-sparkle { display: none; } }

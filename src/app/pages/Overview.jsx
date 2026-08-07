@@ -8,7 +8,7 @@ import {
 import { useWorkspace, inr, num } from '../context/WorkspaceContext';
 import { usePosts } from '../api/hooks';
 import { effyApi } from '../api/effyApi';
-import { Badge, Button, Card, MetricCard, PageHeader, Pacing, StatusBadge } from '../../ui';
+import { Button, Card, MetricCard, PageHeader, Pacing, StatusBadge } from '../../ui';
 
 // Agency overview (spec §7.2) — org-wide rollup across all client workspaces.
 function AgencyOverview({ onSwitchView }) {
@@ -81,8 +81,7 @@ function HeroCard({ className = '', image, eyebrow, title, body, to, cta, icon: 
         : 'bg-gradient-to-t from-black/95 via-black/55 to-black/10'}`}
       />
       <div className="relative flex min-h-[330px] flex-col justify-between p-6 sm:p-7">
-        <div className="flex items-start justify-between gap-4">
-          <Badge className="border border-white/20 bg-black/35 text-white backdrop-blur-md">{eyebrow}</Badge>
+        <div className="flex items-start justify-end">
           <span className="grid h-10 w-10 place-items-center rounded-xl border border-white/20 bg-black/30 text-white backdrop-blur-md">
             <Icon className="h-5 w-5" />
           </span>
@@ -171,6 +170,43 @@ function AnalyticsLink({ to, icon: Icon, title, body }) {
   );
 }
 
+// Compact live Instagram strip for the dashboard — renders nothing until IG is connected.
+function InstagramMini({ workspace }) {
+  const { data } = useQuery({
+    queryKey: ['ig-insights', workspace?.id],
+    queryFn: () => effyApi.instagramInsights(workspace.id),
+    enabled: !!workspace,
+    staleTime: 5 * 60 * 1000,
+  });
+  if (!data || !data.connected || data.error) return null;
+  const p = data;
+  const Stat = ({ label, value }) => (
+    <div className="px-4 text-center">
+      <div className="text-lg font-bold leading-none text-ink">{value}</div>
+      <div className="mt-1 text-[0.6rem] font-semibold uppercase tracking-wide text-ink-faint">{label}</div>
+    </div>
+  );
+  return (
+    <Card className="mb-5 flex flex-wrap items-center gap-4 p-4">
+      {p.avatar && <img src={p.avatar} alt="" className="h-10 w-10 rounded-full object-cover" />}
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-bold text-ink">@{p.username}</span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-success-soft px-2 py-0.5 text-[0.6rem] font-bold text-success">● Live</span>
+        </div>
+        <div className="text-[0.68rem] text-ink-faint">Instagram</div>
+      </div>
+      <div className="ml-auto flex items-center divide-x divide-line">
+        <Stat label="Followers" value={num(p.followers ?? 0)} />
+        <Stat label="Reach 28d" value={num(p.reach28 ?? 0)} />
+        <Stat label="Engagement" value={p.engagementRate != null ? `${p.engagementRate}%` : '—'} />
+        <Stat label="Posts" value={num(p.posts ?? 0)} />
+      </div>
+      <Link to="/app/analytics/organic" className="shrink-0 text-xs font-bold text-coral-ink">View analytics →</Link>
+    </Card>
+  );
+}
+
 export default function Overview() {
   const { workspace, org } = useWorkspace();
   const isAgency = org?.type === 'agency';
@@ -222,9 +258,6 @@ export default function Overview() {
           <h1 className="font-display text-[2rem] font-semibold leading-tight tracking-tightest text-ink">Dashboard</h1>
           <p className="mt-1.5 text-sm text-ink-soft">Start with standout content, then turn the winners into performance campaigns.</p>
         </div>
-        <Link to="/app/studio">
-          <Button variant="spark" size="lg"><Sparkles className="h-4 w-4" /> Create with AI</Button>
-        </Link>
       </div>
 
       <div className="mb-5 grid grid-cols-1 gap-4 xl:grid-cols-12">
@@ -268,6 +301,8 @@ export default function Overview() {
           <JourneyStep number="3" icon={TrendingUp} title="Measure and improve" body="Follow leads, spend and revenue back to the creative." to="/app/analytics/ads" />
         </div>
       </Card>
+
+      <InstagramMini workspace={workspace} />
 
       <section className="mb-8">
         <div className="mb-4 flex items-end justify-between gap-4">

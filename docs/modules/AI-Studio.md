@@ -1,6 +1,6 @@
 # Module: AI Studio
 
-> The 3-panel content creation studio for copy + visuals, brand-aware and score-checked. _Status: ✅ frontend done · 🔌 backend pending._
+> Brand-aware copy, images, video, characters and post-production. _Status: ✅ live frontend + backend._
 > Spec ref: §10.2–10.3 · Phase 1
 
 ## 1. What it does
@@ -8,9 +8,8 @@ Where users create platform-shaped content with AI. A brief (or a campaign/trend
 
 ## 2. Where it lives
 - **Route:** `/app/studio` (optionally `?type=&campaign=`)
-- **Frontend files:** `src/app/pages/AIStudio.jsx`, helpers in-file; brand context via `src/app/data/brandBrain.js`.
-- **Folds in existing tools:** copy ← Campaign Generator engine; visual ← image-gen (`/api/social/image`), Lip Sync (`/lipsync`), Leadership Photo (`/photo`).
-- **Backend (when built):** reuse existing `app/tools/social` (Groq copy + image) + new `content_item` persistence.
+- **Frontend:** `src/app/pages/AIStudio.jsx`; specialist flows under `src/app/components/` (Storyboard, AvatarStudio, CharactersStudio, ProductShotStudio).
+- **Backend:** `app/tools/effy/studio.py`, `characters.py`, `avatarlab.py`, `audio.py`, `veo.py`, and `medialib.py`.
 
 ## 3. Screens & key UI
 Three-panel editor:
@@ -20,6 +19,8 @@ Three-panel editor:
   - Visual: canvas/placeholder + tools (AI image, Background removal, Resize/aspect, Carousel, Thumbnail, Text overlay, Logo placement, Safe-zone) — Lip Sync & Photo open the existing tools.
 - **Right** — Variants, **Creative scores** (§10.3: brand alignment, hook, CTA, platform suitability, readability, ad-policy risk, predicted engagement) each with explanation + suggested fix, **channel preview** (desktop/mobile toggle), comments.
 - Actions: Save draft, Send to approval, Add to calendar.
+- **Agent image embed:** after generating an image, upload an agent photo, choose placement and optional art direction, then create one identity-preserving composite saved to Media Library.
+- **Agent video outro:** after generating a video, pick an existing EffyCharacter or upload a photo, enter a ≤16-word CTA, then generate the speaking clip and append it to the ad.
 
 ## 4. Data model
 `ContentItem`: id, workspace_id, campaign_id?, type, platform, mode, brief{topic,audience,tone,language}, copy{caption|thread[], hooks[], hashtags[], cta}, visual{image_ref, aspect, layers}, variants[], scores{...}, status [draft|in_review|approved|scheduled|published], created_by, updated_at.
@@ -34,16 +35,16 @@ Three-panel editor:
 Content agent (copy) + Creative agent (visual + scoring). Each generation records the Brand Brain facts cited and produces explainable scores (detected/why/fix). Compliance linter (existing) gates risky claims.
 
 ## 7. Integrations
-Image providers (Cloudflare FLUX / Pollinations — existing), Lip Sync (Sync Labs — existing), Photo (rembg — existing). Publishing handled by the Publish module, not here.
+Image generation/editing (Gemini/Imagen or configured provider), video (Veo/local fallback), ElevenLabs TTS, Sync Labs lip-sync, and local ffmpeg assembly. Publishing is handled by Publish.
 
 ## 8. States
 Empty (pick a type / start from), generating (skeleton), variant compare, low-score warning, compliance flag, image-provider unavailable, save/approve success.
 
-## 9. Backend contract (to implement)
-- **Tables:** `content_item`, `content_variant`, `creative_score`.
-- **Endpoints:** `POST /api/studio/generate` (type, brief, brand_ctx) → copy + cited facts + scores; `POST /api/studio/visual` (prompt, aspect) → image (reuse `/api/social/image`); `POST /api/studio/rewrite|shorten|expand|tone|translate`; `POST /api/content` / `PATCH /api/content/:id` (persist draft); `POST /api/content/:id/submit` (→ approvals).
-- **RBAC:** copywriter/designer/strategist create; client-approver comment only.
-- **Limits:** AI credit per generation; image quota.
+## 9. Backend contract
+- **Persistence:** generated outputs are indexed in `effy_media`; reusable speakers in `effy_characters`.
+- **Agent endpoints:** `POST /api/effy/studio/embed/image`; `POST /api/effy/studio/embed/video/stitch`; character create/speak/status endpoints.
+- **Security:** workspace ownership is checked for every referenced media/character; write RBAC applies to generation and stitching.
+- **Limits:** image, Veo and avatar renders use the existing monthly usage meters.
 
 ## 10. Open questions / TODO
 - Carousel multi-slide builder + video script editor depth.

@@ -54,7 +54,7 @@ export default function MediaLibrary() {
     Array.from(e.target.files || []).forEach((f) => upload.mutate(f));
     e.target.value = '';
   };
-  const reuse = (m) => navigate(`/app/studio?image=${encodeURIComponent(m.url)}`);
+  const reuse = (m) => navigate(`/app/studio?${m.kind === 'video' ? 'video' : 'image'}=${encodeURIComponent(m.url)}`);
 
   return (
     <div>
@@ -94,9 +94,10 @@ export default function MediaLibrary() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        /* Masonry (CSS columns) — mixed aspect ratios pack without dead space. */
+        <div className="columns-2 sm:columns-3 lg:columns-4 gap-4">
           {media.map((m) => (
-            <div key={m.id} className="group relative rounded-2xl overflow-hidden bg-surface shadow-e1 hover:shadow-e3 transition-all">
+            <div key={m.id} className="group relative rounded-2xl overflow-hidden bg-surface shadow-e1 hover:shadow-e3 transition-all break-inside-avoid mb-4">
               <div className="relative bg-ink/90" style={{ aspectRatio: m.aspect ? m.aspect.replace(':', ' / ') : '1 / 1' }}>
                 {m.kind === 'video'
                   ? <video src={m.url} muted loop playsInline className="absolute inset-0 w-full h-full object-cover"

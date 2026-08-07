@@ -8,6 +8,7 @@ export default {
     './src/ui/**/*.{js,jsx}',
     './src/components/**/*.{js,jsx}',
     './src/marketing/**/*.{js,jsx}',
+    './src/event/**/*.{js,jsx}',
   ],
   darkMode: 'class',
   theme: {

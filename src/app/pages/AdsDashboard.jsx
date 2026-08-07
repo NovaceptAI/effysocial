@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { ChevronRight, TrendingUp, TrendingDown, Loader2, Plug } from 'lucide-react';
+import { ChevronRight, TrendingUp, TrendingDown, Loader2, Plug, FlaskConical } from 'lucide-react';
 import { useWorkspace, inr, num } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
 import { Card, PageHeader, Button, Badge, MetricCard, Pacing, StatusBadge } from '../../ui';
@@ -84,8 +84,9 @@ export default function AdsDashboard() {
   if (isLoading || !data) {
     return (<><PageHeader title="Advertising" /><Card className="p-10 flex items-center justify-center gap-2 text-ink-soft"><Loader2 className="w-4 h-4 animate-spin" /> Loading ad performance…</Card></>);
   }
-  // No real ad account connected → honest connect state (no sample data).
-  if (data.provider !== 'meta' && data.provider !== 'google') {
+  // Nothing connected (mock provider) → honest connect state, no sample data.
+  // Sandbox and real providers render the full dashboard; sandbox is badged.
+  if (data.mode !== 'sandbox' && data.mode !== 'live') {
     return (
       <div>
         <PageHeader title="Advertising" subtitle="Cross-platform paid performance — campaigns, ad sets and ads." />
@@ -106,6 +107,11 @@ export default function AdsDashboard() {
       <PageHeader
         title="Advertising"
         subtitle="Cross-platform paid performance — campaigns, ad sets and ads."
+        actions={data.mode === 'sandbox' && (
+          <Badge tone="warning" className="flex items-center gap-1.5">
+            <FlaskConical className="w-3.5 h-3.5" /> Sandbox data — not live spend
+          </Badge>
+        )}
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">

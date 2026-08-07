@@ -49,7 +49,7 @@ Living status of every module/screen. **Update the Status column as we build.**
 |---|---|---|---|
 | Ideas board | `/app/ideas` | ✅ 🔌 | kanban w/ 5 stages, quick-add, stage moves, convert→Studio |
 | AI Studio — copy | `/app/studio` | ✅ | 3-panel; **real Groq generation grounded in Brand Brain** + computed scores |
-| AI Studio — visual | `/app/studio` | ✅ 🔌 | visual tools + links to Lip Sync / Photo / image-gen |
+| AI Studio — visual | `/app/studio` | ✅ | image/video generation, EffyCharacters, agent-in-image composite + speaking-agent video outro, Media Library persistence |
 | Media Library | `/app/media` | ✅ 🔌 | filterable grid, tags, usage, rights/expiry |
 | Templates | `/app/templates` | ✅ 🔌 | gallery, categories, brand-locked, dynamic fields → Studio |
 | Brand Brain | `/app/brand` | ✅ 🔌 | knowledge centre; real RAG later |
@@ -73,11 +73,11 @@ Living status of every module/screen. **Update the Status column as we build.**
 ## Advertise (spec §13 · Phase 2–3)
 | Screen | Route | Status |
 |---|---|---|
-| Ad dashboard / Campaigns | `/app/ads` | ✅ P2 | KPIs + spend/leads chart + campaign→adset→ad drill-down; mock adapter, honest banner |
-| Creatives | `/app/creatives` | 🧩 P2 |
-| Audiences | `/app/audiences` | 🧩 P3 |
-| Budgets | `/app/budgets` | 🧩 P3 |
-| Automated Rules | `/app/rules` | 🧩 P3 |
+| Ad dashboard / Campaigns | `/app/ads` | ✅ P2 | KPIs + spend/leads chart + campaign→adset→ad drill-down; connect state until sandbox/real; sandbox badged |
+| Creatives | `/app/creatives` | ✅ P3 | CPL-ranked creative table, format tabs, fatigue badges |
+| Audiences | `/app/audiences` | ✅ P3 | saved/custom/lookalike w/ size, CPL, used-in, overlap warnings |
+| Budgets | `/app/budgets` | ✅ P3 | pacing bars, near-cap/under-pacing flags, in-place budget edit + pause/resume (sandbox-writable) |
+| Automated Rules | `/app/rules` | ✅ P3 | rule builder (metric/op/threshold/action) + read-only dry-run; suggestions only |
 | Campaign creation wizard | `/app/launch` | ✅ P4 | Campaign Launch playbook: basics→content→landing+form→launch, real assembly checklist |
 
 ## Convert (spec §14 · Phase 2)
@@ -134,7 +134,7 @@ All additive + namespaced `effy_*` / `/api/effy/*`. No existing tables/tools tou
 | Real workspaces in app (bootstrap → WorkspaceContext) | ✅ enriched w/ mock metrics for not-yet-migrated modules |
 | Campaigns — real persistence | ✅ effy_campaigns table + `/api/effy/campaigns` (list/get/create), org-ownership enforced, seeded; frontend on TanStack Query |
 | Brand Brain — real persistence + grounded gen | ✅ effy_brand_facts/sources + `/api/effy/brand` (get/fact/source/test); default template overlaid with edits; **Groq-grounded test voice** live; RAG-over-docs pending embedder |
-| AI Studio — real generation | ✅ `/api/effy/studio/generate` — Groq copy grounded in Brand Brain + **real computed creative scores**; frontend Generate wired |
+| AI Studio — real generation | ✅ Groq copy + computed scores; image/video generation; agent image composite; photo→EffyCharacter→lip-sync outro→ffmpeg final video |
 | Publish — real persistence | ✅ effy_posts + `/api/effy/posts` (list/create/approve/request-changes/comment/schedule); Calendar/Scheduled/Approvals/Published on live data with **working approve/retry/comment actions** |
 | Engage — real persistence | ✅ effy_conversations + effy_reviews + reply/close/respond endpoints; Inbox/Comments/EngageLeads/Reviews live with **working reply & respond** |
 | Effy AI — assistant runtime | ✅ `/api/effy/assistant/chat` + `/recommendations`; grounded chat verified with real numbers |
@@ -148,7 +148,7 @@ All additive + namespaced `effy_*` / `/api/effy/*`. No existing tables/tools tou
 | Analytics expansion — leads/revenue/creative | ✅ `/api/effy/analytics/leads|revenue|creative` — lead/revenue aggregate real `effy_leads` (funnel, source/campaign rollups, last-touch revenue, CAC/ROAS); creative + spend via ads adapter (`spendProvider:"mock"` until Phase 3) |
 | RBAC enforcement | ✅ View-only = read-only; Client approver = approval actions only; enforced on every write endpoint |
 | Other module data endpoints (Brand Brain, Publish, Engage, Analytics) | ⬜ (still mock-derived off real workspace) |
-| Integration-adapter layer (mock→real providers) | ✅ (v1) AdsManager: MockAdsProvider live behind `get_ads_provider()`; Meta/Google implement same interface in Phase 3 |
+| Integration-adapter layer (mock→real providers) | ✅ (v2) AdsManager: Mock (connect state) + **Sandbox** (writable, badged, real integration row) behind `get_ads_provider()`; creatives/audiences/budgets/rules surfaces + status/budget writes + rules dry-run; Meta/Google implement same interface in Phase 3 |
 | AI agent runtime (Groq + Brand Brain RAG via pgvector) | ⬜ |
 | Celery jobs / webhooks | ⬜ |
 
@@ -179,4 +179,4 @@ Suite lives in `novalab-engine/tests/` · run: `PYTHONPATH=. myenv/bin/pytest te
 
 _De-mock (2026-07-08): DB cleaned of all demo/seed data; fake workspace metrics removed; connect-channels gate added — see [docs/READINESS.md](docs/READINESS.md)._
 
-_Last updated: **PHASE 2 COMPLETE** — all P1 screens real, 8 backend modules live (auth/tenancy/email, Campaigns, Brand Brain, AI Studio, Publish, Engage, Analytics, Effy AI), RBAC enforced, agency overview + notifications + workspace-select shipped. Right context panel partially covered by the Effy drawer. Phase 2 slices 1–9 shipped (Lead Pipeline, Forms, Ad Dashboard + adapter pattern, Landing Pages, Tracking Centre, Follow-up Automation, Lead Detail + outcomes, Link-in-bio, Analytics expansion: Ads/Leads/Revenue/Creative), 149 tests green. Next: Phase 3 — real integrations (Meta/Google ads, social publishing, messaging) through the existing adapters._
+_Last updated: **PHASE 2 COMPLETE** plus post-P2 creative tooling — AI Studio now supports agent image composites and speaking EffyCharacter video outros. Live Instagram organic insights are available when connected. **212 tests green**. Next: continue Phase 3 real integrations through the existing adapters._

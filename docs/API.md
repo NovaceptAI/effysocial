@@ -53,8 +53,18 @@ Legend: 🔓 no auth · 🔒 requires session · 🏢 org-ownership enforced
 | Method | Path | Auth | Body → Response |
 |---|---|---|---|
 | POST | `/api/effy/studio/generate` | 🔒🏢 | `{workspace, type, topic, language?}` → `{caption, hook, cta, hashtags[], scores[], cited[], platform}` |
+| POST | `/api/effy/studio/image` | 🔒🏢 write | `{workspace, topic, aspect}` → `{imageUrl, prompt}` |
+| POST | `/api/effy/studio/embed/image` | 🔒🏢 write | multipart: `workspace, baseName|base, agent, placement?, direction?` → final `{imageUrl, name}` saved to Media Library |
+| POST | `/api/effy/studio/video/start` | 🔒🏢 write | `{workspace, topic, aspect, voiceover?, voice?, music?, script?}` → `{op}` |
+| POST | `/api/effy/studio/video/status` | 🔒🏢 | `{workspace, op}` → `{status:pending|ready, videoUrl?}` |
+| POST | `/api/effy/studio/embed/video/stitch` | 🔒🏢 write | `{workspace, videoName, outroName}` → final `{videoUrl, name}` |
+| GET | `/api/effy/characters?workspace=ws_N` | 🔒🏢 | preset + custom EffyCharacters |
+| POST | `/api/effy/characters` | 🔒🏢 write | multipart photo/video → reusable EffyCharacter |
+| POST | `/api/effy/characters/speak` | 🔒🏢 write | `{workspace, preset|characterId, script, voice?, language?}` → `{job}` |
 
 Grounded in the workspace's Brand Brain (tone/approved/prohibited). `type` ∈ {ig_post, ig_carousel, ig_reel, fb_post, li_post, x_post, yt_short, wa_promo}. **Scores are computed** (brand alignment, hook, CTA, platform fit, readability, ad-policy risk) each with a `note` and `invert` flag — real, explainable, not fabricated.
+
+Agent image embeds use Gemini multi-image editing. Agent video outros reuse EffyCharacters (photo → base clip → TTS/Sync Labs lip-sync), then normalize and append the speaking clip locally with ffmpeg. Every input media name is checked against the active workspace.
 
 ## Publish  ([Calendar-Approvals.md](modules/Calendar-Approvals.md))
 | Method | Path | Auth | Body → Response |
@@ -181,9 +191,19 @@ Native sources (forms/landing/whatsapp) are computed live from real submissions,
 ## Advertise — Ad Dashboard  ([Advertise-Dashboard.md](modules/Advertise-Dashboard.md))
 | Method | Path | Auth | Response |
 |---|---|---|---|
-| GET | `/api/effy/ads/dashboard?workspace=ws_N` | 🔒🏢 | `{provider, totals:{spend,impressions,reach,cpm,clicks,ctr,cpc,leads,cpl,roas,budget,pacing}, series[], campaigns[{...adsets[{...ads[]}]}]}` |
+| GET | `/api/effy/ads/dashboard?workspace=ws_N` | 🔒🏢 | `{provider, mode, totals:{spend,impressions,reach,cpm,clicks,ctr,cpc,leads,cpl,roas,budget,pacing}, series[], campaigns[{...adsets[{...ads[]}]}]}` |
+| GET | `/api/effy/ads/creatives?workspace=ws_N` | 🔒🏢 | `{provider, mode, creatives[{id,name,format,thumb,campaign,platform,adset,spend,leads,ctr,cpl,fatigue,status}]}` |
+| GET | `/api/effy/ads/audiences?workspace=ws_N` | 🔒🏢 | `{provider, mode, audiences[{id,name,type:saved\|custom\|lookalike,size,description,spend,leads,cpl,usedIn[],overlapWarning}]}` |
+| GET | `/api/effy/ads/budgets?workspace=ws_N` | 🔒🏢 | `{provider, mode, totals:{budget,spend,pacing}, budgets[{id,campaign,platform,status,budget,spent,pacing,cpl,roas,nearCap,underPacing}]}` |
+| POST | `/api/effy/ads/campaigns/:id/status` | 🔒🏢 write | `{workspace, status:active\|paused}` → `{campaign}` · 400 if provider is read-only |
+| POST | `/api/effy/ads/campaigns/:id/budget` | 🔒🏢 write | `{workspace, budget}` (₹1,000–₹1cr) → `{campaign}` · 400 if provider is read-only |
+| POST | `/api/effy/ads/sandbox` | 🔒🏢 write | `{workspace, enabled}` → `{sandbox}` — toggles the sandbox ad account (real `effy_integrations` row, `meta:{sandbox:true}`) |
+| GET | `/api/effy/ads/rules?workspace=ws_N` | 🔒🏢 | `{provider, mode, rules[]}` |
+| POST | `/api/effy/ads/rules` | 🔒🏢 write | `{workspace, name, metric:cpl\|roas\|ctr\|pacing, op:gt\|lt, threshold, action:pause\|notify, scope?}` → `{rule}` |
+| PATCH/DELETE | `/api/effy/ads/rules/:id` | 🔒🏢 write | `{workspace, enabled?}` → `{rule}` / `{}` · 404 unknown rule |
+| POST | `/api/effy/ads/rules/dry-run` | 🔒🏢 | `{workspace}` → `{mode, results[{ruleId,rule,matches[{campaignId,campaign,metric,value,threshold,op,suggestedAction}]}]}` — read-only, suggestions never auto-applied |
 
-First use of the **integration-adapter pattern**: `get_ads_provider(workspace)` returns `MockAdsProvider` (deterministic, workspace-seeded, realistic economics, flagged `provider:"mock"`) until real Meta/Google providers land in Phase 3 behind the same interface.
+The **integration-adapter pattern**: `get_ads_provider(workspace)` returns `SandboxAdsProvider` (writable, deterministic, badged `mode:"sandbox"`) when the sandbox integration row is enabled, `MockAdsProvider` (`mode:"mock"`, UI shows the connect state) otherwise; real Meta/Google providers land in Phase 3 behind the same interface with `mode:"live"`.
 
 ## Strategy Intelligence + Workflows  ([Workflows-Intelligence.md](modules/Workflows-Intelligence.md))
 | Method | Path | Auth | Response |

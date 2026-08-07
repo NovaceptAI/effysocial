@@ -13,6 +13,7 @@ import Pricing from './marketing/Pricing';
 import PublicLanding from './marketing/PublicLanding';
 import PublicSite from './marketing/PublicSite';
 import PublicBio from './marketing/PublicBio';
+import EventShell from './event/EventShell';
 import Hub from './Hub';
 
 // The full product app shell (Phase 0+). Code-split so the marketing site stays light.
@@ -67,6 +68,8 @@ export default function App() {
             <Route path="/s/:slug/:pageKey" element={<PublicSite />} />
             <Route path="/b/:slug" element={<PublicBio />} />
             <Route path="/onboarding" element={<RequireAuth><Onboarding /></RequireAuth>} />
+            {/* Disposable event showcase kiosk (delete src/event/ + this route to remove) */}
+            <Route path="/event" element={<RequireAuth><EventShell /></RequireAuth>} />
 
             {/* Authenticated product */}
             <Route

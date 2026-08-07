@@ -1,6 +1,8 @@
 # Dependencies & build artifacts
 node_modules/
 dist/
+__pycache__/
+*.pyc
 
 # Environment (commit .env.example instead)
 .env
@@ -17,8 +19,19 @@ mahesh.png
 /*.mp4
 /*.mov
 /*.webm
+/*.mp3
 /public/fixit/
+/scripts/_onam/
+/public/onam/
+/public/landing/
+/IMG-*.jpg
+/roff_3d_render*.png
+
+# One-off campaign tooling. Kept out of the app history; the scripts and their
+# renders are archived alongside the deliverables under public/onam/.
+/scripts/
 
 # Editor/OS noise
 .DS_Store
 *.log
+.engine-staging/

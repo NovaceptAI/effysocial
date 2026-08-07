@@ -45,6 +45,10 @@ export const NAV = [
   ]},
   { group: 'Advertise', items: [
     { label: 'Campaigns', to: '/app/ads', icon: Target, phase: 1 },
+    { label: 'Creatives', to: '/app/creatives', icon: Palette, phase: 1 },
+    { label: 'Audiences', to: '/app/audiences', icon: UsersRound, phase: 1 },
+    { label: 'Budgets', to: '/app/budgets', icon: Wallet, phase: 1 },
+    { label: 'Automated Rules', to: '/app/rules', icon: Zap, phase: 1 },
   ]},
   { group: 'Convert', items: [
     { label: 'Websites', to: '/app/sites', icon: Globe, phase: 1 },
@@ -75,3 +79,27 @@ export const NAV = [
 
 // Flat lookup for the command palette + breadcrumbs
 export const NAV_ITEMS = NAV.flatMap((g) => g.items.map((i) => ({ ...i, group: g.group })));
+
+// ── Two-level nav ─────────────────────────────────────────────────────────
+// The generic "hub" menu shown on the launcher (/app) and standalone apps.
+// Performance Marketing enters the deep grouped NAV above; Home always returns
+// to the hub. Order: apps first, then utilities.
+export const HUB_NAV = [
+  { label: 'Home', to: '/app', icon: Home, end: true },
+  { label: 'AI Studio', to: '/app/studio', icon: Wand2 },
+  { label: 'Ad Films', to: '/app/films', icon: Clapperboard },
+  { label: 'Perf. Marketing', to: '/app/home', icon: Target },
+  { label: 'Media Library', to: '/app/media', icon: Images },
+  { label: 'Blog', to: '/app/blog', icon: FileBarChart },
+  { label: "What's New", to: '/app/whats-new', icon: Zap },
+  { label: 'Settings', to: '/app/settings', icon: Settings },
+  { label: 'Pricing', to: '/app/pricing', icon: CreditCard },
+];
+
+// Route prefixes that render the Hub menu; everything else under /app is
+// Performance Marketing (deep menu).
+const HUB_PREFIXES = ['/app/studio', '/app/films', '/app/media', '/app/blog', '/app/whats-new', '/app/settings', '/app/pricing'];
+export function isHubRoute(pathname) {
+  if (pathname === '/app' || pathname === '/app/') return true;
+  return HUB_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}

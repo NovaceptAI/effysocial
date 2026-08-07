@@ -1,13 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   Compass, Wand2, Send, Inbox, Target, FileInput, BarChart3, Settings,
 } from 'lucide-react';
-import { NAV } from '../nav';
+import { NAV, HUB_NAV, isHubRoute } from '../nav';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useAppAuth } from '../context/AppAuth';
 import { cn } from '../../lib/cn';
+
+// A flat rail entry (icon + wrapped label). Used for Home and the Hub menu.
+function RailItem({ to, end, icon: Icon, label, onNavigate }) {
+  return (
+    <NavLink
+      to={to} end={end} onClick={onNavigate} title={label}
+      className={({ isActive }) => cn(
+        'flex flex-col items-center gap-1 w-[60px] py-1.5 rounded-[14px] transition-all duration-200 group',
+        isActive ? 'text-white' : 'text-rail-muted hover:text-white',
+      )}
+    >
+      {({ isActive }) => (
+        <>
+          <span className={cn(
+            'grid h-9 w-9 place-items-center rounded-[11px] transition',
+            isActive
+              ? 'bg-white text-black shadow-[0_10px_24px_-18px_rgba(255,255,255,0.85)]'
+              : 'bg-transparent group-hover:bg-white/[0.08]',
+          )}>
+            <Icon className="h-4 w-4" strokeWidth={2} />
+          </span>
+          <span className="text-[0.56rem] font-bold leading-[1.1] text-center">{label}</span>
+        </>
+      )}
+    </NavLink>
+  );
+}
 
 // Runway-style rail: icons with a small label underneath — no full-text
 // sidebar. Clicking a group opens a flyout panel to the right with that
@@ -30,7 +57,7 @@ const GROUP_ICONS = {
 // Short labels that fit under a 44px icon.
 const GROUP_SHORT = { Administration: 'Admin' };
 
-const RAIL_W = 92; // px — icon + label column
+const RAIL_W = 74; // px — icon + label column
 
 export default function NavRail({ mobileOpen = false, onNavigate }) {
   const { org } = useWorkspace();
@@ -40,6 +67,23 @@ export default function NavRail({ mobileOpen = false, onNavigate }) {
   const home = NAV.find((grp) => grp.group === 'Overview')?.items[0];
   const groups = NAV.filter((grp) => grp.group !== 'Overview');
   const [flyout, setFlyout] = useState(null); // {group, top}
+  const hub = isHubRoute(pathname); // hub (generic) menu vs deep PM menu
+
+  // Logo easter-egg: a brief screen sparkle. Nothing renders until clicked,
+  // then a handful of pure-CSS glints self-remove after ~2s — no libs, no idle cost.
+  const [sparkles, setSparkles] = useState(null);
+  const sparkTimer = useRef(null);
+  useEffect(() => () => clearTimeout(sparkTimer.current), []);
+  const burst = () => {
+    setSparkles(Array.from({ length: 16 }, (_, i) => ({
+      id: `${Date.now()}-${i}`,
+      left: Math.random() * 100, top: Math.random() * 100,
+      size: 10 + Math.random() * 18, delay: Math.random() * 0.5,
+      color: Math.random() < 0.5 ? '#ffffff' : '#FF6A5C',
+    })));
+    clearTimeout(sparkTimer.current);
+    sparkTimer.current = setTimeout(() => setSparkles(null), 2000);
+  };
 
   return (
     <nav
@@ -51,47 +95,35 @@ export default function NavRail({ mobileOpen = false, onNavigate }) {
       )}
       style={{ width: RAIL_W }}
     >
-      {/* Brand mark — white star on a coral tile (crisp app-icon look) */}
-      <div className="grid place-items-center h-16 border-b border-white/10">
-        <span
-          className="grid place-items-center w-11 h-11 rounded-[14px] overflow-hidden"
-          style={{ background: 'linear-gradient(150deg, #FF6A5C 0%, #E5484D 100%)', boxShadow: '0 6px 18px -6px rgba(229,72,77,0.6)' }}
-        >
-          <img src="/brand/effysocial-mark-white.png" alt="EffySocial" className="w-[72%] h-[72%] object-contain" />
-        </span>
+      {/* Brand mark — muted monochrome; click for a little sparkle (not a nav link) */}
+      <div className="grid place-items-center h-16">
+        <button onClick={burst} title="EffySocial" aria-label="EffySocial"
+          className="bg-transparent grid place-items-center transition active:scale-90">
+          <img src="/brand/effysocial-mark-muted.png" alt="EffySocial" className="w-8 h-8 object-contain pointer-events-none" />
+        </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto py-3 flex flex-col items-center gap-1">
-        {/* Home */}
-        {home && (
-          <NavLink
-            to={home.to}
-            end={home.end}
-            onClick={onNavigate}
-            title="Home"
-            className={({ isActive }) => cn(
-              'flex flex-col items-center gap-1 w-[76px] py-2 rounded-[14px] transition-all duration-200 group',
-              isActive ? 'text-white' : 'text-rail-muted hover:text-white',
-            )}
-          >
-            {({ isActive }) => (
-              <>
-                <span className={cn(
-                  'grid h-11 w-11 place-items-center rounded-[14px] transition',
-                  isActive
-                    ? 'bg-white text-black shadow-[0_10px_24px_-18px_rgba(255,255,255,0.85)]'
-                    : 'bg-white/[0.06] text-coral-light group-hover:bg-white/[0.12]',
-                )}>
-                  <home.icon className="h-[19px] w-[19px]" strokeWidth={2} />
-                </span>
-                <span className="text-[0.66rem] font-bold leading-none">Home</span>
-              </>
-            )}
-          </NavLink>
-        )}
+      {sparkles && createPortal(
+        <div className="fixed inset-0 z-[100] pointer-events-none overflow-hidden" aria-hidden="true">
+          {sparkles.map((s) => (
+            <span key={s.id} className="effy-sparkle"
+              style={{ left: `${s.left}%`, top: `${s.top}%`, fontSize: `${s.size}px`, color: s.color, animationDelay: `${s.delay}s` }}>✦</span>
+          ))}
+        </div>,
+        document.body,
+      )}
 
-        {/* Groups: icon + label; click opens the flyout */}
-        {groups.map((grp) => {
+      <div className="flex-1 overflow-y-auto py-3 flex flex-col items-center gap-1">
+        {/* Hub (generic) menu — shown on the launcher + standalone apps */}
+        {hub && HUB_NAV.map((it) => (
+          <RailItem key={it.to} to={it.to} end={it.end} icon={it.icon} label={it.label} onNavigate={onNavigate} />
+        ))}
+
+        {/* Deep Performance-Marketing menu — Home + grouped flyouts */}
+        {!hub && home && (
+          <RailItem to={home.to} end={home.end} icon={home.icon} label="Home" onNavigate={onNavigate} />
+        )}
+        {!hub && groups.map((grp) => {
           const visibleItems = grp.items.filter((item) => (isAgency || !AGENCY_ONLY.has(item.to)) && (!item.adminOnly || authUser?.is_admin));
           if (!visibleItems.length) return null;
           const GIcon = GROUP_ICONS[grp.group] || Compass;
@@ -108,19 +140,19 @@ export default function NavRail({ mobileOpen = false, onNavigate }) {
                 title={`${grp.group} — ${GROUP_HINTS[grp.group] || ''}`}
                 aria-label={grp.group}
                 className={cn(
-                  'flex flex-col items-center gap-1 w-[76px] py-2 rounded-[14px] transition-all duration-200 group bg-transparent',
+                  'flex flex-col items-center gap-1 w-[60px] py-1.5 rounded-[14px] transition-all duration-200 group bg-transparent',
                   groupActive || isFly ? 'text-white' : 'text-rail-muted hover:text-white',
                 )}
               >
                 <span className={cn(
-                  'grid h-11 w-11 place-items-center rounded-[14px] transition',
+                  'grid h-9 w-9 place-items-center rounded-[11px] transition',
                   groupActive
                     ? 'bg-white text-black shadow-[0_10px_24px_-18px_rgba(255,255,255,0.85)]'
                     : isFly ? 'bg-white/[0.15] text-white' : 'bg-transparent group-hover:bg-white/[0.08]',
                 )}>
-                  <GIcon className="w-[19px] h-[19px]" strokeWidth={2} />
+                  <GIcon className="w-4 h-4" strokeWidth={2} />
                 </span>
-                <span className="text-[0.66rem] font-bold leading-none">{GROUP_SHORT[grp.group] || grp.group}</span>
+                <span className="text-[0.56rem] font-bold leading-none">{GROUP_SHORT[grp.group] || grp.group}</span>
               </button>
               {isFly && createPortal(
                 <>
