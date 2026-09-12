@@ -6,6 +6,8 @@ import TopBar from './TopBar';
 import CommandPalette from './CommandPalette';
 import AssistantPanel from '../components/AssistantPanel';
 import { useAppAuth } from '../context/AppAuth';
+import { useTheme } from '../context/ThemeContext';
+import { cn } from '../../lib/cn';
 
 function VerifyBanner() {
   const { user, resendVerification } = useAppAuth();
@@ -33,13 +35,14 @@ const FULL_BLEED = new Set(['/app/studio']);
 export default function AppShell() {
   const { pathname } = useLocation();
   const { loading } = useAppAuth();
+  const { theme } = useTheme();
   const fullBleed = FULL_BLEED.has(pathname);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [navOpen, setNavOpen] = useState(false);
   if (loading) return <div style={{ minHeight: '100dvh', background: '#0B0C0E', color: 'rgba(236,237,239,0.6)', display: 'grid', placeItems: 'center', fontFamily: 'Manrope, system-ui, sans-serif', fontSize: 13 }}>Loading…</div>;
   return (
-    <div className="app-root flex min-h-dvh bg-canvas text-ink">
+    <div className={cn('app-root flex min-h-dvh bg-canvas text-ink', theme === 'light' && 'theme-light')}>
       <NavRail mobileOpen={navOpen} onNavigate={() => setNavOpen(false)} />
       {/* Mobile drawer backdrop */}
       {navOpen && (

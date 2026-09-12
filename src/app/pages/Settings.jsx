@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Palette, Shield, Bell, Clock } from 'lucide-react';
+import { Palette, Shield, Bell, Clock, Sun, Moon } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useAppAuth } from '../context/AppAuth';
+import { useTheme } from '../context/ThemeContext';
 import { Card, PageHeader, Button, Badge } from '../../ui';
 import { cn } from '../../lib/cn';
 
@@ -29,6 +30,7 @@ function Row({ title, desc, children }) {
 export default function Settings() {
   const { org, workspace } = useWorkspace();
   const { user } = useAppAuth();
+  const { theme, setTheme } = useTheme();
   const [notif, setNotif] = useState({ approvals: true, failures: true, leads: true, reportsEmail: false, whatsapp: false });
   const [density, setDensity] = useState('comfortable');
 
@@ -49,6 +51,16 @@ export default function Settings() {
         <div className="space-y-4">
           <Card className="p-5">
             <h3 className="font-bold text-ink mb-2 flex items-center gap-2"><Palette className="w-4 h-4 text-coral-ink" /> Appearance & locale</h3>
+            <Row title="Theme" desc="Dark or light interface.">
+              <div className="flex rounded-lg border border-line p-0.5">
+                {[['dark', Moon], ['light', Sun]].map(([t, Icon]) => (
+                  <button key={t} onClick={() => setTheme(t)}
+                    className={cn('flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold capitalize', theme === t ? 'bg-coral text-white' : 'text-ink-soft bg-transparent')}>
+                    <Icon className="w-3.5 h-3.5" /> {t}
+                  </button>
+                ))}
+              </div>
+            </Row>
             <Row title="Density" desc="Comfortable or compact layouts.">
               <div className="flex rounded-lg border border-line p-0.5">
                 {['comfortable', 'compact'].map((d) => (

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Sparkles, Bell, ChevronRight, LogOut, AlertTriangle, Info, ShieldAlert, CheckSquare, Menu } from 'lucide-react';
+import { Plus, Sparkles, Bell, ChevronRight, LogOut, AlertTriangle, Info, ShieldAlert, CheckSquare, Menu, Sun, Moon } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useAppAuth } from '../context/AppAuth';
+import { useTheme } from '../context/ThemeContext';
 import { usePosts } from '../api/hooks';
 import { effyApi } from '../api/effyApi';
 import { cn } from '../../lib/cn';
@@ -71,6 +72,7 @@ function Notifications() {
 export default function TopBar({ onOpenPalette, onOpenAssistant, onOpenNav }) {
   const { user, workspaces, workspace, setWorkspaceId } = useWorkspace();
   const { user: authUser, logout } = useAppAuth();
+  const { theme, toggleTheme } = useTheme();
   const [wsExpanded, setWsExpanded] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -104,6 +106,10 @@ export default function TopBar({ onOpenPalette, onOpenAssistant, onOpenNav }) {
 
       <button title="Effy AI" onClick={onOpenAssistant} className="grid place-items-center w-9 h-9 rounded-lg bg-coral-soft text-coral-ink hover:bg-coral hover:text-white transition">
         <Sparkles className="w-[18px] h-[18px]" />
+      </button>
+      <button title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'} onClick={toggleTheme}
+        className="grid place-items-center w-9 h-9 rounded-lg bg-transparent hover:bg-surface2 transition text-ink-soft">
+        {theme === 'dark' ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
       </button>
       <Notifications />
       <div className="relative">

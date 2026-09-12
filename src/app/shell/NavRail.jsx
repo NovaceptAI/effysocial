@@ -16,7 +16,7 @@ function RailItem({ to, end, icon: Icon, label, onNavigate }) {
       to={to} end={end} onClick={onNavigate} title={label}
       className={({ isActive }) => cn(
         'flex flex-col items-center gap-1 w-[60px] py-1.5 rounded-[14px] transition-all duration-200 group',
-        isActive ? 'text-white' : 'text-rail-muted hover:text-white',
+        isActive ? 'text-rail-ink' : 'text-rail-muted hover:text-rail-ink',
       )}
     >
       {({ isActive }) => (
@@ -24,8 +24,8 @@ function RailItem({ to, end, icon: Icon, label, onNavigate }) {
           <span className={cn(
             'grid h-9 w-9 place-items-center rounded-[11px] transition',
             isActive
-              ? 'bg-white text-black shadow-[0_10px_24px_-18px_rgba(255,255,255,0.85)]'
-              : 'bg-transparent group-hover:bg-white/[0.08]',
+              ? 'bg-rail-active text-rail-active-ink shadow-[var(--ui-rail-active-shadow)]'
+              : 'bg-transparent group-hover:bg-[color:var(--ui-rail-hover)]',
           )}>
             <Icon className="h-4 w-4" strokeWidth={2} />
           </span>
@@ -88,7 +88,7 @@ export default function NavRail({ mobileOpen = false, onNavigate }) {
   return (
     <nav
       className={cn(
-        'shrink-0 bg-[linear-gradient(180deg,#15161a_0%,#101114_60%,#0d0e11_100%)] text-rail-ink flex flex-col border-r border-white/10',
+        'shrink-0 bg-[image:var(--ui-rail-grad)] text-rail-ink flex flex-col border-r border-rail-line/10',
         'fixed inset-y-0 left-0 z-50 h-dvh transition-transform duration-300 ease-out',
         'md:sticky md:top-0 md:z-auto md:translate-x-0',
         mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full',
@@ -141,14 +141,14 @@ export default function NavRail({ mobileOpen = false, onNavigate }) {
                 aria-label={grp.group}
                 className={cn(
                   'flex flex-col items-center gap-1 w-[60px] py-1.5 rounded-[14px] transition-all duration-200 group bg-transparent',
-                  groupActive || isFly ? 'text-white' : 'text-rail-muted hover:text-white',
+                  groupActive || isFly ? 'text-rail-ink' : 'text-rail-muted hover:text-rail-ink',
                 )}
               >
                 <span className={cn(
                   'grid h-9 w-9 place-items-center rounded-[11px] transition',
                   groupActive
-                    ? 'bg-white text-black shadow-[0_10px_24px_-18px_rgba(255,255,255,0.85)]'
-                    : isFly ? 'bg-white/[0.15] text-white' : 'bg-transparent group-hover:bg-white/[0.08]',
+                    ? 'bg-rail-active text-rail-active-ink shadow-[var(--ui-rail-active-shadow)]'
+                    : isFly ? 'bg-[color:var(--ui-rail-press)] text-rail-ink' : 'bg-transparent group-hover:bg-[color:var(--ui-rail-hover)]',
                 )}>
                   <GIcon className="w-4 h-4" strokeWidth={2} />
                 </span>
@@ -157,7 +157,7 @@ export default function NavRail({ mobileOpen = false, onNavigate }) {
               {isFly && createPortal(
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setFlyout(null)} />
-                  <div className="fixed z-50 w-56 max-h-[70vh] overflow-y-auto rounded-2xl bg-[#16181D] border border-white/10 shadow-2xl p-1.5"
+                  <div className="fixed z-50 w-56 max-h-[70vh] overflow-y-auto rounded-2xl bg-rail-soft border border-rail-line/10 shadow-2xl p-1.5"
                     style={{ left: RAIL_W + 8, top: flyout.top }}>
                     <p className="px-3 pt-2 pb-1.5 text-[0.65rem] font-bold uppercase tracking-[0.09em] text-rail-muted">{grp.group}</p>
                     {visibleItems.map((item) => (
@@ -168,13 +168,13 @@ export default function NavRail({ mobileOpen = false, onNavigate }) {
                         onClick={() => { setFlyout(null); onNavigate?.(); }}
                         className={({ isActive }) => cn(
                           'flex items-center gap-2.5 rounded-[11px] px-3 py-2 text-sm font-semibold transition',
-                          isActive ? 'bg-white text-black' : 'text-rail-ink hover:bg-white/[0.07] hover:text-white',
+                          isActive ? 'bg-rail-active text-rail-active-ink' : 'text-rail-ink hover:bg-[color:var(--ui-rail-hover)]',
                         )}
                       >
                         {({ isActive }) => (
                           <>
                             <item.icon className="w-4 h-4 shrink-0" strokeWidth={2} />
-                            <span style={isActive ? { color: '#000' } : undefined}>{item.label}</span>
+                            <span style={isActive ? { color: 'rgb(var(--ui-rail-active-ink))' } : undefined}>{item.label}</span>
                           </>
                         )}
                       </NavLink>

@@ -44,13 +44,18 @@ export default {
           light: '#ff6b5e',   // spark (static)
           ink: 'rgb(var(--ui-coral-ink) / <alpha-value>)', // text/links
         },
-        // Warm-charcoal navigation rail
+        // Navigation rail — variable-backed so it flips with the dark/light
+        // app theme (see --ui-rail-* in src/styles/theme.css).
         rail: {
-          DEFAULT: '#101114',   // neutral-black rail, harmonized with the dark app
-          soft: '#17191D',
-          line: '#262A31',
-          ink: '#ECEDEF',
-          muted: '#9298A2',
+          DEFAULT: 'rgb(var(--ui-rail) / <alpha-value>)',
+          soft: 'rgb(var(--ui-rail-soft) / <alpha-value>)',
+          line: 'rgb(var(--ui-rail-line) / <alpha-value>)',
+          ink: 'rgb(var(--ui-rail-ink) / <alpha-value>)',
+          muted: 'rgb(var(--ui-rail-muted) / <alpha-value>)',
+          active: {
+            DEFAULT: 'rgb(var(--ui-rail-active) / <alpha-value>)',
+            ink: 'rgb(var(--ui-rail-active-ink) / <alpha-value>)',
+          },
         },
         success: { DEFAULT: 'rgb(var(--ui-success) / <alpha-value>)', soft: 'rgb(var(--ui-success-soft) / <alpha-value>)' },
         warning: { DEFAULT: 'rgb(var(--ui-warning) / <alpha-value>)', soft: 'rgb(var(--ui-warning-soft) / <alpha-value>)' },

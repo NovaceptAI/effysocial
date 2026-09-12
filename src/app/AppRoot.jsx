@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WorkspaceProvider } from './context/WorkspaceContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { NAV_ITEMS } from './nav';
 import AppShell from './shell/AppShell';
 import AppLauncher from './pages/AppLauncher';
@@ -86,6 +87,7 @@ const childPath = (to) => (to === '/app' ? '' : to.replace(/^\/app\//, ''));
 export default function AppRoot() {
   return (
     <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
       <WorkspaceProvider>
         <Routes>
           {/* One platform, one shell. The dashboard (/app) is home — four
@@ -161,6 +163,7 @@ export default function AppRoot() {
           <Route path="films/:id" element={<FilmMaker />} />
         </Routes>
       </WorkspaceProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
