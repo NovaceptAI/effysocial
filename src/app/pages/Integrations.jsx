@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useSearchParams } from 'react-router-dom';
-import { Plug, AlertTriangle, Check, KeyRound, Loader2, X, FlaskConical } from 'lucide-react';
+import { useSearchParams, Link } from 'react-router-dom';
+import { Plug, AlertTriangle, Check, KeyRound, Loader2, X, FlaskConical, Building2 } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
 import { useInvalidatingMutation } from '../api/hooks';
@@ -144,9 +144,24 @@ export default function Integrations() {
                             {it.provider === 'instagram' && (
                               <Button size="sm" variant="secondary" onClick={() => setTestPost({ imageUrl: '', caption: '' })}>Test post</Button>
                             )}
+                            {it.provider === 'google_business' && (
+                              <Link to="/app/google-business"><Button size="sm" variant="secondary"><Building2 className="w-3.5 h-3.5" /> Profile</Button></Link>
+                            )}
                             <Button size="sm" variant="ghost" onClick={() => disconnect.mutate(it.provider)} disabled={disconnect.isPending}>
                               <X className="w-3.5 h-3.5" /> Disconnect
                             </Button>
+                          </div>
+                        ) : it.provider === 'google_business' ? (
+                          <div className="flex gap-1.5">
+                            {/* Profile creation works in demo mode today; it syncs live once connected. */}
+                            <Link to="/app/google-business"><Button size="sm" variant="secondary"><Building2 className="w-3.5 h-3.5" /> Profile</Button></Link>
+                            {it.state === 'pending_credentials' ? (
+                              <Button size="sm" variant="secondary" onClick={() => connect(it.provider)}><KeyRound className="w-3.5 h-3.5" /> Setup</Button>
+                            ) : (
+                              <Button size="sm" onClick={() => connect(it.provider)} disabled={busy === it.provider}>
+                                {busy === it.provider ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Connect'}
+                              </Button>
+                            )}
                           </div>
                         ) : it.provider === 'meta_ads' ? (
                           <div className="flex gap-1.5">

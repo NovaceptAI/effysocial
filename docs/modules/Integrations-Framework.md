@@ -21,8 +21,9 @@ Until credentials exist, "Connect" returns `pending_credentials` with exact setu
 - `GET /api/effy/integrations?workspace=` 🔒🏢 → `{integrations:[{provider, label, category, state, account?, lastSync?, note?}]}` (catalogue merged with stored rows)
 - `POST /api/effy/integrations/:provider/connect` 🔒🏢 admin-write → starts OAuth when server creds exist (`{redirect}`), else `{state:"pending_credentials", setup:[…]}`
 - `POST /api/effy/integrations/:provider/disconnect` 🔒🏢 admin-write
-- Env keys checked: `META_APP_ID/SECRET`, `GOOGLE_ADS_CLIENT_ID/SECRET`, `LINKEDIN_CLIENT_ID/SECRET`.
+- Env keys checked: `META_APP_ID/SECRET`, `GOOGLE_ADS_CLIENT_ID/SECRET` (Ads/GA4), `GOOGLE_CLIENT_ID/SECRET` (Business Profile), `LINKEDIN_CLIENT_ID/SECRET`.
 - Adapter wiring: `get_ads_provider(ws)` → real provider iff `meta_ads`/`google_ads` row `connected`, else mock.
+- **GBP profile (mock⇄live, same flow):** `GET /api/effy/gbp/profile?workspace=` → `{mode:"mock"|"live", categories[], profile?}` · `POST /api/effy/gbp/profile` 🔒🏢 write → saves to the `google_business` row's `meta.profile`; in live mode also pushes to Google's Business Information API (`sync:{state:synced|error|mock}`) · `POST /api/effy/gbp/profile/verify` → demo-verifies (mock) or reports honest `pending_verification` (live). Connect/disconnect preserve `meta.profile`, so a demo-created profile syncs unchanged once credentials land. UI: `/app/google-business` wizard, linked from the Integrations card.
 
 ## 5. Table
 `effy_integrations`: id, workspace_id, provider, state, account, meta JSON (token refs later — encrypted, never serialized), last_sync, created_at. Unique (workspace_id, provider).
@@ -35,4 +36,4 @@ Catalogue merge, connect → pending_credentials without env creds, disconnect, 
 `oauth.py` holds provider-agnostic OAuth 2.0: authorize-code flow, CSRF `state` via EffyToken (single-use, 15-min), token exchange + identity fetch, and **Fernet token encryption at rest** (key derived from SECRET_KEY; tokens never serialized to the client). Providers are data in `PROVIDERS` — adding Meta/Google is config, not new flow code.
 - `POST /integrations/:provider/connect` → `{state:"redirect", redirect}` when creds exist, else `{state:"pending_credentials", setup[]}`.
 - `GET /integrations/:provider/callback` (public) → exchanges code, stores encrypted token, redirects to `/app/integrations?connected=…&status=…`.
-- **LinkedIn is live** (real creds). **Redirect URI to register in each provider app:** `https://effysocial.effybiz.in/api/effy/integrations/<provider>/callback`.
+- **LinkedIn is live** (real creds). **Google Business Profile OAuth is configured** (`GOOGLE_CLIENT_ID/SECRET`, scope `business.manage`, offline access + consent for refresh tokens) — pending the client secret + GBP API access approval in Google Cloud. **Redirect URI to register in each provider app:** `https://effysocial.effybiz.in/api/effy/integrations/<provider>/callback`.

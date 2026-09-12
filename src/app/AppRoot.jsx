@@ -21,6 +21,7 @@ import Reviews from './pages/Reviews';
 import OrganicAnalytics from './pages/OrganicAnalytics';
 import Reports from './pages/Reports';
 import Integrations from './pages/Integrations';
+import GoogleBusiness from './pages/GoogleBusiness';
 import Team from './pages/Team';
 import MarketingPlan from './pages/MarketingPlan';
 import Trends from './pages/Trends';
@@ -116,6 +117,7 @@ export default function AppRoot() {
             <Route path="analytics/organic" element={<OrganicAnalytics />} />
             <Route path="reports" element={<Reports />} />
             <Route path="integrations" element={<Integrations />} />
+            <Route path="google-business" element={<GoogleBusiness />} />
             <Route path="team" element={<Team />} />
             <Route path="plan" element={<MarketingPlan />} />
             <Route path="trends" element={<Trends />} />

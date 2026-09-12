@@ -338,6 +338,12 @@ export const effyApi = {
     http(`/integrations/${provider}/connect`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId }) }),
   disconnectIntegration: (provider, workspaceId) =>
     http(`/integrations/${provider}/disconnect`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId }) }),
+  // Google Business Profile — mock-first; the same flow syncs to Google once connected
+  getGbpProfile: (workspaceId) => http(`/gbp/profile?workspace=${encodeURIComponent(workspaceId)}`),
+  saveGbpProfile: (payload) =>
+    http('/gbp/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
+  verifyGbpProfile: (workspaceId) =>
+    http('/gbp/profile/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId }) }),
   connectInstagramToken: (workspaceId, token) =>
     http('/integrations/instagram/connect-token', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId, token }) }),
   publishInstagram: (workspaceId, imageUrl, caption) =>
