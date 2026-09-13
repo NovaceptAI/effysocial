@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Building2, MapPin, Clock, Globe, Phone, Pencil, Loader2, Plug, BadgeCheck, ArrowLeft, ArrowRight, Check } from 'lucide-react';
+import { Building2, MapPin, Clock, Globe, Phone, Pencil, Loader2, Plug, BadgeCheck, ArrowLeft, ArrowRight, Check, ShieldQuestion } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
 import { Card, PageHeader, Button, Badge } from '../../ui';
@@ -138,17 +138,30 @@ function ProfileSummary({ profile, mode, onVerify, verifying }) {
       </Card>
 
       <div className="space-y-4">
-        <Card className="p-5">
-          <h4 className="font-bold text-ink text-sm mb-2 flex items-center gap-2"><BadgeCheck className="w-4 h-4 text-coral" /> Verification</h4>
-          <p className="text-xs text-ink-faint mb-3">{profile.sync?.message || 'Verification makes the profile visible on Search & Maps.'}</p>
-          {profile.status !== 'verified' ? (
-            <Button size="sm" onClick={onVerify} disabled={verifying}>
-              {verifying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Verify business'}
-            </Button>
-          ) : (
-            <Badge tone="success">Verified</Badge>
-          )}
-        </Card>
+        {profile.sync?.state === 'claim_required' ? (
+          /* Google already lists this business — claiming is the only way in. */
+          <Card className="p-5 bg-warning-soft border-warning/20">
+            <h4 className="font-bold text-ink text-sm mb-2 flex items-center gap-2"><ShieldQuestion className="w-4 h-4 text-warning" /> Already on Google</h4>
+            <p className="text-xs text-ink-soft mb-3">{profile.sync.message}</p>
+            {profile.sync.claimUrl && (
+              <a href={profile.sync.claimUrl} target="_blank" rel="noreferrer">
+                <Button size="sm">Request ownership</Button>
+              </a>
+            )}
+          </Card>
+        ) : (
+          <Card className="p-5">
+            <h4 className="font-bold text-ink text-sm mb-2 flex items-center gap-2"><BadgeCheck className="w-4 h-4 text-coral" /> Verification</h4>
+            <p className="text-xs text-ink-faint mb-3">{profile.sync?.message || 'Verification makes the profile visible on Search & Maps.'}</p>
+            {profile.status !== 'verified' ? (
+              <Button size="sm" onClick={onVerify} disabled={verifying}>
+                {verifying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Verify business'}
+              </Button>
+            ) : (
+              <Badge tone="success">Verified</Badge>
+            )}
+          </Card>
+        )}
         {mode === 'mock' && (
           <Card className="p-5">
             <h4 className="font-bold text-ink text-sm mb-2 flex items-center gap-2"><Plug className="w-4 h-4 text-coral" /> Go live</h4>
