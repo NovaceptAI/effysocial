@@ -178,17 +178,39 @@ Apply: `cd /srv/novalab-engine && FLASK_APP=wsgi.py myenv/bin/flask db upgrade`.
 | Thing | Value |
 |---|---|
 | Host | single AWS Linux box |
-| Frontend serve | nginx site `effysocial.effybiz.in` → static root `/srv/effysocial/dist` (SPA fallback to `index.html`) |
+| Frontend serve | nginx site `effysocial.effybiz.in` → static root `/srv/effysocial/dist`, a symlink to the live release in `.releases/` (SPA fallback to `index.html`) |
 | API proxy | nginx `/api/*` → `http://127.0.0.1:5010` (gunicorn) |
-| Backend service | `systemctl {restart,status} novalab-engine.service` (gunicorn) |
+| Backend service | `novalab-engine.service` (gunicorn); deploys reload it gracefully with `SIGHUP` |
 | Python env | `/srv/novalab-engine/myenv` |
 | Database | PostgreSQL `novastudy_db` |
 | TLS | Let's Encrypt (`/var/well-known/acme-challenge`) |
 
-**Deploy frontend:** `cd /srv/effysocial && npm run build` (writes `dist/`,
-served immediately; Vite hashes assets so no cache-bust needed).
-**Deploy backend:** pull + `flask db upgrade` (if new migration) +
-`sudo systemctl restart novalab-engine.service`.
+**Never edit `/srv/novalab-engine` or `/srv/effysocial` directly** — gunicorn
+and nginx serve them, so an edit there is an edit to production. All changes go
+through `scripts/effy_phase.sh` in the engine repo:
+
+```
+effy_phase.sh start  NAME   # worktrees for both repos on branch phase/NAME under ~/effy-work/NAME
+                            # …edit and commit in ~/effy-work/NAME/{engine,web}…
+effy_phase.sh check  NAME   # backend tests, frontend tests, build; records the passing commits
+effy_phase.sh deploy NAME   # backup → fast-forward main → migrations → frontend release
+                            # → graceful engine reload → smoke checks → push
+effy_phase.sh finish NAME   # remove worktrees and merged branches
+effy_phase.sh rollback      # previous frontend release + engine commit (migrations are not reverted)
+effy_phase.sh status
+```
+
+Deploy refuses when the commits differ from what passed `check`, when either
+production repo has local changes or has drifted from `origin/main`, or when the
+phase is not based on the current `main`.
+
+`/srv/effysocial/dist` is a symlink to the live release in
+`/srv/effysocial/.releases/` (the newest four are kept); deploy builds a new
+release and swaps the link atomically, so nginx never serves a half-written
+build. Do not run `npm run build` in `/srv/effysocial` — it would build into the
+live release in place. Every deploy first takes a database backup
+(`scripts/backup_db.py`) and records it, with both commit ranges, in
+`~/effy-work/deploys.log`.
 
 ### Environment variables (engine `.env`)
 | Key | Purpose |
