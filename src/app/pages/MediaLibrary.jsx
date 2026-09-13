@@ -75,7 +75,7 @@ export default function MediaLibrary() {
         {TABS.map((t) => (
           <button key={t.key} onClick={() => setTab(t.key)}
             className={cn('px-4 py-1.5 rounded-full text-sm font-semibold transition',
-              tab === t.key ? 'bg-ink text-white' : 'bg-surface2 text-ink-soft hover:text-ink')}>
+              tab === t.key ? 'bg-rail-active text-rail-active-ink' : 'bg-surface2 text-ink-soft hover:text-ink')}>
             {t.label}
           </button>
         ))}
@@ -98,17 +98,17 @@ export default function MediaLibrary() {
         <div className="columns-2 sm:columns-3 lg:columns-4 gap-4">
           {media.map((m) => (
             <div key={m.id} className="group relative rounded-2xl overflow-hidden bg-surface shadow-e1 hover:shadow-e3 transition-all break-inside-avoid mb-4">
-              <div className="relative bg-ink/90" style={{ aspectRatio: m.aspect ? m.aspect.replace(':', ' / ') : '1 / 1' }}>
+              <div className="relative bg-black/90" style={{ aspectRatio: m.aspect ? m.aspect.replace(':', ' / ') : '1 / 1' }}>
                 {m.kind === 'video'
                   ? <video src={m.url} muted loop playsInline className="absolute inset-0 w-full h-full object-cover"
                       onMouseEnter={(e) => e.currentTarget.play().catch(() => {})} onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }} />
                   : <img src={m.url} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />}
-                <span className="absolute top-2 left-2 grid place-items-center w-6 h-6 rounded-md bg-ink/55 text-white backdrop-blur-sm">
+                <span className="absolute top-2 left-2 grid place-items-center w-6 h-6 rounded-md bg-black/55 text-white backdrop-blur-sm">
                   {m.kind === 'video' ? <Play className="w-3 h-3" /> : <ImageIcon className="w-3 h-3" />}
                 </span>
                 {/* motion picker overlay ("Make it move") */}
                 {moveFor === m.id && (
-                  <div className="absolute inset-0 z-10 grid place-items-center bg-ink/70 backdrop-blur-sm p-3">
+                  <div className="absolute inset-0 z-10 grid place-items-center bg-black/70 backdrop-blur-sm p-3">
                     {animate.isPending ? (
                       <span className="inline-flex items-center gap-1.5 text-white text-xs font-semibold"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Animating…</span>
                     ) : (
@@ -130,7 +130,7 @@ export default function MediaLibrary() {
                   </div>
                 )}
                 {/* hover actions */}
-                <div className="absolute inset-x-0 bottom-0 p-2 flex items-center gap-1.5 bg-gradient-to-t from-ink/80 to-transparent translate-y-full group-hover:translate-y-0 transition-transform">
+                <div className="absolute inset-x-0 bottom-0 p-2 flex items-center gap-1.5 bg-gradient-to-t from-black/80 to-transparent translate-y-full group-hover:translate-y-0 transition-transform">
                   {m.kind === 'image' && (
                     <button onClick={() => setMoveFor(m.id)} title="Make it move"
                       className="grid place-items-center w-8 h-8 rounded-lg bg-white/90 text-coral-ink hover:bg-white"><Film className="w-3.5 h-3.5" /></button>

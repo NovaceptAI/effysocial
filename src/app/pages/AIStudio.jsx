@@ -113,7 +113,7 @@ function FormatChooser({ onPick }) {
         {FILTERS.map((f) => (
           <button key={f} onClick={() => setFilter(f)}
             className={cn('px-4 py-1.5 rounded-full text-sm font-semibold transition',
-              filter === f ? 'bg-ink text-white' : 'bg-surface2 text-ink-soft hover:text-ink')}>
+              filter === f ? 'bg-rail-active text-rail-active-ink' : 'bg-surface2 text-ink-soft hover:text-ink')}>
             {f}
           </button>
         ))}
@@ -122,10 +122,12 @@ function FormatChooser({ onPick }) {
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         {shown.map((f) => (
           <button key={f.id} onClick={() => onPick(f)}
-            className="group relative h-56 overflow-hidden rounded-2xl bg-ink text-left shadow-e1 hover:shadow-e3 hover:-translate-y-0.5 transition-all">
+            className="group relative h-56 overflow-hidden rounded-2xl bg-neutral-900 text-left shadow-e1 hover:shadow-e3 hover:-translate-y-0.5 transition-all">
             <img src={`/formats/${f.thumb || f.id}.jpg`} alt="" loading="lazy"
               className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-            <div className="absolute inset-0 bg-gradient-to-t from-ink/95 via-ink/10 to-ink/10" />
+            {/* Fixed dark scrim (not `ink`, which inverts on dark) so the white
+                label stays legible over pale photos in either theme. */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/10" />
             <div className="absolute inset-x-0 top-0 flex items-start justify-between p-3">
               <span className="rounded-full bg-black/35 px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-wide text-white backdrop-blur-md">
                 {f.group}

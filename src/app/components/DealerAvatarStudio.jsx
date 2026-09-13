@@ -200,7 +200,7 @@ export default function DealerAvatarStudio({ onBack }) {
                     ? <img src={p.imgUrl} alt="" className="w-full h-full object-cover" />
                     : <div className="w-full h-full grid place-items-center text-xs text-ink-faint">—</div>}
                   {busy === `pose-${spec.key}` && (
-                    <div className="absolute inset-0 grid place-items-center bg-ink/40 text-white"><RefreshCw className="w-4 h-4 animate-spin" /></div>
+                    <div className="absolute inset-0 grid place-items-center bg-black/40 text-white"><RefreshCw className="w-4 h-4 animate-spin" /></div>
                   )}
                 </div>
                 <div className="mt-1.5 flex items-center justify-between gap-1">

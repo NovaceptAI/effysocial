@@ -334,9 +334,9 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
                       : s.imageUrl
                         ? <img src={s.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
                         : <div className="absolute inset-0 grid place-items-center text-white/25"><ImageIcon className="w-7 h-7" /></div>}
-                    <span className="absolute top-2 left-2 grid place-items-center min-w-[24px] h-6 px-1.5 rounded-md bg-ink/60 text-white text-xs font-bold backdrop-blur-sm">{i + 1}</span>
+                    <span className="absolute top-2 left-2 grid place-items-center min-w-[24px] h-6 px-1.5 rounded-md bg-black/60 text-white text-xs font-bold backdrop-blur-sm">{i + 1}</span>
                     <button onClick={() => removeScene(i)} title="Remove shot"
-                      className="absolute top-2 right-2 grid place-items-center w-6 h-6 rounded-md bg-ink/60 text-white hover:bg-error backdrop-blur-sm transition opacity-0 group-hover:opacity-100"><X className="w-3.5 h-3.5" /></button>
+                      className="absolute top-2 right-2 grid place-items-center w-6 h-6 rounded-md bg-black/60 text-white hover:bg-error backdrop-blur-sm transition opacity-0 group-hover:opacity-100"><X className="w-3.5 h-3.5" /></button>
                     {/* caption overlay */}
                     {s.caption && <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-ink/75 to-transparent"><p className="text-white text-xs font-semibold leading-snug line-clamp-2">{s.caption}</p></div>}
                     {s.rendering && (
@@ -346,7 +346,7 @@ export default function Storyboard({ format, onBack, initialBrief = '' }) {
                     )}
                     {/* hover render control */}
                     <button onClick={() => renderScene(i)} disabled={s.rendering || renderingAll}
-                      className="absolute inset-x-0 bottom-0 translate-y-full group-hover:translate-y-0 transition-transform bg-ink/80 text-white text-xs font-bold py-2 inline-flex items-center justify-center gap-1.5 disabled:opacity-60">
+                      className="absolute inset-x-0 bottom-0 translate-y-full group-hover:translate-y-0 transition-transform bg-black/80 text-white text-xs font-bold py-2 inline-flex items-center justify-center gap-1.5 disabled:opacity-60">
                       {s.videoUrl ? <><RefreshCw className="w-3.5 h-3.5" /> Regenerate shot</> : <><Film className="w-3.5 h-3.5" /> Render shot</>}
                     </button>
                   </div>

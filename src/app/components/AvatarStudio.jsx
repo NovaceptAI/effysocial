@@ -93,12 +93,12 @@ export default function AvatarStudio({ onBack }) {
           <div className="flex gap-1.5 my-3">
             <button onClick={() => setSource('demo')}
               className={cn('flex-1 rounded-xl px-3 py-2.5 text-sm font-bold transition',
-                source === 'demo' ? 'bg-ink text-white' : 'bg-surface2 text-ink-soft')}>
+                source === 'demo' ? 'bg-rail-active text-rail-active-ink' : 'bg-surface2 text-ink-soft')}>
               Demo avatar
             </button>
             <button onClick={() => setSource('upload')}
               className={cn('flex-1 rounded-xl px-3 py-2.5 text-sm font-bold transition',
-                source === 'upload' ? 'bg-ink text-white' : 'bg-surface2 text-ink-soft')}>
+                source === 'upload' ? 'bg-rail-active text-rail-active-ink' : 'bg-surface2 text-ink-soft')}>
               Upload your own
             </button>
           </div>
@@ -150,12 +150,12 @@ export default function AvatarStudio({ onBack }) {
           <div className="flex gap-1.5 my-3">
             <button onClick={() => setMode('script')}
               className={cn('flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-bold transition',
-                mode === 'script' ? 'bg-ink text-white' : 'bg-surface2 text-ink-soft')}>
+                mode === 'script' ? 'bg-rail-active text-rail-active-ink' : 'bg-surface2 text-ink-soft')}>
               <Mic className="w-3.5 h-3.5" /> Script + AI voice
             </button>
             <button onClick={() => setMode('audio')}
               className={cn('flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-bold transition',
-                mode === 'audio' ? 'bg-ink text-white' : 'bg-surface2 text-ink-soft')}>
+                mode === 'audio' ? 'bg-rail-active text-rail-active-ink' : 'bg-surface2 text-ink-soft')}>
               <FileAudio className="w-3.5 h-3.5" /> Upload audio
             </button>
           </div>
