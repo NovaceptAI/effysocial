@@ -46,11 +46,16 @@ export default function CampaignLaunch() {
     enabled: !!campaign,
   });
 
+  const budgetValid = Number(budget) > 0;
   const createCampaign = async () => {
-    if (!name.trim()) return;
+    if (!name.trim() || !budgetValid) return;
     setBusy('campaign');
     try {
-      const c = await effyApi.createCampaign({ workspace: workspace.id, name: name.trim(), objective, budget: Number(budget), pillar, channels });
+      const payload = { workspace: workspace.id, name: name.trim(), objective, budget: Number(budget), pillar, channels };
+      // Re-visiting step 1 after creation updates the campaign instead of duplicating it.
+      const c = campaign
+        ? await effyApi.updateCampaign(campaign.id, payload)
+        : await effyApi.createCampaign(payload);
       setCampaign(c);
       setStep(2);
     } finally { setBusy(''); }
@@ -146,9 +151,11 @@ export default function CampaignLaunch() {
             {OBJECTIVES.map((o) => <option key={o}>{o}</option>)}
           </select>
           <label className="block text-xs font-bold text-ink-soft mb-1">Budget (₹)</label>
-          <input type="number" value={budget} onChange={(e) => setBudget(e.target.value)} className="w-full rounded-lg border border-line bg-surface px-3.5 py-2.5 text-sm mb-5" />
-          <Button className="w-full" onClick={createCampaign} disabled={busy === 'campaign' || !name.trim()}>
-            {busy === 'campaign' ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Create & continue <ArrowRight className="w-4 h-4" /></>}
+          <input type="number" min="1" value={budget} onChange={(e) => setBudget(e.target.value)}
+            className={cn('w-full rounded-lg border bg-surface px-3.5 py-2.5 text-sm', budgetValid ? 'border-line mb-5' : 'border-error mb-1')} />
+          {!budgetValid && <p className="text-xs text-error mb-5">Enter a budget above ₹0.</p>}
+          <Button className="w-full" onClick={createCampaign} disabled={busy === 'campaign' || !name.trim() || !budgetValid}>
+            {busy === 'campaign' ? <Loader2 className="w-4 h-4 animate-spin" /> : campaign ? <>Update & continue <ArrowRight className="w-4 h-4" /></> : <>Create & continue <ArrowRight className="w-4 h-4" /></>}
           </Button>
         </Card>
       )}

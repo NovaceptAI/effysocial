@@ -14,7 +14,7 @@ export default function Trends() {
   const { workspace } = useWorkspace();
   const navigate = useNavigate();
   const [saved, setSaved] = useState({});   // topic → true once saved as idea
-  const { data: t = EMPTY } = useQuery({
+  const { data: t = EMPTY, isLoading, isError, refetch } = useQuery({
     queryKey: ['trends', workspace?.id],
     queryFn: () => effyApi.strategyTrends(workspace.id),
     enabled: !!workspace,
@@ -30,6 +30,25 @@ export default function Trends() {
     <div>
       <PageHeader title="Trends" subtitle="AI-suggested themes for your industry — content gaps are computed from your real posts." />
 
+      {isLoading && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2 h-64 rounded-2xl bg-surface2 animate-pulse" />
+          <div className="space-y-4">
+            <div className="h-28 rounded-2xl bg-surface2 animate-pulse" />
+            <div className="h-28 rounded-2xl bg-surface2 animate-pulse" />
+          </div>
+        </div>
+      )}
+
+      {isError && !isLoading && (
+        <Card className="p-6 text-center">
+          <AlertTriangle className="w-5 h-5 text-warning mx-auto mb-2" />
+          <p className="text-sm text-ink-soft mb-3">Couldn't load trends for this workspace.</p>
+          <Button size="sm" variant="secondary" onClick={() => refetch()}>Retry</Button>
+        </Card>
+      )}
+
+      {!isLoading && !isError && (<>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="lg:col-span-2 p-5">
           <h3 className="font-bold text-ink mb-3">Trending now</h3>
@@ -74,6 +93,7 @@ export default function Trends() {
           <div className="flex flex-wrap gap-2">{t.seasonal.map((s, i) => <Badge key={s} tone={i === 0 ? 'coral' : 'default'}>{s}</Badge>)}</div>
         </Card>
       </div>
+      </>)}
     </div>
   );
 }
