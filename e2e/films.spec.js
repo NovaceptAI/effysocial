@@ -27,3 +27,20 @@ test('a regenerated still shows its clip as out of date (FILM-015)', async ({ pa
   await open(page, films.stillRegenerated, 4);
   await expect(page.getByText('Out of date — the still, motion or length changed', { exact: false })).toHaveCount(1);
 });
+
+test('the master is signed off before delivery, and the record names the approver (FILM-028)', async ({ page }) => {
+  let film = { ...films.awaitingMasterSignoff, stage: 7 };
+  await stubApi(page, {
+    'GET /bootstrap': bootstrap,
+    'GET /films/1': () => ({ status: 'ok', film }),
+    'GET /studio/voices': { voices: [] },
+    'PATCH /films/1': (body) => ({ status: 'ok', film: { ...film, ...body } }),
+    'POST /films/1/signoff': () => { film = { ...films.fresh, stage: 6 }; return { status: 'ok', film }; },
+  });
+  await page.goto('/app/films/1');
+  await expect(page.getByText('Approve the master before building exports or dealer versions.')).toBeVisible();
+  await page.getByRole('button', { name: 'Go to sign-off' }).click();
+  const box = page.getByRole('region', { name: 'Master sign-off' });
+  await box.getByRole('button', { name: /approve master/i }).click();
+  await expect(box.getByTestId('signoff')).toContainText('by Meera Iyer (Client approver)');
+});

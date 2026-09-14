@@ -58,8 +58,8 @@ describe('Ad Films — renders that no longer match the film', () => {
     expect(screen.getByText(/The film changed after it was assembled/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /rebuild exports/i })).toBeDisabled();
     expect(screen.getByRole('button', { name: /build dealer versions/i })).toBeDisabled();
-    for (const label of ['Master 16:9', '9:16 Reel', 'WhatsApp 480p', 'Sharma']) {
-      expect(within(screen.getByText(label).parentElement).getByText('Out of date')).toBeInTheDocument();
+    for (const row of ['export-master', 'export-reel', 'export-whatsapp', 'dealer-Sharma']) {
+      expect(within(screen.getByTestId(row)).getByText('Out of date')).toBeInTheDocument();
     }
     await user.click(screen.getByRole('button', { name: 'Go to assemble' }));
     await screen.findByText('The cut');

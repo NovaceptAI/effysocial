@@ -152,8 +152,11 @@ export const effyApi = {
     http(`/films/${id}/scenes/${sceneId}/vo`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload || {}) }),
   filmStill: (id, sceneId, payload) =>
     http(`/films/${id}/scenes/${sceneId}/still`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload || {}) }),
-  filmApprove: (id, sceneId, approved) =>
-    http(`/films/${id}/scenes/${sceneId}/approve`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ approved }) }),
+  filmApprove: (id, sceneId, approved, note) =>
+    http(`/films/${id}/scenes/${sceneId}/approve`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(note ? { approved, note } : { approved }) }),
+  // Sign off (or ask for changes to) the master or a cutdown: { stage, target?, decision, note? }.
+  filmSignoff: (id, payload) =>
+    http(`/films/${id}/signoff`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.film),
   filmAnimate: (id, sceneId) =>
     http(`/films/${id}/scenes/${sceneId}/animate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) }),
   filmAnimateStatus: (id, sceneId) =>

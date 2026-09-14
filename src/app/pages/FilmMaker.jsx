@@ -60,11 +60,36 @@ function Chip({ active, suggested, onClick, children }) {
   );
 }
 
+// Sign-off times come from the engine in UTC; older rows may lack the offset.
+const fmtWhen = (iso) => {
+  if (!iso) return '';
+  const d = new Date(/(Z|[+-]\d\d:\d\d)$/.test(iso) ? iso : `${iso}Z`);
+  return d.toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+};
+
+const CUTDOWN_LABELS = { reel: '9:16 Reel', whatsapp: 'WhatsApp 480p' };
+
+function SignoffLine({ signoff }) {
+  if (!signoff) return null;
+  const who = signoff.approver?.name || signoff.approver?.email || 'unknown approver';
+  const approved = signoff.decision === 'approved';
+  return (
+    <div data-testid="signoff" style={{ fontSize: 11.5, color: T.dim, display: 'flex', flexWrap: 'wrap', gap: '2px 6px', alignItems: 'center' }}>
+      <span style={{ color: approved ? T.green : T.amber, fontWeight: 700 }}>{approved ? 'Approved' : 'Changes requested'}</span>
+      <span>
+        by {who}{signoff.approver?.role ? ` (${signoff.approver.role})` : ''} · {fmtWhen(signoff.at)} · round {signoff.round}
+      </span>
+      {signoff.extraScope && <Flag title="Beyond the revisions included for this film">Extra scope</Flag>}
+      {signoff.note && <span style={{ flexBasis: '100%', color: T.text }}>“{signoff.note}”</span>}
+    </div>
+  );
+}
+
 function StatusDot({ color }) {
   return <span style={{ width: 8, height: 8, borderRadius: 99, background: color, display: 'inline-block' }} />;
 }
 
-function OutOfDate({ children = 'Out of date', title }) {
+function Flag({ children = 'Out of date', title }) {
   return (
     <span title={title} style={{ fontSize: 11, fontWeight: 700, color: T.amber, background: '#3a2c10', borderRadius: 99, padding: '2px 8px', whiteSpace: 'nowrap' }}>
       {children}
@@ -95,6 +120,7 @@ export default function FilmMaker() {
   const [showPaste, setShowPaste] = useState(false);  // paste-your-own-script panel
   const [pasteText, setPasteText] = useState('');
   const [voEdits, setVoEdits] = useState({});         // sceneId → edited VO line (Voice stage)
+  const [changeNote, setChangeNote] = useState('');   // master "request changes" note
 
   useEffect(() => { const t = setTimeout(() => setLit(true), 30); return () => clearTimeout(t); }, []);
 
@@ -167,6 +193,18 @@ export default function FilmMaker() {
     canAssemble: allClips, blockers: allClips ? [] : ['Animate every scene first.'],
     masterStale: false, exportsStale: false, dealersStale: false,
   };
+  const signoffs = film.signoffs || { master: null, masterApproved: false, cutdowns: {}, history: [] };
+  const signOff = (payload, label) => run(label, async () => {
+    qc.setQueryData(['film', id], await effyApi.filmSignoff(id, payload));
+  });
+  const deliverableLabel = (h) => {
+    if (h.stage === 'master') return 'Master';
+    if (h.stage === 'stills') {
+      const sc = scenes.find((x) => String(x.id) === h.target);
+      return sc ? `Scene ${sc.idx + 1} still` : 'Still (scene since replaced)';
+    }
+    return CUTDOWN_LABELS[h.target] || `Dealer version — ${h.target.replace(/^dealer:/, '')}`;
+  };
 
   return (
     <div style={{
@@ -231,6 +269,25 @@ export default function FilmMaker() {
         {/* ── Stage 1: Assets & Direction ─────────────────────────────── */}
         {view === 1 && (
           <div style={{ display: 'grid', gap: 16 }}>
+            <section style={{ ...panel, padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: 220 }}>
+                <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 2 }}>Sign-off terms</h2>
+                <p style={{ fontSize: 12.5, color: T.dim }}>
+                  Revision rounds agreed with the client for each still, the master and each cutdown. Every approval
+                  records who signed off and when; rounds beyond this number are marked extra scope.
+                </p>
+              </div>
+              <label style={{ fontSize: 12.5, color: T.dim, display: 'flex', alignItems: 'center', gap: 8 }}>
+                Revisions included
+                <input type="number" min={0} max={20} placeholder="Not agreed"
+                  key={`ra:${film.revisionAllowance ?? ''}`} defaultValue={film.revisionAllowance ?? ''}
+                  onBlur={(e) => {
+                    const v = e.target.value === '' ? null : Number(e.target.value);
+                    if (v !== (film.revisionAllowance ?? null)) patch.mutate({ revisionAllowance: v });
+                  }}
+                  style={{ ...inputStyle, width: 110 }} />
+              </label>
+            </section>
             <section style={{ ...panel, padding: 20 }}>
               <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Brand assets</h2>
               <p style={{ fontSize: 12.5, color: T.dim, marginBottom: 14 }}>
@@ -598,6 +655,13 @@ export default function FilmMaker() {
                       )}
                     </div>
                     {s.still && (
+                      <div style={{ marginTop: 8 }}>
+                        {s.signoff
+                          ? <SignoffLine signoff={s.signoff} />
+                          : s.stillStatus === 'approved' && <div style={{ fontSize: 11.5, color: T.dim }}>Approved — approver not recorded</div>}
+                      </div>
+                    )}
+                    {s.still && (
                       <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
                         <input placeholder='Edit: e.g. "add the branded blue bucket in the foreground"'
                           value={editDrafts[s.id] || ''}
@@ -750,7 +814,7 @@ export default function FilmMaker() {
                       title="Edit the line — fix a mispronounced word, then Regenerate"
                       style={{ ...inputStyle, flex: 1, minWidth: 0, fontSize: 12.5, padding: '5px 8px' }} />
                     {s.voStale
-                      ? <OutOfDate title="The line or the narrator changed after this voiceover was made">Out of date — regenerate</OutOfDate>
+                      ? <Flag title="The line or the narrator changed after this voiceover was made">Out of date — regenerate</Flag>
                       : <span style={{ fontSize: 11.5, whiteSpace: 'nowrap', color: (s.voSeconds > s.seconds + 0.4 || s.voSeconds < s.seconds * 0.55) ? T.amber : T.green }}>{s.voSeconds?.toFixed(1)}s / {s.seconds}s</span>}
                     <audio src={s.voUrl} controls style={{ height: 28, width: 170 }} />
                     <Btn kind="quiet" disabled={busy === `vo${s.id}`} style={{ padding: '4px 9px', fontSize: 11.5 }}
@@ -811,6 +875,34 @@ export default function FilmMaker() {
                   <div style={{ color: T.dim, marginTop: 4 }}>{qa.note} · {qa.durationS}s</div>
                 </div>
               )}
+              {master && !cut.masterStale && (
+                <section aria-label="Master sign-off" style={{ marginTop: 14, padding: '12px 14px', borderRadius: 10, background: T.raised }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                    <ShieldCheck size={15} color={signoffs.masterApproved ? T.green : T.dim} />
+                    <strong style={{ fontSize: 13 }}>Master sign-off</strong>
+                  </div>
+                  {signoffs.master
+                    ? <SignoffLine signoff={signoffs.master} />
+                    : <p style={{ fontSize: 12, color: T.dim }}>Not signed off yet. Exports and dealer versions unlock once the master is approved.</p>}
+                  <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                    {!signoffs.masterApproved && (
+                      <Btn style={{ background: T.green, color: '#08130d', padding: '6px 12px', fontSize: 12.5 }} disabled={!!busy}
+                        onClick={() => signOff({ stage: 'master', decision: 'approved' }, 'msign')}>
+                        {busy === 'msign' ? <RefreshCw size={13} className="animate-spin" /> : <Check size={13} />} Approve master
+                      </Btn>
+                    )}
+                    <input value={changeNote} onChange={(e) => setChangeNote(e.target.value)} aria-label="What needs to change"
+                      placeholder="What needs to change?" style={{ ...inputStyle, flex: 1, minWidth: 160, fontSize: 12, padding: '6px 10px' }} />
+                    <Btn kind="quiet" disabled={!changeNote.trim() || !!busy} style={{ padding: '6px 12px', fontSize: 12.5 }}
+                      onClick={() => run('mchg', async () => {
+                        qc.setQueryData(['film', id], await effyApi.filmSignoff(id, { stage: 'master', decision: 'changes_requested', note: changeNote }));
+                        setChangeNote('');
+                      })}>
+                      Request changes
+                    </Btn>
+                  </div>
+                </section>
+              )}
             </div>
             <div style={{ ...panel, padding: 20, alignSelf: 'start' }}>
               <h3 style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>End card</h3>
@@ -852,9 +944,16 @@ export default function FilmMaker() {
                 <Btn kind="quiet" onClick={() => goStage(6)} style={{ padding: '5px 10px', fontSize: 12 }}>Go to assemble</Btn>
               </div>
             )}
+            {master && !cut.masterStale && !signoffs.masterApproved && (
+              <div role="status" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', background: '#3a2c10', color: T.amber, borderRadius: 10, padding: '10px 14px', fontSize: 12.5, marginBottom: 14 }}>
+                <Lock size={14} />
+                <span style={{ flex: 1, minWidth: 200 }}>Approve the master before building exports or dealer versions.</span>
+                <Btn kind="quiet" onClick={() => goStage(6)} style={{ padding: '5px 10px', fontSize: 12 }}>Go to sign-off</Btn>
+              </div>
+            )}
             {master && (
               <>
-                <Btn disabled={busy === 'exp' || cut.masterStale} onClick={() => run('exp', async () => {
+                <Btn disabled={busy === 'exp' || cut.masterStale || !signoffs.masterApproved} onClick={() => run('exp', async () => {
                   const f = await effyApi.filmExports(id);
                   qc.setQueryData(['film', id], f);
                 })} style={{ marginBottom: 16 }}>
@@ -864,10 +963,17 @@ export default function FilmMaker() {
                 <div style={{ display: 'grid', gap: 8 }}>
                   {[['master', 'Master ' + film.aspect], ['reel', '9:16 Reel'], ['whatsapp', 'WhatsApp 480p']].map(([k, label]) => (
                     film.renders?.[k] && typeof film.renders[k] === 'string' && (
-                      <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 10, background: T.raised, borderRadius: 10, padding: '10px 14px' }}>
+                      <div key={k} data-testid={`export-${k}`} style={{ background: T.raised, borderRadius: 10, padding: '10px 14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <Play size={14} color={T.dim} />
                         <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>{label}</span>
-                        {(k === 'master' ? cut.masterStale : cut.exportsStale) && <OutOfDate />}
+                        {(k === 'master' ? cut.masterStale : cut.exportsStale) && <Flag />}
+                        {k !== 'master' && k in signoffs.cutdowns && signoffs.cutdowns[k]?.decision !== 'approved' && (
+                          <Btn kind="quiet" disabled={!!busy} style={{ padding: '3px 9px', fontSize: 11.5 }}
+                            onClick={() => signOff({ stage: 'cutdown', target: k, decision: 'approved' }, `cut${k}`)}>
+                            <Check size={12} /> Approve
+                          </Btn>
+                        )}
                         <button type="button" title="Copy link"
                           onClick={() => { navigator.clipboard?.writeText(film.renders[k]); setNotice({ kind: 'warn', text: `${label} link copied.` }); }}
                           style={{ background: 'none', color: T.dim, cursor: 'pointer', fontSize: 12.5, fontWeight: 600 }}>
@@ -876,6 +982,12 @@ export default function FilmMaker() {
                         <a href={film.renders[k]} target="_blank" rel="noreferrer" style={{ color: T.coral, fontSize: 12.5, fontWeight: 600, display: 'inline-flex', gap: 5, alignItems: 'center' }}>
                           <Download size={13} /> Download
                         </a>
+                      </div>
+                      {(k === 'master' ? signoffs.master : signoffs.cutdowns[k]) && (
+                        <div style={{ marginTop: 6, paddingLeft: 24 }}>
+                          <SignoffLine signoff={k === 'master' ? signoffs.master : signoffs.cutdowns[k]} />
+                        </div>
+                      )}
                       </div>
                     )
                   ))}
@@ -907,7 +1019,7 @@ export default function FilmMaker() {
                   <textarea value={dealerText} onChange={(e) => setDealerText(e.target.value)} rows={3}
                     placeholder={'Sharma Hardware, Sharma Traders, Pune\nGupta Paints, Gupta & Sons, Nagpur'}
                     style={{ ...inputStyle, background: T.surface, resize: 'vertical', marginBottom: 8 }} />
-                  <Btn kind="quiet" disabled={busy === 'pers' || !dealerText.trim() || cut.masterStale} onClick={() => run('pers', async () => {
+                  <Btn kind="quiet" disabled={busy === 'pers' || !dealerText.trim() || cut.masterStale || !signoffs.masterApproved} onClick={() => run('pers', async () => {
                     const dealers = dealerText.split('\n').map((l) => {
                       const [name, shop, city] = l.split(',').map((x) => x.trim());
                       return name ? { name, shop: shop || '', city: city || '' } : null;
@@ -921,18 +1033,49 @@ export default function FilmMaker() {
                   {(film.renders?.personalized || []).length > 0 && (
                     <div style={{ display: 'grid', gap: 6, marginTop: 10 }}>
                       {film.renders.personalized.map((p) => (
-                        <div key={p.media} style={{ display: 'flex', alignItems: 'center', gap: 10, background: T.surface, borderRadius: 8, padding: '8px 12px' }}>
+                        <div key={p.media} data-testid={`dealer-${p.name}`} style={{ background: T.surface, borderRadius: 8, padding: '8px 12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <span style={{ fontSize: 12.5, fontWeight: 600, flex: 1 }}>{p.name}</span>
-                          {cut.dealersStale && <OutOfDate />}
+                          {cut.dealersStale && <Flag />}
+                          {`dealer:${p.name}` in signoffs.cutdowns && signoffs.cutdowns[`dealer:${p.name}`]?.decision !== 'approved' && (
+                            <Btn kind="quiet" disabled={!!busy} style={{ padding: '3px 9px', fontSize: 11.5 }}
+                              onClick={() => signOff({ stage: 'cutdown', target: `dealer:${p.name}`, decision: 'approved' }, `cut${p.name}`)}>
+                              <Check size={12} /> Approve
+                            </Btn>
+                          )}
                           <a href={p.url} target="_blank" rel="noreferrer" style={{ color: T.coral, fontSize: 12, fontWeight: 600, display: 'inline-flex', gap: 4, alignItems: 'center' }}>
                             <Download size={12} /> Download
                           </a>
+                        </div>
+                        {signoffs.cutdowns[`dealer:${p.name}`] && (
+                          <div style={{ marginTop: 5 }}><SignoffLine signoff={signoffs.cutdowns[`dealer:${p.name}`]} /></div>
+                        )}
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
               </>
+            )}
+
+            {signoffs.history.length > 0 && (
+              <section aria-label="Sign-off record" style={{ background: T.raised, borderRadius: 12, padding: 14, marginTop: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: T.dim, letterSpacing: '.05em' }}>SIGN-OFF RECORD</div>
+                  <span style={{ fontSize: 11.5, color: T.dim }}>
+                    {film.revisionAllowance == null ? 'Revisions included: not agreed' : `Revisions included: ${film.revisionAllowance} per deliverable`}
+                    {signoffs.history.some((h) => h.extraScope) && ` · ${signoffs.history.filter((h) => h.extraScope).length} extra-scope decision(s)`}
+                  </span>
+                </div>
+                <ol style={{ display: 'grid', gap: 8, listStyle: 'none', margin: 0, padding: 0 }}>
+                  {signoffs.history.map((h) => (
+                    <li key={h.id} style={{ borderTop: `1px solid ${T.border}`, paddingTop: 8 }}>
+                      <div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 2 }}>{deliverableLabel(h)}</div>
+                      <SignoffLine signoff={h} />
+                    </li>
+                  ))}
+                </ol>
+              </section>
             )}
           </section>
         )}
