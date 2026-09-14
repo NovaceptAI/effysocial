@@ -232,12 +232,31 @@ exact setup steps — no fake OAuth.
 
 ## 9. Testing
 
-- **173 tests** (`tests/test_effy_*.py`, 20 files), run:
-  `cd /srv/novalab-engine && PYTHONPATH=. myenv/bin/pytest tests/ -q`
-  (SQLite override + register/account fixtures in `conftest.py`).
-- **Discipline:** every backend slice ships tests — a contract file per module
-  **plus** an entry in the tenancy-security matrix (401/404 cross-org). Groq is
-  mocked in tests; a small opt-in live smoke tier exists (`test_smoke_external`).
+`effy_phase.sh check` runs all three layers below; a phase cannot deploy unless
+they pass.
+
+**Backend** (`novalab-engine/tests/`, pytest): run
+`myenv/bin/python -m pytest -q` from the engine checkout. SQLite override plus
+register/account fixtures live in `conftest.py`; providers are stubbed, and a
+small opt-in live smoke tier exists (`RUN_SMOKE=1`). Every backend slice ships a
+contract file plus an entry in the tenancy matrix (401/404 cross-org).
+
+**Frontend unit and component** (Vitest + React Testing Library, jsdom):
+`npm test` (or `npm run test:watch`). Tests sit beside the code as
+`*.test.js(x)`. `src/test/mockApi.js` stubs `fetch` for `/api/effy` from a
+`"METHOD /path"` table, records calls and lists anything unhandled;
+`src/test/render.jsx` renders a page inside the real auth, workspace, query and
+router providers. The session fixture mirrors the engine's bootstrap payload.
+
+**End to end** (Playwright, `e2e/`): `npm run test:e2e` builds the app, serves it
+with `vite preview` on port 4180 and runs Chromium on desktop, plus a Pixel 7
+viewport for `responsive.spec.js`. `/api/effy` is stubbed per test with
+`e2e/support/api.js`, so no backend or live data is involved. `@playwright/test`
+is pinned to exactly 1.63.0 because that version uses the Chromium build cached
+in `~/.cache/ms-playwright`; an upgrade needs `npx playwright install chromium`.
+
+Name tests after the Launch Ledger case they cover (e.g. `CAMP-003`), and check
+a new test fails when the behaviour it guards is broken.
 
 ---
 

@@ -35,3 +35,8 @@ mahesh.png
 .DS_Store
 *.log
 .engine-staging/
+
+# Test output
+.e2e-build/
+test-results/
+playwright-report/
