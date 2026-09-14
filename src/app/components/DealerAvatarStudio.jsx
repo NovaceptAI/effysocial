@@ -8,6 +8,7 @@ import { useWorkspace } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
 import { Button, Badge, Card } from '../../ui';
 import ShareRow from './ShareRow';
+import BrandMasterCard, { mastersKey } from './BrandMasterCard';
 import { cn } from '../../lib/cn';
 
 /* Personalized Avatar Video (raw v1).
@@ -42,6 +43,12 @@ export default function DealerAvatarStudio({ onBack }) {
     enabled: !!workspace,
   });
   const { data: audioOpts } = useQuery({ queryKey: ['studio-voices'], queryFn: () => effyApi.studioVoices() });
+  const { data: mastersData } = useQuery({
+    queryKey: mastersKey(workspace?.id),
+    queryFn: () => effyApi.avatarMasters(workspace.id),
+    enabled: !!workspace,
+  });
+  const activeMaster = mastersData?.active || null;
   const voices = audioOpts?.voices || [];
   const dealer = dealers.find((d) => d.id === selId);
 
@@ -75,6 +82,8 @@ export default function DealerAvatarStudio({ onBack }) {
           <div className="flex-1" />
           {!creating && <Button onClick={() => setCreating(true)}><Plus className="w-4 h-4" /> New dealer</Button>}
         </div>
+
+        <BrandMasterCard workspaceId={workspace?.id} />
 
         {creating && (
           <Card className="p-6 mb-5">
@@ -339,9 +348,25 @@ export default function DealerAvatarStudio({ onBack }) {
             )}
           </div>
         </div>
+        <p data-testid="render-master" className="text-sm text-ink-soft mb-3">
+          Renders on{' '}
+          {activeMaster
+            ? <><strong className="text-ink">{activeMaster.title}</strong> <span className="text-ink-faint">(brand master, {activeMaster.durationS.toFixed(1)} s)</span></>
+            : <><strong className="text-ink">the placeholder master</strong> <span className="text-ink-faint">— add the brand master from the dealer list</span></>}
+        </p>
         {!dealer.locked && <p className="text-sm text-ink-faint">Lock the avatar identity to enable rendering. The master video stays fixed — only the avatar, dialogue and text layers are personalized.</p>}
         {dealer.renders?.master && (
           <>
+            {dealer.builtOn && (
+              <p data-testid="built-on" className="text-xs text-ink-faint mb-2">
+                Built on {dealer.builtOn.placeholder ? 'the placeholder master' : `“${dealer.builtOn.title}”`}
+                {(dealer.builtOn.id ?? null) !== (activeMaster?.id ?? null) && (
+                  <span className="block mt-1 text-warning font-semibold">
+                    The master has changed since this render — re-render to use {activeMaster ? `“${activeMaster.title}”` : 'the placeholder'}.
+                  </span>
+                )}
+              </p>
+            )}
             <video src={dealer.renders.master} controls className="w-full max-w-2xl rounded-xl bg-black" />
             <ShareRow videoUrl={dealer.renders.master} caption={`Festive greetings from ${dealer.name} — ${dealer.shop}, ${dealer.city}`} />
           </>

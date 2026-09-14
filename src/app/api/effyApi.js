@@ -109,6 +109,22 @@ export const effyApi = {
   dealerCompliance: (id) => http(`/dealer-avatars/${id}/compliance`, { method: 'POST' }),
   dealerRender: (id) => http(`/dealer-avatars/${id}/render`, { method: 'POST' }).then((d) => d.dealer),
   dealerExports: (id) => http(`/dealer-avatars/${id}/exports`, { method: 'POST' }),
+  // Brand master videos for dealer renders (one active per workspace; none = placeholder)
+  avatarMasters: (workspaceId) => http(`/dealer-avatars/masters?workspace=${encodeURIComponent(workspaceId)}`),
+  uploadAvatarMaster: (workspaceId, file, title) => {
+    const fd = new FormData();
+    fd.append('workspace', workspaceId);
+    fd.append('file', file);
+    if (title) fd.append('title', title);
+    return http('/dealer-avatars/masters', { method: 'POST', body: fd });
+  },
+  avatarMasterFromLibrary: (workspaceId, name) =>
+    http('/dealer-avatars/masters/from-library', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId, name }) }),
+  updateAvatarMaster: (id, payload) =>
+    http(`/dealer-avatars/masters/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
+  deleteAvatarMaster: (id) => http(`/dealer-avatars/masters/${id}`, { method: 'DELETE' }),
+  useAvatarPlaceholder: (workspaceId) =>
+    http('/dealer-avatars/masters/placeholder', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId }) }),
 
   // EffyCharacters — default lip-sync speakers
   listCharacters: (workspaceId) => http(`/characters?workspace=${encodeURIComponent(workspaceId)}`),
