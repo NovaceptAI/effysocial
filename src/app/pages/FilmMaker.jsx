@@ -110,6 +110,7 @@ export default function FilmMaker() {
   const [busy, setBusy] = useState('');
   const [notice, setNotice] = useState(null); // {kind:'warn'|'error', text}
   const fileRef = useRef(null);
+  const briefRef = useRef(null);                      // the brief as typed, sent with Draft the script
   const [editDrafts, setEditDrafts] = useState({}); // sceneId → edit text
   const [castQuery, setCastQuery] = useState('');
   const [castResults, setCastResults] = useState([]);
@@ -447,7 +448,7 @@ export default function FilmMaker() {
                 Pick how many scenes and how long each runs — the narration is written to fill every second.
                 Scenes with approved stills survive a re-draft.
               </p>
-              <textarea defaultValue={film.brief} rows={4} placeholder="What is this film about? e.g. 20s monsoon-proofing ad: cracked roofs suffer, our coating fixes it, meet your local dealer."
+              <textarea ref={briefRef} aria-label="Film brief" defaultValue={film.brief} rows={4} placeholder="What is this film about? e.g. 20s monsoon-proofing ad: cracked roofs suffer, our coating fixes it, meet your local dealer."
                 onBlur={(e) => e.target.value !== film.brief && patch.mutate({ brief: e.target.value })}
                 style={{ ...inputStyle, resize: 'vertical', marginBottom: 12, fontSize: 14, lineHeight: 1.5 }} />
               <div style={{ display: 'flex', gap: 14, alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 4 }}>
@@ -470,8 +471,10 @@ export default function FilmMaker() {
                 </div>
                 <div style={{ flex: 1 }} />
                 <Btn disabled={busy === 'script'} onClick={() => run('script', async () => {
-                  document.activeElement?.blur?.();
-                  const f = await effyApi.filmScript(id, { scenes: sceneCount || film.sceneCount || 4, sceneSeconds: sceneSecs });
+                  // Send the brief with the request: saving it on blur races the script
+                  // request, and the engine would draft from the previous brief.
+                  const brief = briefRef.current?.value ?? film.brief;
+                  const f = await effyApi.filmScript(id, { brief, scenes: sceneCount || film.sceneCount || 4, sceneSeconds: sceneSecs });
                   qc.setQueryData(['film', id], f);
                 })}>
                   {busy === 'script' ? <RefreshCw size={15} className="animate-spin" /> : <Sparkles size={15} />}

@@ -38,5 +38,6 @@ mahesh.png
 
 # Test output
 .e2e-build/
+.e2e-film-build/
 test-results/
 playwright-report/

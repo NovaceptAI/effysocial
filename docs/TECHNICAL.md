@@ -272,6 +272,18 @@ viewport for `responsive.spec.js`. `/api/effy` is stubbed per test with
 is pinned to exactly 1.63.0 because that version uses the Chromium build cached
 in `~/.cache/ms-playwright`; an upgrade needs `npx playwright install chromium`.
 
+**Demo film** (`e2e-film/`, `npm run test:e2e:film`): the strategy's primary demo in
+Chromium against the real engine. `playwright.film.config.js` starts
+`scripts/e2e_film_server.py` from the engine checkout (the sibling `../engine` in a
+phase worktree, else `/srv/novalab-engine`; `EFFY_ENGINE_DIR` overrides) on port
+5099 with a throwaway SQLite database and temporary media folder, and serves the
+build on 4293 with `/api/effy` proxied to it. Only paid providers are stubbed
+(script beats, stills, Veo clips, voice-overs, the audio check); ffmpeg assembles
+and exports for real, and the run downloads the master, 9:16 reel and WhatsApp
+exports and checks them with ffprobe. The engine runs under `env -i` without the
+production `.env`, so an unstubbed provider fails instead of spending money. It
+takes about a minute and runs in `effy_phase.sh check`.
+
 Name tests after the Launch Ledger case they cover (e.g. `CAMP-003`), and check
 a new test fails when the behaviour it guards is broken.
 

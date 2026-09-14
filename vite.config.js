@@ -22,6 +22,8 @@ export default defineConfig({
   },
   preview: {
     headers: { 'Content-Security-Policy': csp },
+    // The demo-film run (npm run test:e2e:film) points the built app at a real engine.
+    ...(process.env.E2E_ENGINE ? { proxy: { '/api/effy': { target: process.env.E2E_ENGINE } } } : {}),
   },
   server: {
     proxy: {
