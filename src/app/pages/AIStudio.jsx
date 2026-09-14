@@ -175,6 +175,11 @@ export default function AIStudio() {
   const [lang, setLang] = useState('English');
   const [busy, setBusy] = useState(false);
   const [genErr, setGenErr] = useState('');   // why the last generation failed; never written into the draft
+  const [sending, setSending] = useState(false);
+  const sendingRef = useRef(false);            // blocks a second send before the first re-render
+  const [sendErr, setSendErr] = useState('');
+  const [refineErr, setRefineErr] = useState('');
+  const [imgErr, setImgErr] = useState('');
   // A reused asset opens straight into the preview with an empty draft to fill.
   const [result, setResult] = useState((reusedImage || reusedVideo) ? { caption: '', hashtags: [], scores: [], hook: '', cta: '', cited: [] } : null);
   const [preview, setPreview] = useState('mobile');
@@ -228,7 +233,7 @@ export default function AIStudio() {
 
   const generate = async () => {
     if (!workspace || !format) return;
-    setBusy(true); setResult(null); setSent(false); setGenErr('');
+    setBusy(true); setResult(null); setSent(false); setGenErr(''); setSendErr(''); setRefineErr('');
     try {
       const d = await effyApi.generateStudio({ workspace: workspace.id, type: format.id, topic, language: lang, trend, angle });
       setResult({ caption: d.caption, hashtags: d.hashtags || [], scores: d.scores || [], hook: d.hook, cta: d.cta, cited: d.cited || [] });
@@ -240,17 +245,24 @@ export default function AIStudio() {
     } finally { setBusy(false); }
   };
   const sendToApproval = async () => {
-    if (!result) return;
-    await effyApi.sendToApproval({ workspace: workspace.id, hook: result.hook, caption: result.caption, channel: format.platform, type: format.id.split('_')[1] || 'post', campaignId });
-    setSent(true);
+    if (!result || sent || sendingRef.current) return;
+    sendingRef.current = true; setSending(true); setSendErr('');
+    try {
+      await effyApi.sendToApproval({ workspace: workspace.id, hook: result.hook, caption: result.caption, channel: format.platform, type: format.id.split('_')[1] || 'post', campaignId });
+      setSent(true);
+    } catch (e) {
+      setSendErr(e.message || 'Could not send to approval — try again.');
+    } finally { sendingRef.current = false; setSending(false); }
   };
   const refine = async (tool) => {
     const current = captionRef.current?.value ?? result?.caption;
     if (!current) return;
-    setRefining(tool);
+    setRefining(tool); setRefineErr('');
     try {
       const d = await effyApi.studioRefine({ workspace: workspace.id, type: format.id, tool, caption: current, language: lang });
       setResult((r) => ({ ...r, caption: d.caption ?? r.caption, hashtags: d.hashtags ?? r.hashtags, scores: d.scores ?? r.scores, hook: d.hook ?? r.hook }));
+    } catch (e) {
+      setRefineErr(e.message || 'Could not refine the caption — try again.');
     } finally { setRefining(''); }
   };
   // Creative-testing set: N strategically different takes via the existing
@@ -287,10 +299,13 @@ export default function AIStudio() {
 
   const genImage = async () => {
     if (!workspace || !format) return;
-    setImgBusy(true);
+    setImgBusy(true); setImgErr('');
     try {
       const d = await effyApi.studioImage({ workspace: workspace.id, topic: topic || trend || angle, aspect: format.aspect });
       if (d.imageUrl) setImage(d.imageUrl);
+      else setImgErr('No image came back — try again.');
+    } catch (e) {
+      setImgErr(e.message || 'Could not generate the image — try again.');
     } finally { setImgBusy(false); }
   };
   const embedAgent = async () => {
@@ -430,10 +445,16 @@ export default function AIStudio() {
           {LANGS.map((l) => <option key={l}>{l}</option>)}
         </select>
         <Button variant="secondary" disabled={!result} onClick={() => navigate('/app/calendar')}><CalendarPlus className="w-4 h-4" /> Calendar</Button>
-        <Button disabled={!result || sent} onClick={sendToApproval}>
-          {sent ? <><Check className="w-4 h-4" /> Sent</> : <><Send className="w-4 h-4" /> Send to approval</>}
+        <Button disabled={!result || sent || sending} onClick={sendToApproval}>
+          {sent ? <><Check className="w-4 h-4" /> Sent</> : sending ? <><RefreshCw className="w-4 h-4 animate-spin" /> Sending…</> : <><Send className="w-4 h-4" /> Send to approval</>}
         </Button>
       </div>
+      {sendErr && (
+        <div role="alert" className="mb-3 flex items-start gap-2.5 rounded-xl bg-error-soft px-4 py-2.5 text-sm text-error">
+          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+          <span><strong className="font-semibold">Not sent to approval.</strong> {sendErr}</span>
+        </div>
+      )}
 
       {sent && (
         <div className="mb-5">
@@ -550,6 +571,7 @@ export default function AIStudio() {
                     </button>
                   ))}
                 </div>
+                {refineErr && <p role="alert" className="mt-3 text-xs text-error">{refineErr}</p>}
               </>
             )}
           </div>
@@ -613,6 +635,7 @@ export default function AIStudio() {
                     </Button>
                   )}
                 </div>
+                {imgErr && <p role="alert" className="mt-2 text-xs text-error text-center">{imgErr}</p>}
                 {embedOpen && image && !video && (
                   <div className="mt-3 w-full rounded-xl bg-surface2/60 p-3 space-y-2.5">
                     <div className="text-xs font-bold text-ink">Embed an agent into this image</div>

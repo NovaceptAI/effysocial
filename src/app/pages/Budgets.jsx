@@ -12,6 +12,9 @@ const PLATFORM = {
   google: { label: 'Google', cls: 'bg-warning-soft text-warning' },
 };
 
+const BUDGET_MIN = 1_000;
+const BUDGET_MAX = 10_000_000;  // ₹1 crore
+
 function BudgetCell({ row, ws, canWrite }) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(row.budget);
@@ -22,22 +25,30 @@ function BudgetCell({ row, ws, canWrite }) {
   if (!canWrite) return <span className="tabular-nums">{inr(row.budget)}</span>;
   if (!editing) {
     return (
-      <button onClick={() => { setValue(row.budget); setEditing(true); }} className="group flex items-center gap-1.5 tabular-nums hover:text-ink">
+      <button onClick={() => { setValue(row.budget); save.reset(); setEditing(true); }} className="group flex items-center gap-1.5 tabular-nums hover:text-ink">
         {inr(row.budget)} <Pencil className="w-3 h-3 text-ink-faint opacity-0 group-hover:opacity-100" />
       </button>
     );
   }
+  // Same bounds the ads API enforces, so a bad value never leaves the browser.
+  const amount = Number(value);
+  const valid = String(value).trim() !== '' && Number.isFinite(amount) && amount >= BUDGET_MIN && amount <= BUDGET_MAX;
   return (
-    <span className="flex items-center gap-1">
-      <input
-        type="number" value={value} onChange={(e) => setValue(e.target.value)} autoFocus
-        className="w-24 px-2 py-1 rounded-lg border border-line bg-surface text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-coral/30"
-      />
-      <Button size="sm" variant="ghost" onClick={() => save.mutate(undefined, { onSuccess: () => setEditing(false) })} disabled={save.isPending}>
-        {save.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-      </Button>
-      <Button size="sm" variant="ghost" onClick={() => setEditing(false)}><X className="w-3.5 h-3.5" /></Button>
-    </span>
+    <div>
+      <span className="flex items-center gap-1">
+        <input
+          type="number" min={BUDGET_MIN} max={BUDGET_MAX} value={value} autoFocus aria-label={`Monthly budget for ${row.campaign}`}
+          onChange={(e) => { setValue(e.target.value); if (save.isError) save.reset(); }}
+          className={cn('w-24 px-2 py-1 rounded-lg border bg-surface text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-coral/30', valid ? 'border-line' : 'border-error')}
+        />
+        <Button size="sm" variant="ghost" aria-label="Save budget" onClick={() => save.mutate(undefined, { onSuccess: () => setEditing(false) })} disabled={!valid || save.isPending}>
+          {save.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+        </Button>
+        <Button size="sm" variant="ghost" aria-label="Cancel" onClick={() => setEditing(false)}><X className="w-3.5 h-3.5" /></Button>
+      </span>
+      {!valid && <p className="mt-1 text-xs text-error">Enter a budget between ₹1,000 and ₹1 crore.</p>}
+      {valid && save.isError && <p role="alert" className="mt-1 text-xs text-error">{save.error.message}</p>}
+    </div>
   );
 }
 
@@ -49,9 +60,13 @@ function StatusAction({ row, ws }) {
   );
   if (row.status === 'ended') return null;
   return (
-    <Button size="sm" variant="ghost" onClick={() => toggle.mutate()} disabled={toggle.isPending}>
-      {toggle.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : active ? <><Pause className="w-3.5 h-3.5" /> Pause</> : <><Play className="w-3.5 h-3.5" /> Resume</>}
-    </Button>
+    <div className="inline-flex flex-col items-end">
+      <Button size="sm" variant="ghost" onClick={() => toggle.mutate()} disabled={toggle.isPending}>
+        {toggle.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : active ? <><Pause className="w-3.5 h-3.5" /> Pause</> : <><Play className="w-3.5 h-3.5" /> Resume</>}
+      </Button>
+      {/* A silent failure here would leave spend running while the page implies it stopped. */}
+      {toggle.isError && <p role="alert" className="mt-1 max-w-[14rem] text-right text-xs text-error">{toggle.error.message}</p>}
+    </div>
   );
 }
 

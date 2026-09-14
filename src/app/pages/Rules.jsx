@@ -35,6 +35,7 @@ export default function Rules() {
   const [formErr, setFormErr] = useState('');
   const [dryRun, setDryRun] = useState(null);
   const [running, setRunning] = useState(false);
+  const [dryErr, setDryErr] = useState('');
 
   const { data, isLoading } = useQuery({
     queryKey: ['ads-rules', workspace?.id],
@@ -64,8 +65,9 @@ export default function Rules() {
   };
 
   const runDry = async () => {
-    setRunning(true);
+    setRunning(true); setDryErr('');
     try { setDryRun(await effyApi.adsRulesDryRun(workspace.id)); }
+    catch (e) { setDryErr(e.message || 'Could not run the check — try again.'); }
     finally { setRunning(false); }
   };
 
@@ -115,12 +117,14 @@ export default function Rules() {
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-ink truncate">{r.name}</p>
                 <RuleSentence r={r} />
+                {toggle.isError && toggle.variables?.id === r.id && <p role="alert" className="mt-1 text-xs text-error">{toggle.error.message}</p>}
+                {remove.isError && remove.variables === r.id && <p role="alert" className="mt-1 text-xs text-error">{remove.error.message}</p>}
               </div>
               <Badge tone={r.enabled ? 'success' : 'default'}>{r.enabled ? 'Active' : 'Paused'}</Badge>
               <Button size="sm" variant="ghost" onClick={() => toggle.mutate({ id: r.id, enabled: !r.enabled })} disabled={toggle.isPending}>
                 {r.enabled ? 'Pause' : 'Resume'}
               </Button>
-              <Button size="sm" variant="ghost" onClick={() => remove.mutate(r.id)} disabled={remove.isPending}>
+              <Button size="sm" variant="ghost" onClick={() => remove.mutate(r.id)} disabled={remove.isPending} aria-label={`Delete rule ${r.name}`}>
                 <Trash2 className="w-3.5 h-3.5 text-error" />
               </Button>
             </Card>
@@ -190,6 +194,7 @@ export default function Rules() {
             <Button variant="secondary" className="w-full" onClick={runDry} disabled={running || rules.length === 0}>
               {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <PlayCircle className="w-4 h-4" />} Run check
             </Button>
+            {dryErr && <p role="alert" className="mt-2 text-xs text-error">{dryErr}</p>}
             {dryRun && (
               <div className="mt-3 space-y-2">
                 {dryRun.results.length === 0 && <p className="text-xs text-ink-faint">No active rules to check.</p>}
