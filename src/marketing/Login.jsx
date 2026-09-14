@@ -119,6 +119,10 @@ export default function Login() {
             className="w-full flex items-center justify-center gap-2 rounded-lg border border-coral/40 bg-coral-tint text-coral-ink font-bold py-3 text-sm hover:bg-coral hover:text-white hover:border-coral transition disabled:opacity-60">
             Create your free account <ArrowRight className="w-4 h-4" />
           </button>
+          <p className="text-center text-xs text-ink-faint mt-3 leading-relaxed">
+            By creating an account you agree to the <Link to="/terms" className="font-semibold text-coral-ink">Terms of Service</Link> and
+            acknowledge the <Link to="/privacy" className="font-semibold text-coral-ink">Privacy Policy</Link>.
+          </p>
         </div>
         )}
       </div>

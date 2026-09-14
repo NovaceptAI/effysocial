@@ -325,6 +325,10 @@ export default function Landing() {
       <footer style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
         <div className="max-w-6xl mx-auto px-6 py-10 flex flex-wrap items-center justify-between gap-3 text-sm" style={{ color: FAINT }}>
           <img src="/brand/effysocial-logo-trim.png" alt="EffySocial" className="w-auto" style={{ height: 22 }} />
+          <nav aria-label="Legal" className="flex items-center gap-4">
+            <Link to="/privacy" className="hover:text-white">Privacy Policy</Link>
+            <Link to="/terms" className="hover:text-white">Terms of Service</Link>
+          </nav>
           <span>Powered by EffyBiz · © 2026</span>
         </div>
       </footer>

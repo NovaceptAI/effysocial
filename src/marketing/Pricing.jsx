@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, Minus, ArrowRight, Sparkles } from 'lucide-react';
+import { LegalFooterLinks } from './legal/LegalLayout';
 
 const PLANS = [
   {
@@ -202,6 +203,7 @@ export default function Pricing() {
       <footer className="border-t border-hair">
         <div className="max-w-6xl mx-auto px-6 py-10 flex flex-wrap items-center justify-between gap-3 text-sm text-ink-faint">
           <Link to="/" className="flex items-center"><img src="/brand/effysocial-logo-trim.png" alt="EffySocial" className="w-auto" style={{ height: 20 }} /></Link>
+          <LegalFooterLinks />
           <span>Powered by EffyBiz · © 2026</span>
         </div>
       </footer>

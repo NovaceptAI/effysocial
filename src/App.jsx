@@ -10,6 +10,8 @@ import Forgot from './marketing/Forgot';
 import Reset from './marketing/Reset';
 import PublicForm from './marketing/PublicForm';
 import Pricing from './marketing/Pricing';
+import Privacy from './marketing/Privacy';
+import Terms from './marketing/Terms';
 import PublicLanding from './marketing/PublicLanding';
 import PublicSite from './marketing/PublicSite';
 import PublicBio from './marketing/PublicBio';
@@ -62,6 +64,8 @@ export default function App() {
             <Route path="/reset" element={<Reset />} />
             <Route path="/f/:slug" element={<PublicForm />} />
             <Route path="/pricing" element={<Pricing />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
             <Route path="/p/:slug" element={<PublicLanding />} />
             <Route path="/s/:slug" element={<PublicSite />} />
             <Route path="/s/:slug/:pageKey" element={<PublicSite />} />

@@ -4,7 +4,7 @@ import { stubApi, signedOut, signedInEmpty } from './support/api';
 // Load the main screens under the production CSP (see support/test.js, which fails
 // on any violation). Data is stubbed; screens may show empty or error states —
 // this checks that their code, styles and fonts load under the policy.
-const PUBLIC = ['/', '/login', '/pricing', '/forgot'];
+const PUBLIC = ['/', '/login', '/pricing', '/forgot', '/privacy', '/terms'];
 const APP = ['/app', '/app/studio', '/app/films', '/app/media', '/app/brand', '/app/home', '/app/campaigns',
   '/app/launch', '/app/ads', '/app/rules', '/app/budgets', '/app/pipeline', '/app/integrations', '/app/settings'];
 
