@@ -25,7 +25,7 @@ export default function Login() {
 
   const getStarted = async () => {
     setError('');
-    if (!email || password.length < 6) { setError('Enter an email and a 6+ character password to sign up.'); return; }
+    if (!email || password.length < 8) { setError('Enter an email and a password of at least 8 characters to sign up.'); return; }
     setBusy(true);
     const r = await register({ email, password, name: email.split('@')[0] });
     setBusy(false);
