@@ -6,6 +6,7 @@ import TopBar from './TopBar';
 import CommandPalette from './CommandPalette';
 import AssistantPanel from '../components/AssistantPanel';
 import { useAppAuth } from '../context/AppAuth';
+import { useWorkspace } from '../context/WorkspaceContext';
 import { useTheme } from '../context/ThemeContext';
 import { cn } from '../../lib/cn';
 
@@ -36,6 +37,7 @@ export default function AppShell() {
   const { pathname } = useLocation();
   const { loading } = useAppAuth();
   const { theme } = useTheme();
+  const { workspaceId } = useWorkspace();
   const fullBleed = FULL_BLEED.has(pathname);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
@@ -58,7 +60,8 @@ export default function AppShell() {
         <main className={fullBleed
           ? 'flex-1 min-w-0 w-full px-4 sm:px-6 py-5'
           : 'flex-1 min-w-0 p-5 sm:p-8 max-w-[1360px] w-full mx-auto'}>
-          <Outlet />
+          {/* Keyed by workspace: switching remounts the page, so no list or form keeps the last workspace's rows. */}
+          <Outlet key={workspaceId || 'none'} />
         </main>
       </div>
       <CommandPalette open={paletteOpen} setOpen={setPaletteOpen} />

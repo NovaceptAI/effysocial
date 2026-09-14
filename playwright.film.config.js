@@ -2,7 +2,8 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { defineConfig, devices } from '@playwright/test';
 
-// The demo film, end to end (launch plan 2.9, ENV-015): the production build in
+// The real-engine suite — the demo film end to end (launch plan 2.9, ENV-015) and
+// workspaces and clients (3.1). The production build in
 // Chromium, talking to the real engine (scripts/e2e_film_server.py) on a throwaway
 // database with the paid AI providers stubbed. ffmpeg really assembles and exports,
 // so the run ends with a playable file.

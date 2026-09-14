@@ -36,6 +36,6 @@ export const bootstrapFixture = {
   status: 'ok',
   user: { id: 1, name: 'Asha Rao', email: 'asha@example.in', email_verified: true, is_admin: false },
   org: { id: 1, name: 'Rao Dental', type: 'business', plan: 'Growth' },
-  workspaces: [{ id: 'ws_1', dbId: 1, name: 'Rao Dental Pune', industry: 'Dental clinic', location: 'Pune', logo: '🦷', accent: '#E84A33' }],
-  role: 'Owner',
+  workspaces: [{ id: 'ws_1', dbId: 1, name: 'Rao Dental Pune', industry: 'Dental clinic', location: 'Pune', logo: '🦷', accent: '#E84A33', managerId: 1 }],
+  role: 'Workspace admin',
 };

@@ -6,30 +6,34 @@ import {
   Library, Megaphone, Play, Plug, Rocket, Sparkles, TrendingUp, Users, Wand2,
 } from 'lucide-react';
 import { useWorkspace, inr, num } from '../context/WorkspaceContext';
-import { usePosts } from '../api/hooks';
+import { usePosts, useClientSummary } from '../api/hooks';
 import { effyApi } from '../api/effyApi';
 import { Button, Card, MetricCard, PageHeader, Pacing, StatusBadge } from '../../ui';
 
-// Agency overview (spec §7.2) — org-wide rollup across all client workspaces.
+// Agency overview (spec §7.2) — org-wide rollup across all client workspaces,
+// summed from each workspace's own figures (G21).
 function AgencyOverview({ onSwitchView }) {
   const { org, workspaces, setWorkspaceId } = useWorkspace();
-  const totals = workspaces.reduce((t, w) => ({
-    spend: t.spend + (w.monthlySpend || 0), leads: t.leads + (w.leads || 0),
-    approvals: t.approvals + (w.approvals || 0), alerts: t.alerts + (w.alerts || 0),
+  const { data: figures } = useClientSummary();
+  const rows = Object.values(figures || {});
+  const totals = rows.reduce((t, f) => ({
+    spend: t.spend + f.spend, leads: t.leads + f.leads30d,
+    approvals: t.approvals + f.approvals, alerts: t.alerts + f.alerts,
   }), { spend: 0, leads: 0, approvals: 0, alerts: 0 });
+  const shown = (n, fmt = num) => (figures ? fmt(n) : '…');
 
   return (
     <div>
       <PageHeader
         title={`${org.name} — all clients`}
-        subtitle={`${workspaces.length} workspaces under management`}
+        subtitle={`${workspaces.length} workspace${workspaces.length === 1 ? '' : 's'} under management`}
         actions={<Button variant="secondary" onClick={onSwitchView}>Client view</Button>}
       />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <MetricCard label="Spend under management" value={inr(totals.spend)} hint="per month" />
-        <MetricCard label="Leads (all clients)" value={num(totals.leads)} hint="all time" />
-        <MetricCard label="Pending approvals" value={num(totals.approvals)} hint="across clients" />
-        <MetricCard label="Active alerts" value={num(totals.alerts)} hint="needs action" />
+        <MetricCard label="Spend under management" value={shown(totals.spend, inr)} hint="recorded on campaigns" />
+        <MetricCard label="Leads (all clients)" value={shown(totals.leads)} hint="last 30 days" />
+        <MetricCard label="Pending approvals" value={shown(totals.approvals)} hint="across clients" />
+        <MetricCard label="Active alerts" value={shown(totals.alerts)} hint="needs action" />
       </div>
       <Card className="p-5">
         <div className="flex items-center justify-between mb-3">

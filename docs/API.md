@@ -16,6 +16,9 @@ Legend: 🔓 no auth · 🔒 requires session · 🏢 org-ownership enforced
 | GET | `/api/effy/auth/me` | 🔒 | → `{user:{id,name,email,email_verified}}` |
 | GET | `/api/effy/bootstrap` | 🔒 | → `{user, org, role, workspaces[]}` |
 | GET | `/api/effy/workspaces` | 🔒 | → same as bootstrap |
+| POST | `/api/effy/workspaces` | 🔒🏢 | `{name, industry?, location?, logo?, accent?, managerId?}` → `{workspace}` · owners/admins only (403) · 400 no name, outside manager or 100-workspace limit · 409 name taken in the org. `managerId` defaults to the creator; `null` leaves it unassigned |
+| PATCH | `/api/effy/workspaces/:id` | 🔒🏢 | any of the create fields → `{workspace}` · 404 outside your org · same 400/403/409 rules |
+| GET | `/api/effy/workspaces/summary` | 🔒🏢 | → `{clients:[{id, manager:{id,name}\|null, channels[], spend, leads, leads30d, approvals, alerts, organic:{level,reason}, paid:{level,reason}, lastActivity}]}` — see [Clients.md](modules/Clients.md) |
 
 ### Email verification & password reset
 | Method | Path | Auth | Body → Response |
@@ -25,7 +28,7 @@ Legend: 🔓 no auth · 🔒 requires session · 🏢 org-ownership enforced
 | POST | `/api/effy/auth/forgot` | 🔓 | `{email}` → `{status, dev_link?}` (always ok) |
 | POST | `/api/effy/auth/reset` | 🔓 | `{token, password}` → `{status}` · 400 invalid/expired |
 
-**Bootstrap shape:** `{ user:{id,name,email,email_verified}, org:{id,name,type,plan}, role, workspaces:[{id:"ws_N", dbId, name, industry, location, logo, accent}] }`
+**Bootstrap shape:** `{ user:{id,name,email,email_verified}, org:{id,name,type,plan}, role, workspaces:[{id:"ws_N", dbId, name, industry, location, logo, accent, managerId}] }`
 
 ## Campaigns  ([Campaigns.md](modules/Campaigns.md))
 | Method | Path | Auth | Body → Response |

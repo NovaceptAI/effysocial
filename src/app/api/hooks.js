@@ -34,6 +34,15 @@ export function useOrganicAnalytics(workspace) {
   });
 }
 
+// Per-workspace figures for the Clients table, keyed by workspace id (G21).
+export function useClientSummary() {
+  return useQuery({
+    queryKey: ['workspace-summary'],
+    queryFn: effyApi.workspaceSummary,
+    select: (rows) => Object.fromEntries(rows.map((r) => [r.id, r])),
+  });
+}
+
 // Mutation that invalidates a query key on success.
 export function useInvalidatingMutation(fn, keyFactory) {
   const qc = useQueryClient();

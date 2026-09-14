@@ -7,6 +7,7 @@ import { useAppAuth } from '../context/AppAuth';
 import { useTheme } from '../context/ThemeContext';
 import { usePosts } from '../api/hooks';
 import { effyApi } from '../api/effyApi';
+import WorkspaceDialog from '../components/WorkspaceDialog';
 import { cn } from '../../lib/cn';
 
 function Dropdown({ open, onClose, children, className }) {
@@ -21,6 +22,7 @@ function Dropdown({ open, onClose, children, className }) {
   );
 }
 
+const WORKSPACE_ITEM = 'Client workspace';
 const SEV_ICON = { error: ShieldAlert, warning: AlertTriangle, info: Info };
 const SEV_CLS = { error: 'text-error', warning: 'text-warning', info: 'text-info' };
 
@@ -70,12 +72,13 @@ function Notifications() {
 }
 
 export default function TopBar({ onOpenPalette, onOpenAssistant, onOpenNav }) {
-  const { user, workspaces, workspace, setWorkspaceId } = useWorkspace();
+  const { user, org, workspaces, workspace, setWorkspaceId, canManageWorkspaces } = useWorkspace();
   const { user: authUser, logout } = useAppAuth();
   const { theme, toggleTheme } = useTheme();
   const [wsExpanded, setWsExpanded] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [newWorkspace, setNewWorkspace] = useState(false);
   const otherWorkspaces = (workspaces || []).filter((w) => w.id !== workspace?.id);
   const navigate = useNavigate();
 
@@ -99,7 +102,12 @@ export default function TopBar({ onOpenPalette, onOpenAssistant, onOpenNav }) {
         </button>
         <Dropdown open={createOpen} onClose={() => setCreateOpen(false)} className="right-0 w-52">
           {createItems.map((c) => (
-            <button key={c} onClick={() => setCreateOpen(false)} className="w-full text-left px-3 py-2 text-sm text-ink bg-transparent hover:bg-surface2 transition">{c}</button>
+            <button key={c} onClick={() => { setCreateOpen(false); if (c === WORKSPACE_ITEM && canManageWorkspaces) setNewWorkspace(true); }}
+              disabled={c === WORKSPACE_ITEM && !canManageWorkspaces}
+              title={c === WORKSPACE_ITEM && !canManageWorkspaces ? 'Only owners and admins can create workspaces.' : undefined}
+              className="w-full text-left px-3 py-2 text-sm text-ink bg-transparent hover:bg-surface2 transition disabled:opacity-50">
+              {c === WORKSPACE_ITEM && org?.type !== 'agency' ? 'Workspace' : c}
+            </button>
           ))}
         </Dropdown>
       </div>
@@ -158,6 +166,8 @@ export default function TopBar({ onOpenPalette, onOpenAssistant, onOpenNav }) {
           </button>
         </Dropdown>
       </div>
+      <WorkspaceDialog open={newWorkspace} onClose={() => setNewWorkspace(false)}
+        onSaved={(ws) => { setWorkspaceId(ws.id); navigate('/app'); }} />
     </header>
   );
 }

@@ -368,6 +368,12 @@ export const effyApi = {
 
   // Team
   listTeam: () => http('/team').then((d) => d.members),
+  // Workspaces and client workspaces (G21)
+  createWorkspace: (payload) =>
+    http('/workspaces', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.workspace),
+  updateWorkspace: (id, payload) =>
+    http(`/workspaces/${encodeURIComponent(id)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.workspace),
+  workspaceSummary: () => http('/workspaces/summary').then((d) => d.clients),
 
   // Integrations (Phase 3)
   listIntegrations: (workspaceId) => http(`/integrations?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.integrations),

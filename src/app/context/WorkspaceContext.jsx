@@ -1,44 +1,68 @@
-import React, { createContext, useContext, useMemo, useState, useEffect } from 'react';
+import React, { createContext, useContext, useMemo, useState, useCallback } from 'react';
 import { useAppAuth } from './AppAuth';
 
-// Workspaces come from the real backend bootstrap (org → workspaces).
-// NO invented metrics: operational fields default to honest zeros/empties and
-// only become non-zero when a module supplies real data. `channels` fills from
-// connected integrations as they come online.
-const DEFAULTS = {
-  channels: [], monthlySpend: 0, leads: 0,
-  organicHealth: 'attention', paidHealth: 'attention', manager: 'You',
-  approvals: 0, alerts: 0, lastReport: '—',
-};
+// Workspaces come from the real backend bootstrap (org → workspaces). Figures
+// about a workspace (spend, leads, health) come from /workspaces/summary via
+// useClientSummary, never from defaults here.
+
+// Roles that may create and edit workspaces — mirrors tenancy.ORG_ADMIN_ROLES.
+export const WORKSPACE_ADMIN_ROLES = new Set(['Agency owner', 'Agency admin', 'Workspace admin']);
+
+const STORAGE_KEY = 'effy.workspace';
 
 function initials(name = '') {
   return name.split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'U';
 }
 
+// The chosen workspace survives a reload; storage can be unavailable (private mode).
+function savedChoice(userId) {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+    return saved && saved.user === userId ? saved.workspace : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveChoice(userId, workspaceId) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ user: userId, workspace: workspaceId })); } catch { /* private mode */ }
+}
+
 const WorkspaceContext = createContext(null);
 
 export function WorkspaceProvider({ children }) {
-  const { bootstrap } = useAppAuth();
+  const { bootstrap, refresh } = useAppAuth();
+  const userId = bootstrap?.user?.id;
 
-  const workspaces = useMemo(() => {
-    const list = bootstrap?.workspaces || [];
-    return list.map((w) => ({ ...DEFAULTS, ...w }));
-  }, [bootstrap]);
+  const workspaces = useMemo(() => bootstrap?.workspaces || [], [bootstrap]);
 
-  const [workspaceId, setWorkspaceId] = useState(null);
-  useEffect(() => {
-    if (workspaces.length && !workspaces.some((w) => w.id === workspaceId)) {
-      setWorkspaceId(workspaces[0].id);
-    }
-  }, [workspaces, workspaceId]);
+  // Resolved during render, not in an effect, so the first page to mount after a
+  // reload already asks for the remembered workspace rather than the first one.
+  const [chosen, setChosen] = useState(null);
+  const workspaceId = useMemo(() => {
+    const has = (id) => id != null && workspaces.some((w) => w.id === id);
+    if (has(chosen)) return chosen;
+    const saved = savedChoice(userId);
+    return has(saved) ? saved : workspaces[0]?.id ?? null;
+  }, [workspaces, chosen, userId]);
 
-  const workspace = workspaces.find((w) => w.id === workspaceId) || workspaces[0] || null;
+  const setWorkspaceId = useCallback((id) => {
+    setChosen(id);
+    if (userId != null) saveChoice(userId, id);
+  }, [userId]);
+
+  const workspace = workspaces.find((w) => w.id === workspaceId) || null;
   const user = bootstrap?.user ? { ...bootstrap.user, avatar: initials(bootstrap.user.name) } : { name: 'User', avatar: 'U' };
   const org = bootstrap?.org || { name: 'EffySocial' };
+  const role = bootstrap?.role || null;
+  const canManageWorkspaces = WORKSPACE_ADMIN_ROLES.has(role);
 
   const value = useMemo(
-    () => ({ org, user, workspaces, workspace, workspaceId: workspace?.id, setWorkspaceId }),
-    [org, user, workspaces, workspace],
+    () => ({
+      org, user, role, canManageWorkspaces, workspaces, workspace, workspaceId: workspace?.id, setWorkspaceId,
+      refreshWorkspaces: refresh,
+    }),
+    [org, user, role, canManageWorkspaces, workspaces, workspace, setWorkspaceId, refresh],
   );
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
 }

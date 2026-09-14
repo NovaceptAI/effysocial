@@ -110,6 +110,12 @@ to revenue (spec §3.2).
 - **RBAC roles:** View-only (read-only), Client approver (approval actions only),
   writers (full). `require_write()` blocks the first two on mutations;
   `require_approval_rights()` blocks View-only on approve/reject.
+- **Workspaces:** `require_org_admin(action)` lets Agency owner, Agency admin and
+  Workspace admin create and edit workspaces (`workspaces.py`); everyone else gets 403.
+  The web app remembers the chosen workspace per user in `localStorage`, resolves it
+  during render so the first request after a reload uses it, and keys the page
+  outlet by workspace so switching remounts the page (no rows or half-filled forms
+  carry over).
 - **Abuse limits** (`ratelimit.py`, sliding windows): failed logins per email
   (10 / 15 min) and per IP (50 / 15 min), sign-ups per IP (10 / h), emails per
   address (5 / h) and per IP (20 / h), link attempts per IP (30 / 15 min). Over the
@@ -256,7 +262,7 @@ contract file plus an entry in the tenancy matrix (401/404 cross-org).
 check` sets `EFFY_ROUTE_GATE=1`, which fails the run and lists any `/api/effy`
 route that no test calls, so a new endpoint can't ship untested. Set
 `EFFY_ROUTE_COVERAGE=<file>` to write the called routes out. As of 14 Sep 2026
-all 206 routes are called.
+all 209 routes are called.
 
 **Frontend unit and component** (Vitest + React Testing Library, jsdom):
 `npm test` (or `npm run test:watch`). Tests sit beside the code as
@@ -272,8 +278,9 @@ viewport for `responsive.spec.js`. `/api/effy` is stubbed per test with
 is pinned to exactly 1.63.0 because that version uses the Chromium build cached
 in `~/.cache/ms-playwright`; an upgrade needs `npx playwright install chromium`.
 
-**Demo film** (`e2e-film/`, `npm run test:e2e:film`): the strategy's primary demo in
-Chromium against the real engine. `playwright.film.config.js` starts
+**Real engine** (`e2e-film/`, `npm run test:e2e:film`): the strategy's primary demo
+(`demo-film.spec.js`) and workspaces and clients (`workspaces.spec.js`) in Chromium
+against the real engine. `playwright.film.config.js` starts
 `scripts/e2e_film_server.py` from the engine checkout (the sibling `../engine` in a
 phase worktree, else `/srv/novalab-engine`; `EFFY_ENGINE_DIR` overrides) on port
 5099 with a throwaway SQLite database and temporary media folder, and serves the
