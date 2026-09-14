@@ -252,6 +252,12 @@ register/account fixtures live in `conftest.py`; providers are stubbed, and a
 small opt-in live smoke tier exists (`RUN_SMOKE=1`). Every backend slice ships a
 contract file plus an entry in the tenancy matrix (401/404 cross-org).
 
+**Route gate:** `conftest.py` records every API route a test calls. `effy_phase.sh
+check` sets `EFFY_ROUTE_GATE=1`, which fails the run and lists any `/api/effy`
+route that no test calls, so a new endpoint can't ship untested. Set
+`EFFY_ROUTE_COVERAGE=<file>` to write the called routes out. As of 14 Sep 2026
+all 206 routes are called.
+
 **Frontend unit and component** (Vitest + React Testing Library, jsdom):
 `npm test` (or `npm run test:watch`). Tests sit beside the code as
 `*.test.js(x)`. `src/test/mockApi.js` stubs `fetch` for `/api/effy` from a
