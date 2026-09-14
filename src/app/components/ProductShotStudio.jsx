@@ -18,10 +18,10 @@ import { cn } from '../../lib/cn';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const ASPECTS = [['9:16', 'Reel 9:16'], ['1:1', 'Square 1:1'], ['16:9', 'Wide 16:9']];
 
-export default function ProductShotStudio({ onBack }) {
+export default function ProductShotStudio({ onBack, initialId = null }) {
   const { workspace } = useWorkspace();
   const qc = useQueryClient();
-  const [selId, setSelId] = useState(null);
+  const [selId, setSelId] = useState(initialId);
   const [busy, setBusy] = useState('');
   const [msg, setMsg] = useState(null);            // {kind:'error'|'warn', text}
   const [creating, setCreating] = useState(false);
@@ -48,6 +48,17 @@ export default function ProductShotStudio({ onBack }) {
     finally { setBusy(''); }
   };
   const back = () => { setSelId(null); refetchList(); };
+  const deleteShot = (s) => {
+    const label = s.title || s.product || 'this product shot';
+    // eslint-disable-next-line no-alert
+    if (!window.confirm(`Delete “${label}”? Its looks and video settings are removed; generated media stays in the Media Library.`)) return;
+    run(`del-shot${s.id}`, async () => {
+      await effyApi.deleteProductShot(s.id);
+      qc.removeQueries({ queryKey: ['product-shot', s.id] });
+      setSelId(null);
+      await refetchList();
+    });
+  };
 
   const createShot = () => run('create', async () => {
     const s = await effyApi.createProductShot({ workspace: workspace.id, title: nTitle.trim(), product: nProduct.trim(), aspect: nAspect });
@@ -98,6 +109,7 @@ export default function ProductShotStudio({ onBack }) {
     return (
       <div className="max-w-6xl mx-auto rounded-2xl p-5 sm:p-6 [&_input]:text-white [&_select]:text-white [&_textarea]:text-white [&_input]:placeholder-white/40 [&_textarea]:placeholder-white/40" style={{ background: '#0B0C0F', color: '#EDEEF0' }}>
         {Header}
+        {msg && <p role="alert" className={cn('mb-3 text-sm rounded-xl px-3.5 py-2.5', msg.kind === 'error' ? 'bg-red-500/15 text-red-300' : 'bg-amber-500/15 text-amber-300')}>{msg.text}</p>}
         <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
           <button type="button" onClick={() => setCreating(true)}
             className="relative rounded-2xl grid place-items-center transition hover:-translate-y-1 bg-transparent ring-1 ring-white/10"
@@ -111,8 +123,9 @@ export default function ProductShotStudio({ onBack }) {
             </span>
           </button>
           {shots.map((s) => (
-            <button key={s.id} type="button" onClick={() => setSelId(s.id)}
-              className="relative rounded-2xl overflow-hidden text-left transition hover:-translate-y-1 bg-transparent ring-1 ring-white/10"
+            <div key={s.id} className="relative group">
+            <button type="button" onClick={() => setSelId(s.id)} aria-label={`Open ${s.title || s.product || 'product shot'}`}
+              className="relative w-full rounded-2xl overflow-hidden text-left transition hover:-translate-y-1 bg-transparent ring-1 ring-white/10"
               style={{ aspectRatio: '3 / 4', background: '#0D0E12' }}>
               {s.sourceUrl && <img src={s.sourceUrl} alt="" className="absolute inset-0 w-full h-full object-cover opacity-90" />}
               <span className="absolute top-2.5 left-2.5 text-[10px] font-bold px-2 py-0.5 rounded-full bg-black/55 text-white/85 backdrop-blur-sm">
@@ -123,6 +136,11 @@ export default function ProductShotStudio({ onBack }) {
                 <span className="block text-white/55 text-[12px] mt-0.5 truncate">{s.product}</span>
               </span>
             </button>
+            <button type="button" onClick={() => deleteShot(s)} disabled={!!busy} aria-label={`Delete ${s.title || s.product || 'product shot'}`}
+              className="absolute top-2 right-2 grid place-items-center w-8 h-8 rounded-full bg-black/60 text-white/80 hover:text-red-400 backdrop-blur-sm">
+              {busy === `del-shot${s.id}` ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+            </button>
+            </div>
           ))}
         </div>
 
@@ -171,6 +189,10 @@ export default function ProductShotStudio({ onBack }) {
         <span className="font-display text-lg font-semibold tracking-tight">{shot.title || shot.product || 'Product shot'}</span>
         <Badge tone="new">{shot.aspect}</Badge>
         <span className="ml-auto text-xs text-white/45">Spend ~${(shot.spendUsd || 0).toFixed(2)} / ${shot.budgetUsd?.toFixed(0)}</span>
+        <button type="button" onClick={() => deleteShot(shot)} disabled={!!busy}
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-white/55 hover:text-red-400 bg-transparent">
+          <Trash2 className="w-3.5 h-3.5" /> Delete
+        </button>
       </div>
 
       <div className="grid lg:grid-cols-[300px_1fr] gap-6 items-start">

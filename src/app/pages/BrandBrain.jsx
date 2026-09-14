@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check, Loader2, Pencil, Plus, X, ShieldCheck, Sparkles, Info, Upload, Image as ImageIcon } from 'lucide-react';
+import { Check, Loader2, Pencil, Plus, X, ShieldCheck, Sparkles, Info, Upload, Image as ImageIcon, FileText, Globe, Trash2, MessageSquareText } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
 import { Card, PageHeader, Button, Badge, Pacing } from '../../ui';
@@ -184,6 +184,7 @@ function SectionCard({ section, data, workspaceId, onSaved }) {
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [drafting, setDrafting] = useState(false);
+  const [draftNote, setDraftNote] = useState(null);   // {cited:[...]} or {error}
   const initText = () => {
     if (section.type === 'paragraph') return data || '';
     if (section.type === 'chips') return (data || []).join(', ');
@@ -201,10 +202,15 @@ function SectionCard({ section, data, workspaceId, onSaved }) {
   };
 
   const draft = async () => {
-    setDrafting(true);
-    try { setVal(suggestionToText(section, await effyApi.suggestBrandSection(workspaceId, section.key))); }
-    catch { /* leave current text; user can retry */ }
-    finally { setDrafting(false); }
+    setDrafting(true); setDraftNote(null);
+    try {
+      const d = await effyApi.suggestBrandSection(workspaceId, section.key);
+      setVal(suggestionToText(section, d.suggestion));
+      setDraftNote({ cited: d.cited || [] });
+    } catch (e) {
+      // Leave the current text so nothing typed is lost; say why so the user can retry.
+      setDraftNote({ error: e.message || 'Couldn’t draft this — try again.' });
+    } finally { setDrafting(false); }
   };
   const openAndDraft = () => { open(); draft(); };
 
@@ -270,6 +276,10 @@ function SectionCard({ section, data, workspaceId, onSaved }) {
             <textarea autoFocus rows={section.rows || (section.type === 'list' ? 4 : 2)} value={val} onChange={(e) => setVal(e.target.value)}
               placeholder={section.placeholder} className="w-full rounded-xl bg-surface2 px-3.5 py-2.5 text-sm" />
           )}
+          {draftNote?.error && <p role="alert" className="text-xs text-error mt-1.5">{draftNote.error}</p>}
+          {draftNote?.cited?.length > 0 && (
+            <p className="text-xs text-ink-faint mt-1.5">Drafted from: {draftNote.cited.join(', ')}</p>
+          )}
           <div className="flex items-center gap-2 mt-3">
             <Button size="sm" variant="primary" onClick={save} disabled={busy || drafting}>
               {busy ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving…</> : <><Check className="w-3.5 h-3.5" /> Save</>}
@@ -285,6 +295,114 @@ function SectionCard({ section, data, workspaceId, onSaved }) {
       ) : (
         <Display section={section} data={data} />
       )}
+    </Card>
+  );
+}
+
+function VoiceTest({ workspaceId }) {
+  const [prompt, setPrompt] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState(null);
+  const [err, setErr] = useState('');
+  const run = async () => {
+    setBusy(true); setErr('');
+    try { setResult(await effyApi.testBrandVoice(workspaceId, prompt.trim())); }
+    catch (e) { setErr(e.message || 'Couldn’t test the voice — try again.'); }
+    finally { setBusy(false); }
+  };
+  const facts = { tone: 'tone', approved: 'approved words', prohibited: 'words to avoid' };
+  return (
+    <Card className="p-5">
+      <section aria-label="Test the brand voice">
+        <h3 className="font-bold text-ink mb-1 flex items-center gap-2"><MessageSquareText className="w-4 h-4 text-coral-ink" /> Test the brand voice</h3>
+        <p className="text-sm text-ink-soft mb-3">Ask for any piece of copy and see how it sounds with the facts and documents above.</p>
+        <textarea rows={2} value={prompt} onChange={(e) => setPrompt(e.target.value)} aria-label="What should Effy write?"
+          placeholder="e.g. A two-line Instagram caption for our Diwali offer" className="w-full rounded-xl bg-surface2 px-3.5 py-2.5 text-sm" />
+        <div className="flex items-center gap-2 mt-2">
+          <Button size="sm" onClick={run} disabled={busy || !prompt.trim()}>
+            {busy ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Writing…</> : <><Sparkles className="w-3.5 h-3.5" /> Try it</>}
+          </Button>
+        </div>
+        {err && <p role="alert" className="text-sm text-error mt-2">{err}</p>}
+        {result && (
+          <div className="mt-3 rounded-xl bg-surface2/70 p-3.5">
+            <p data-testid="voice-output" className="text-sm text-ink whitespace-pre-line">{result.output}</p>
+            <p className="text-xs text-ink-faint mt-2">
+              Grounded in: {(result.cited || []).map((c) => facts[c] || c).join(', ')}
+            </p>
+          </div>
+        )}
+      </section>
+    </Card>
+  );
+}
+
+const SOURCE_TYPES = { document: FileText, website: Globe, manual: Pencil };
+
+function Sources({ workspaceId, sources, onChanged }) {
+  const fileRef = useRef(null);
+  const [busy, setBusy] = useState('');
+  const [err, setErr] = useState('');
+  const [link, setLink] = useState({ name: '', ref: '' });
+  const run = async (key, fn) => {
+    setBusy(key); setErr('');
+    try { await fn(); onChanged(); return true; } catch (e) { setErr(e.message || 'Something went wrong — try again.'); return false; } finally { setBusy(''); }
+  };
+  const upload = (file) => {
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) { setErr('Documents must be under 10 MB.'); return; }
+    run('upload', () => effyApi.addBrandDocument(workspaceId, file));
+  };
+  return (
+    <Card className="p-5">
+      <section aria-label="Brand sources">
+        <h3 className="font-bold text-ink mb-1 flex items-center gap-2"><FileText className="w-4 h-4 text-coral-ink" /> Brand sources</h3>
+        <p className="text-sm text-ink-soft mb-3">
+          Upload brand guidelines or other documents (PDF, DOCX, TXT or Markdown, up to 10 MB). Their text grounds Draft with AI
+          and the voice test, which name the document they drew on. Website links are recorded for reference.
+        </p>
+        {sources.length ? (
+          <ul className="divide-y divide-line mb-3">
+            {sources.map((s) => {
+              const Icon = SOURCE_TYPES[s.type] || FileText;
+              return (
+                <li key={s.id} className="flex items-center gap-2.5 py-2 text-sm">
+                  <Icon className="w-4 h-4 text-ink-faint shrink-0" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-semibold text-ink truncate">{s.name}</span>
+                    <span className="block text-xs text-ink-faint truncate">
+                      {s.type === 'document' ? `${s.chars.toLocaleString('en-IN')} characters of text` : s.ref || s.type} · added {s.date}
+                    </span>
+                  </span>
+                  <button type="button" aria-label={`Remove ${s.name}`} disabled={!!busy}
+                    onClick={() => run(`del${s.id}`, () => effyApi.deleteBrandSource(s.id))}
+                    className="bg-transparent text-ink-faint hover:text-error">
+                    {busy === `del${s.id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        ) : <p className="text-sm text-ink-faint mb-3">No sources yet.</p>}
+        <input ref={fileRef} type="file" accept=".pdf,.docx,.txt,.md,application/pdf,text/plain,text/markdown" hidden
+          onChange={(e) => { upload(e.target.files?.[0]); e.target.value = ''; }} />
+        <div className="flex flex-wrap items-center gap-2">
+          <Button size="sm" onClick={() => fileRef.current?.click()} disabled={!!busy}>
+            {busy === 'upload' ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Reading…</> : <><Upload className="w-3.5 h-3.5" /> Upload document</>}
+          </Button>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 mt-3">
+          <input value={link.name} onChange={(e) => setLink((l) => ({ ...l, name: e.target.value }))} placeholder="Name (optional)"
+            aria-label="Website name" className="rounded-xl bg-surface2 px-3 py-2 text-sm w-40" />
+          <input value={link.ref} onChange={(e) => setLink((l) => ({ ...l, ref: e.target.value }))} placeholder="https://yourbrand.com"
+            aria-label="Website address" className="rounded-xl bg-surface2 px-3 py-2 text-sm flex-1 min-w-[180px]" />
+          <Button size="sm" variant="secondary" disabled={!!busy || !link.ref.trim()}
+            onClick={async () => { if (await run('link', () => effyApi.addBrandLink(workspaceId, { name: link.name.trim(), ref: link.ref.trim() }))) setLink({ name: '', ref: '' }); }}>
+            <Globe className="w-3.5 h-3.5" /> Add website
+          </Button>
+        </div>
+        {err && <p role="alert" className="text-sm text-error mt-2">{err}</p>}
+      </section>
     </Card>
   );
 }
@@ -327,6 +445,11 @@ export default function BrandBrain() {
         {SECTIONS.map((s) => (
           <SectionCard key={s.key} section={s} data={brain[s.key]?.data} workspaceId={workspace.id} onSaved={refetch} />
         ))}
+      </div>
+
+      <div className="grid lg:grid-cols-2 gap-4 items-start mt-4">
+        <VoiceTest workspaceId={workspace.id} />
+        <Sources workspaceId={workspace.id} sources={brain.sources?.data || []} onChanged={refetch} />
       </div>
 
       <Card className="p-5 mt-4 bg-coral-tint/60">

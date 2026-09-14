@@ -36,7 +36,7 @@ const FORMATS = [
   { id: 'characters', label: 'EffyCharacters', platform: 'instagram', icon: UserSquare, aspect: '9 / 16', size: 'Lip-sync speakers', group: 'Avatar', characters: true, thumb: 'ig_reel' },
   { id: 'product_shot', label: 'Product Shots', platform: 'instagram', icon: Package, aspect: '9 / 16', size: 'Beauty product video', group: 'Product', product: true, thumb: 'ig_carousel' },
 ];
-const FILTERS = ['Popular', 'Instagram', 'Facebook', 'LinkedIn', 'YouTube', 'WhatsApp', 'Avatar', 'Product'];
+const FILTERS = ['Popular', 'Instagram', 'Facebook', 'LinkedIn', 'X', 'YouTube', 'WhatsApp', 'Avatar', 'Product'];
 const LANGS = ['English', 'Hindi', 'Hinglish', 'Marathi'];
 const COPY_TOOLS = ['Rewrite', 'Shorten', 'Expand', 'Change tone', 'Add CTA', 'More hooks', 'Hashtags', 'Translate'];
 
@@ -168,7 +168,10 @@ export default function AIStudio() {
   const reusedVideo = params.get('video') || '';
   const campaignId = params.get('campaign') ? Number(params.get('campaign')) : null;
   const seeded = params.get('trend') || params.get('angle') || params.get('topic') || reusedImage || reusedVideo || campaignId;
-  const [format, setFormat] = useState(seeded ? (reusedVideo ? FORMATS.find((f) => f.video) || FORMATS[0] : FORMATS[0]) : null);
+  // Opened from Home's recent sessions: go straight into that Product Shot project.
+  const productShotId = Number(params.get('productShot')) || null;
+  const [format, setFormat] = useState(productShotId ? FORMATS.find((f) => f.product)
+    : seeded ? (reusedVideo ? FORMATS.find((f) => f.video) || FORMATS[0] : FORMATS[0]) : null);
 
   const [panel, setPanel] = useState('brief');   // open tool panel (or null)
   const [topic, setTopic] = useState(params.get('topic') || '');
@@ -421,7 +424,7 @@ export default function AIStudio() {
     return <CharactersStudio onBack={() => setFormat(null)} />;
   }
   if (format.product) {
-    return <ProductShotStudio onBack={() => setFormat(null)} />;
+    return <ProductShotStudio onBack={() => setFormat(null)} initialId={productShotId} />;
   }
 
   // Storyboard formats get a dedicated multi-scene experience.

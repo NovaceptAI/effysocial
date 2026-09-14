@@ -40,8 +40,19 @@ export const effyApi = {
   deleteSite: (id) => http(`/sites/${id}`, { method: 'DELETE' }),
   publicSite: (slug) => http(`/public/site/${encodeURIComponent(slug)}`).then((d) => d.site),
 
+  // Returns { suggestion, cited } — cited names the brand documents the draft drew on.
   suggestBrandSection: (workspaceId, section) =>
-    http('/brand/suggest', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId, section }) }).then((d) => d.suggestion),
+    http('/brand/suggest', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId, section }) }),
+  addBrandDocument: (workspaceId, file, name) => {
+    const fd = new FormData();
+    fd.append('workspace', workspaceId);
+    fd.append('file', file);
+    if (name) fd.append('name', name);
+    return http('/brand/source', { method: 'POST', body: fd }).then((d) => d.source);
+  },
+  addBrandLink: (workspaceId, { name, ref }) =>
+    http('/brand/source', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId, type: 'website', name, ref }) }).then((d) => d.source),
+  deleteBrandSource: (id) => http(`/brand/source/${id}`, { method: 'DELETE' }),
   uploadBrandLogo: (workspaceId, file) => {
     const fd = new FormData();
     fd.append('workspace', workspaceId);

@@ -55,7 +55,7 @@ export default function AppLauncher() {
     ...films.map((f) => ({ id: `f${f.id}`, title: f.title || f.product || 'Untitled film', kind: 'Ad Film', icon: FilmIcon,
       thumb: f.posterUrl || '', status: FILM_STATUS[f.status] || 'Draft', at: f.updatedAt || f.createdAt, to: `/app/films/${f.id}` })),
     ...shots.map((s) => ({ id: `s${s.id}`, title: s.title || s.product || 'Product shot', kind: 'Product Shot', icon: Package,
-      thumb: s.sourceUrl || '', status: s.status === 'delivered' ? 'Ready' : s.status === 'production' ? 'In progress' : 'Draft', at: s.updatedAt || s.createdAt, to: '/app/studio' })),
+      thumb: s.sourceUrl || '', status: s.status === 'delivered' ? 'Ready' : s.status === 'production' ? 'In progress' : 'Draft', at: s.updatedAt || s.createdAt, to: `/app/studio?productShot=${s.id}` })),
   ].sort((a, b) => String(b.at || '').localeCompare(String(a.at || ''))).slice(0, 4);
 
   const generations = media.filter((m) => m.url).slice(0, 8);
