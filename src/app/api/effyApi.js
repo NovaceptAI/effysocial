@@ -268,6 +268,9 @@ export const effyApi = {
   updateWorkflow: (id, payload) =>
     http(`/workflows/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.workflow),
 
+  // A 7-day link to a media file for pasting elsewhere; `url` must be a link the app showed.
+  shareMediaLink: (url) =>
+    http('/media/share', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) }),
   // Media Library — asset catalogue
   listMedia: (workspaceId, type) =>
     http(`/library?workspace=${encodeURIComponent(workspaceId)}${type ? `&type=${type}` : ''}`).then((d) => d.media),

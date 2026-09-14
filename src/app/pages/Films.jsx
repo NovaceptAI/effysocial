@@ -46,6 +46,17 @@ export default function Films() {
   const filmsBase = pathname.startsWith('/app/films-app') ? '/app/films-app' : '/app/films';
   const qc = useQueryClient();
   const [creating, setCreating] = useState(false);
+  const [copied, setCopied] = useState(null);   // {id, text} after Copy link
+  const copyShareLink = async (filmId, url) => {
+    // Links in the app expire within a day; a copied link is a 7-day share link.
+    try {
+      const share = await effyApi.shareMediaLink(url);
+      await navigator.clipboard?.writeText(share.url);
+      setCopied({ id: filmId, text: `Copied · works until ${new Date(share.expires * 1000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}` });
+    } catch (e) {
+      setCopied({ id: filmId, text: e.message || 'Couldn’t copy the link — reload and try again.' });
+    }
+  };
   const [title, setTitle] = useState('');
   const [client, setClient] = useState('');
   const [product, setProduct] = useState('');
@@ -228,10 +239,11 @@ export default function Films() {
                       <a href={master} download className="inline-flex items-center gap-1 text-xs font-semibold text-ink-soft hover:text-ink">
                         <Download className="w-3.5 h-3.5" /> Master
                       </a>
-                      <button type="button" onClick={() => navigator.clipboard?.writeText(master)}
+                      <button type="button" onClick={() => copyShareLink(f.id, master)}
                         className="bg-transparent inline-flex items-center gap-1 text-xs font-semibold text-ink-soft hover:text-ink">
                         <LinkIcon className="w-3.5 h-3.5" /> Copy link
                       </button>
+                      {copied?.id === f.id && <span role="status" className="text-xs text-ink-faint">{copied.text}</span>}
                     </>
                   )}
                   <button type="button" title="Delete film"

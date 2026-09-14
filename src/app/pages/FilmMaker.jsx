@@ -981,7 +981,12 @@ export default function FilmMaker() {
                           </Btn>
                         )}
                         <button type="button" title="Copy link"
-                          onClick={() => { navigator.clipboard?.writeText(film.renders[k]); setNotice({ kind: 'warn', text: `${label} link copied.` }); }}
+                          onClick={() => run(`share${k}`, async () => {
+                            // Links in the app expire within a day; a copied link is a 7-day share link.
+                            const { url, expires } = await effyApi.shareMediaLink(film.renders[k]);
+                            await navigator.clipboard?.writeText(url);
+                            setNotice({ kind: 'warn', text: `${label} link copied. It works until ${new Date(expires * 1000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}.` });
+                          })}
                           style={{ background: 'none', color: T.dim, cursor: 'pointer', fontSize: 12.5, fontWeight: 600 }}>
                           Copy link
                         </button>
