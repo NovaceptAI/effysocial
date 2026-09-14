@@ -6,7 +6,8 @@ import { stubApi, signedOut, signedInEmpty } from './support/api';
 // this checks that their code, styles and fonts load under the policy.
 const PUBLIC = ['/', '/login', '/pricing', '/forgot', '/privacy', '/terms'];
 const APP = ['/app', '/app/studio', '/app/films', '/app/media', '/app/brand', '/app/home', '/app/campaigns',
-  '/app/launch', '/app/ads', '/app/rules', '/app/budgets', '/app/pipeline', '/app/integrations', '/app/settings'];
+  '/app/launch', '/app/ads', '/app/rules', '/app/budgets', '/app/pipeline', '/app/integrations', '/app/settings',
+  '/app/analytics/acceptance'];
 
 test('the policy is sent with the page', async ({ page }) => {
   await stubApi(page, signedOut);

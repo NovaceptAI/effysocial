@@ -154,6 +154,10 @@ export const effyApi = {
     http(`/films/${id}/scenes/${sceneId}/still`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload || {}) }),
   filmApprove: (id, sceneId, approved, note) =>
     http(`/films/${id}/scenes/${sceneId}/approve`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(note ? { approved, note } : { approved }) }),
+  // Acceptance records — films, product shots and AI Studio jobs (measured work + the customer's verdict).
+  listAcceptance: (workspaceId) => http(`/acceptance?workspace=${encodeURIComponent(workspaceId)}`),
+  recordAcceptance: (kind, ref, payload) =>
+    http(`/acceptance/${kind}/${encodeURIComponent(ref)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
   // Sign off (or ask for changes to) the master or a cutdown: { stage, target?, decision, note? }.
   filmSignoff: (id, payload) =>
     http(`/films/${id}/signoff`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.film),

@@ -6,6 +6,7 @@ import {
   Send, AlertTriangle, ShieldCheck, Play, Download, Lock, TrendingUp, ArrowRight,
 } from 'lucide-react';
 import { effyApi } from '../api/effyApi';
+import AcceptanceCard from '../components/AcceptanceCard';
 
 /* The theatre: a silent, full-screen production room. Neutral dark greys so
    the footage is judged against nothing; pure black only in the preview well;
@@ -1056,6 +1057,14 @@ export default function FilmMaker() {
                   )}
                 </div>
               </>
+            )}
+
+            {film.acceptance && (
+              <div style={{ marginTop: 16 }}>
+                <AcceptanceCard kind="film" refId={film.id} summary={film.acceptance} onSaved={() => refetch()}
+                  deliveredLabel="brief to exports"
+                  palette={{ text: T.text, dim: T.dim, raised: T.raised, surface: T.surface, border: T.border, green: T.green, amber: T.amber, red: T.red, accent: T.coral }} />
+              </div>
             )}
 
             {signoffs.history.length > 0 && (

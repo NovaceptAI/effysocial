@@ -58,3 +58,20 @@ test('Film Maker buttons have no browser-default borders', async ({ page }) => {
     .evaluate((el) => getComputedStyle(el).borderTopWidth);
   expect(quiet).toBe('1px');
 });
+
+test('a delivered film shows its acceptance record, and the Creation Acceptance page lists it (FILM-029)', async ({ page }) => {
+  const { default: acceptance } = await import('../src/test/fixtures/acceptance.js');
+  const film = { ...acceptance.film, stage: 7 };
+  await stubApi(page, {
+    'GET /bootstrap': bootstrap,
+    [`GET /films/${film.id}`]: { status: 'ok', film },
+    'GET /studio/voices': { voices: [] },
+    'GET /acceptance': acceptance.list,
+  });
+  await page.goto(`/app/films/${film.id}`);
+  const card = page.getByRole('region', { name: 'Acceptance record' });
+  await expect(card.getByTestId('verdict')).toContainText('Accepted with fixes · quality 4/5 · 3 delivery hours');
+  await page.goto('/app/analytics/acceptance');
+  await expect(page.getByRole('heading', { name: 'Creation Acceptance' })).toBeVisible();
+  await expect(page.getByRole('link', { name: film.title })).toBeVisible();
+});

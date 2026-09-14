@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -177,6 +177,12 @@ export default function AIStudio() {
   const [genErr, setGenErr] = useState('');   // why the last generation failed; never written into the draft
   const [sending, setSending] = useState(false);
   const sendingRef = useRef(false);            // blocks a second send before the first re-render
+  // One acceptance-record job per format session: every draft, refine, image, video
+  // and send-to-approval made while this format is open is counted under it.
+  const jobRef = useRef(null);
+  useEffect(() => {
+    jobRef.current = format ? `st_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}` : null;
+  }, [format]);
   const [sendErr, setSendErr] = useState('');
   const [refineErr, setRefineErr] = useState('');
   const [imgErr, setImgErr] = useState('');
@@ -235,7 +241,7 @@ export default function AIStudio() {
     if (!workspace || !format) return;
     setBusy(true); setResult(null); setSent(false); setGenErr(''); setSendErr(''); setRefineErr('');
     try {
-      const d = await effyApi.generateStudio({ workspace: workspace.id, type: format.id, topic, language: lang, trend, angle });
+      const d = await effyApi.generateStudio({ workspace: workspace.id, type: format.id, topic, language: lang, trend, angle, job: jobRef.current });
       setResult({ caption: d.caption, hashtags: d.hashtags || [], scores: d.scores || [], hook: d.hook, cta: d.cta, cited: d.cited || [] });
       setPanel(null);   // collapse the tool panel so the result gets full room
     } catch (e) {
@@ -248,7 +254,7 @@ export default function AIStudio() {
     if (!result || sent || sendingRef.current) return;
     sendingRef.current = true; setSending(true); setSendErr('');
     try {
-      await effyApi.sendToApproval({ workspace: workspace.id, hook: result.hook, caption: result.caption, channel: format.platform, type: format.id.split('_')[1] || 'post', campaignId });
+      await effyApi.sendToApproval({ workspace: workspace.id, hook: result.hook, caption: result.caption, channel: format.platform, type: format.id.split('_')[1] || 'post', campaignId, topic, job: jobRef.current });
       setSent(true);
     } catch (e) {
       setSendErr(e.message || 'Could not send to approval — try again.');
@@ -259,7 +265,7 @@ export default function AIStudio() {
     if (!current) return;
     setRefining(tool); setRefineErr('');
     try {
-      const d = await effyApi.studioRefine({ workspace: workspace.id, type: format.id, tool, caption: current, language: lang });
+      const d = await effyApi.studioRefine({ workspace: workspace.id, type: format.id, tool, caption: current, language: lang, topic, job: jobRef.current });
       setResult((r) => ({ ...r, caption: d.caption ?? r.caption, hashtags: d.hashtags ?? r.hashtags, scores: d.scores ?? r.scores, hook: d.hook ?? r.hook }));
     } catch (e) {
       setRefineErr(e.message || 'Could not refine the caption — try again.');
@@ -272,7 +278,7 @@ export default function AIStudio() {
     setVarSel({}); setVarSent(false);
     await Promise.all(VARIANT_ANGLES.map(async (v, i) => {
       try {
-        const d = await effyApi.generateStudio({ workspace: workspace.id, type: format.id, topic, language: lang, trend, angle: v.angle });
+        const d = await effyApi.generateStudio({ workspace: workspace.id, type: format.id, topic, language: lang, trend, angle: v.angle, job: jobRef.current });
         setVariants((prev) => prev.map((x, j) => (j === i
           ? { ...x, status: 'ok', caption: d.caption, hook: d.hook, cta: d.cta, hashtags: d.hashtags || [] } : x)));
       } catch (e) {
@@ -289,7 +295,7 @@ export default function AIStudio() {
         // eslint-disable-next-line no-await-in-loop
         await effyApi.sendToApproval({
           workspace: workspace.id, hook: v.hook, caption: v.caption,
-          channel: format.platform, type: format.id.split('_')[1] || 'post', campaignId,
+          channel: format.platform, type: format.id.split('_')[1] || 'post', campaignId, topic, job: jobRef.current,
           title: `[${v.label}] ${(v.hook || v.caption || '').slice(0, 80)}`,
         });
       }
@@ -301,7 +307,7 @@ export default function AIStudio() {
     if (!workspace || !format) return;
     setImgBusy(true); setImgErr('');
     try {
-      const d = await effyApi.studioImage({ workspace: workspace.id, topic: topic || trend || angle, aspect: format.aspect });
+      const d = await effyApi.studioImage({ workspace: workspace.id, topic: topic || trend || angle, aspect: format.aspect, type: format.id, job: jobRef.current });
       if (d.imageUrl) setImage(d.imageUrl);
       else setImgErr('No image came back — try again.');
     } catch (e) {
@@ -330,11 +336,12 @@ export default function AIStudio() {
       const { op, prompt } = await effyApi.studioVideoStart({
         workspace: workspace.id, topic: topic || trend || angle, trend, aspect: format.aspect,
         voiceover: voiceOn, voice, music, language: lang, script: result?.caption || topic || trend || angle,
+        type: format.id, job: jobRef.current,
       });
       if (prompt) setVidPrompt(prompt);
       setVidMsg('Rendering video…');
       for (let i = 0; i < 60; i += 1) {
-        const st = await effyApi.studioVideoStatus({ workspace: workspace.id, op });
+        const st = await effyApi.studioVideoStatus({ workspace: workspace.id, op, job: jobRef.current });
         if (st.status === 'ready') { setVideo(st.videoUrl); setVidMsg(''); return; }
         setVidMsg('Rendering video — this can take up to a few minutes…');
         await new Promise((r) => setTimeout(r, 8000));

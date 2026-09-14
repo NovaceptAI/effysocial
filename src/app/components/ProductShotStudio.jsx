@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
+import AcceptanceCard from './AcceptanceCard';
 import { Badge, Button } from '../../ui';
 import ShareRow from './ShareRow';
 import GrowNudge from './GrowNudge';
@@ -225,6 +226,11 @@ export default function ProductShotStudio({ onBack }) {
               <ShareRow videoUrl={master} />
               <div className="mt-3"><GrowNudge text="Video's ready. Publish it and turn it into a campaign in Performance Marketing." /></div>
             </div>
+          )}
+          {shot.acceptance && (
+            <AcceptanceCard kind="product_shot" refId={shot.id} summary={shot.acceptance} onSaved={() => refetch()}
+              deliveredLabel="start to build"
+              palette={{ text: '#EDEEF0', dim: 'rgba(255,255,255,.55)', raised: '#0D0E12', surface: '#16181D', border: 'rgba(255,255,255,.12)', green: '#34D399', amber: '#FBBF24', red: '#F87171', accent: '#FF6A5C' }} />
           )}
         </div>
 

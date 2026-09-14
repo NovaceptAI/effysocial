@@ -6,7 +6,7 @@ import {
   Target, Palette, UsersRound, Wallet, Zap,
   Globe, FileInput, GitBranch, Repeat2, Crosshair, AtSign,
   BarChart3, LineChart, PieChart, IndianRupee, ImagePlay, FileBarChart,
-  Building2, Users, Plug, CreditCard, Settings, Rocket , Workflow, ShieldCheck, Clapperboard } from 'lucide-react';
+  Building2, Users, Plug, CreditCard, Settings, Rocket , Workflow, ShieldCheck, Clapperboard, ClipboardCheck } from 'lucide-react';
 
 // phase: 1 available now, 2/3/4 = labelled "soon" but navigable to a placeholder.
 // One platform, one menu — Content leads (creation first), then Strategy.
@@ -65,6 +65,7 @@ export const NAV = [
     { label: 'Leads', to: '/app/analytics/leads', icon: PieChart, phase: 1 },
     { label: 'Revenue', to: '/app/analytics/revenue', icon: IndianRupee, phase: 1 },
     { label: 'Creative Performance', to: '/app/analytics/creative', icon: ImagePlay, phase: 1 },
+    { label: 'Creation Acceptance', to: '/app/analytics/acceptance', icon: ClipboardCheck, phase: 1 },
     { label: 'Reports', to: '/app/reports', icon: FileBarChart, phase: 1 },
   ]},
   { group: 'Administration', items: [

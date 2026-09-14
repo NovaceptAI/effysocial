@@ -62,6 +62,7 @@ import AdsAnalytics from './pages/AdsAnalytics';
 import LeadAnalytics from './pages/LeadAnalytics';
 import RevenueAnalytics from './pages/RevenueAnalytics';
 import CreativeAnalytics from './pages/CreativeAnalytics';
+import Acceptance from './pages/Acceptance';
 import ModulePlaceholder from './pages/ModulePlaceholder';
 
 const queryClient = new QueryClient();
@@ -79,7 +80,7 @@ const BUILT = new Set([
   '/app/playbooks', '/app/launch', '/app/landing', '/app/tracking',
   '/app/followups', '/app/bio',
   '/app/analytics/ads', '/app/analytics/leads', '/app/analytics/revenue',
-  '/app/analytics/creative',
+  '/app/analytics/creative', '/app/analytics/acceptance',
 ]);
 
 // Strip the "/app" prefix to get the nested route path for each nav item.
@@ -156,6 +157,7 @@ export default function AppRoot() {
             <Route path="analytics/leads" element={<LeadAnalytics />} />
             <Route path="analytics/revenue" element={<RevenueAnalytics />} />
             <Route path="analytics/creative" element={<CreativeAnalytics />} />
+            <Route path="analytics/acceptance" element={<Acceptance />} />
             {NAV_ITEMS.filter((i) => !BUILT.has(i.to)).map((i) => (
               <Route key={i.to} path={childPath(i.to)} element={<ModulePlaceholder />} />
             ))}
