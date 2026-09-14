@@ -13,3 +13,10 @@
 /* No underline by default; colour is left to the bare `a` reset (lower
    specificity) so text-* utilities on designed links/buttons win. */
 .app-root a { text-decoration: none; }
+
+/* The Film Maker is a full-screen room rendered outside the app shell, so the
+   .app-root reset above never reaches it and its buttons fell back to the
+   browser's 2px outset border and system font. Same baseline, scoped to it;
+   borders set inline (quiet buttons, chips, inputs) still win. */
+.film-room button { border-width: 0; border-style: solid; font-family: inherit; }
+.film-room input, .film-room select, .film-room textarea { font-family: inherit; }

@@ -207,7 +207,7 @@ export default function FilmMaker() {
   };
 
   return (
-    <div style={{
+    <div className="film-room" style={{
       position: 'fixed', inset: 0, background: T.stage, color: T.text, overflowY: 'auto',
       opacity: lit ? 1 : 0, transition: 'opacity .3s ease', fontFamily: 'inherit', zIndex: 50,
     }}>

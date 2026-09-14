@@ -44,3 +44,17 @@ test('the master is signed off before delivery, and the record names the approve
   await box.getByRole('button', { name: /approve master/i }).click();
   await expect(box.getByTestId('signoff')).toContainText('by Meera Iyer (Client approver)');
 });
+
+test('Film Maker buttons have no browser-default borders', async ({ page }) => {
+  await open(page, films.awaitingMasterSignoff, 6);
+  for (const name of [/exit/i, /re-assemble/i, /approve master/i]) {
+    const border = await page.getByRole('button', { name }).first()
+      .evaluate((el) => `${getComputedStyle(el).borderTopStyle} ${getComputedStyle(el).borderTopWidth}`);
+    expect(border, String(name)).not.toMatch(/outset|inset/);
+    expect(border, String(name)).toMatch(/ 0px$/);
+  }
+  // A deliberately bordered button keeps its border.
+  const quiet = await page.getByRole('button', { name: 'Request changes' })
+    .evaluate((el) => getComputedStyle(el).borderTopWidth);
+  expect(quiet).toBe('1px');
+});
