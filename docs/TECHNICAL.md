@@ -50,7 +50,7 @@ groups: `auth·tenancy` (routes.py), `campaigns`, `brand`, `studio`, `publish`,
 | Database | PostgreSQL `novastudy_db` (shared); pgvector enabled (RAG deferred) |
 | AI | Groq `llama-3.3-70b-versatile` (text); Cloudflare FLUX / Pollinations (images, free); `rembg` local (CEO photo) |
 | Auth | EffySocial-native accounts, Werkzeug password hashing, Flask signed-cookie session (`effy_uid`) |
-| Crypto | `cryptography` Fernet for OAuth token-at-rest (key derived from `SECRET_KEY`) |
+| Crypto | `cryptography` MultiFernet for OAuth tokens at rest (keys in `EFFY_TOKEN_KEY`) |
 
 ---
 
@@ -110,6 +110,14 @@ to revenue (spec §3.2).
 - **RBAC roles:** View-only (read-only), Client approver (approval actions only),
   writers (full). `require_write()` blocks the first two on mutations;
   `require_approval_rights()` blocks View-only on approve/reject.
+- **Abuse limits** (`ratelimit.py`, sliding windows): failed logins per email
+  (10 / 15 min) and per IP (50 / 15 min), sign-ups per IP (10 / h), emails per
+  address (5 / h) and per IP (20 / h), link attempts per IP (30 / 15 min). Over the
+  limit returns 429 with `Retry-After`. The client IP is nginx's `X-Real-IP`,
+  trusted only from loopback. Passwords are 8–128 characters.
+- **Legal pages:** `/privacy` and `/terms` (`src/marketing/Privacy.jsx`, `Terms.jsx`).
+  They show a draft notice and highlighted placeholders while `LEGAL.draft` in
+  `src/marketing/legal/meta.js` is true; set it to false only after approval.
 
 ---
 
@@ -215,10 +223,13 @@ live release in place. Every deploy first takes a database backup
 ### Environment variables (engine `.env`)
 | Key | Purpose |
 |---|---|
-| `SECRET_KEY` | Flask session + Fernet token-encryption key derivation |
-| `GROQ_API_KEY`, `GROQ_CHAT_MODEL` | AI generation (default `llama-3.3-70b-versatile`) |
+| `SECRET_KEY` | Flask session signing (shared with novacept-platform). Tokens stored before `EFFY_TOKEN_KEY` can still be read with a key derived from it until rekeyed |
+| `EFFY_TOKEN_KEY` | Comma-separated Fernet keys for stored OAuth tokens; the first encrypts, all decrypt. Rotate by prepending a key, then `scripts/rekey_tokens.py check` / `apply`. Keep a copy outside the server — losing it makes stored tokens unreadable |
+| `GROQ_API_KEY`, `GROQ_CHAT_MODEL`, `GROQ_CHAT_MODEL_BATCH` | AI generation: realtime voice uses `GROQ_CHAT_MODEL` (`qwen/qwen3.8-27b`), batch work uses `GROQ_CHAT_MODEL_BATCH` (`openai/gpt-oss-120b`) |
 | `EFFY_BASE_URL` | Public base for email + OAuth redirect links |
-| `RESEND_API_KEY` **or** `EFFY_SMTP_HOST/PORT/USER/PASS` | Transactional email (dev falls back to logged links) |
+| `RESEND_API_KEY` **or** `EFFY_SMTP_HOST/PORT/USER/PASS` | Transactional email. If sending fails the link is only logged |
+| `EFFY_EXPOSE_DEV_LINKS` | **Development only.** `1` returns verification and reset links in API responses when email can't be sent. Never set in production — it would hand out password-reset links |
+| `EFFY_RATELIMIT_STORE`, `EFFY_REDIS_URL` | Sign-in rate limits. Default store is Redis at `redis://127.0.0.1:6379/0`, shared by all gunicorn workers; `memory` is per process and meant for tests |
 | `EFFY_EMAIL_SENDER` | From-address |
 | `META_APP_ID` / `META_APP_SECRET` | Meta (Instagram/FB/Ads/WhatsApp) — **live** |
 | `LINKEDIN_CLIENT_ID` / `LINKEDIN_CLIENT_SECRET` | LinkedIn OAuth — **live** |
@@ -249,7 +260,7 @@ contract file plus an entry in the tenancy matrix (401/404 cross-org).
 router providers. The session fixture mirrors the engine's bootstrap payload.
 
 **End to end** (Playwright, `e2e/`): `npm run test:e2e` builds the app, serves it
-with `vite preview` on port 4180 and runs Chromium on desktop, plus a Pixel 7
+with `vite preview` on port 4291 (set `E2E_PORT` to change it) and runs Chromium on desktop, plus a Pixel 7
 viewport for `responsive.spec.js`. `/api/effy` is stubbed per test with
 `e2e/support/api.js`, so no backend or live data is involved. `@playwright/test`
 is pinned to exactly 1.63.0 because that version uses the Chromium build cached
