@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './support/test';
 import { stubApi, signedOut, signedInEmpty } from './support/api';
 
 // Runs in the "mobile" project (Pixel 7 viewport) — see playwright.config.js.

@@ -1,5 +1,12 @@
+import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+
+// The production Content-Security-Policy, read from the nginx snippet so `vite preview`
+// (used by the end-to-end tests) enforces exactly what nginx sends.
+const csp = readFileSync(new URL('./deploy/content-security-policy.conf', import.meta.url), 'utf8')
+  .match(/add_header Content-Security-Policy "([^"]+)"/)[1]
+  .replace(/; upgrade-insecure-requests$/, '') // preview is plain http
 
 export default defineConfig({
   plugins: [react()],
@@ -12,6 +19,9 @@ export default defineConfig({
     include: ['src/**/*.test.{js,jsx}'],
     css: false,
     restoreMocks: true,
+  },
+  preview: {
+    headers: { 'Content-Security-Policy': csp },
   },
   server: {
     proxy: {
