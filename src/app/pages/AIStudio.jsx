@@ -6,7 +6,7 @@ import {
   Check, FileText, Film, Images, Square, MessageCircle, Video, Briefcase,
   CalendarPlus, Send, Flame, Swords, X, ArrowRight, ArrowLeft, PenLine, Palette,
   SlidersHorizontal, Search, Clapperboard, Mic, Layers, UserSquare, Users, Package,
-  UserRoundPlus,
+  UserRoundPlus, AlertTriangle,
 } from 'lucide-react';
 import Storyboard from '../components/Storyboard';
 import ShareRow from '../components/ShareRow';
@@ -174,6 +174,7 @@ export default function AIStudio() {
   const [topic, setTopic] = useState(params.get('topic') || '');
   const [lang, setLang] = useState('English');
   const [busy, setBusy] = useState(false);
+  const [genErr, setGenErr] = useState('');   // why the last generation failed; never written into the draft
   // A reused asset opens straight into the preview with an empty draft to fill.
   const [result, setResult] = useState((reusedImage || reusedVideo) ? { caption: '', hashtags: [], scores: [], hook: '', cta: '', cited: [] } : null);
   const [preview, setPreview] = useState('mobile');
@@ -227,13 +228,15 @@ export default function AIStudio() {
 
   const generate = async () => {
     if (!workspace || !format) return;
-    setBusy(true); setResult(null); setSent(false);
+    setBusy(true); setResult(null); setSent(false); setGenErr('');
     try {
       const d = await effyApi.generateStudio({ workspace: workspace.id, type: format.id, topic, language: lang, trend, angle });
       setResult({ caption: d.caption, hashtags: d.hashtags || [], scores: d.scores || [], hook: d.hook, cta: d.cta, cited: d.cited || [] });
       setPanel(null);   // collapse the tool panel so the result gets full room
     } catch (e) {
-      setResult({ caption: `Generation failed: ${e.message || 'try again'}`, hashtags: [], scores: [] });
+      // Keep the failure out of `result`: anything there can be sent to approval,
+      // refined, narrated in a video or published as a caption.
+      setGenErr(e.message || 'Generation failed — try again.');
     } finally { setBusy(false); }
   };
   const sendToApproval = async () => {
@@ -703,7 +706,9 @@ export default function AIStudio() {
                       <SlidersHorizontal className="w-3.5 h-3.5" /> Refine
                     </button>
                   </div>
-                  <textarea ref={captionRef} key={result.caption} defaultValue={result.caption} rows={5}
+                  {/* Controlled, so edits are what Send to approval, video and sharing use. */}
+                  <textarea ref={captionRef} value={result.caption || ''} rows={5}
+                    onChange={(e) => { const caption = e.target.value; setResult((r) => ({ ...r, caption })); }}
                     className="w-full rounded-xl bg-surface2 px-3.5 py-3 text-sm leading-relaxed resize-y max-h-72" />
                   {result.hashtags.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mt-2.5">{result.hashtags.map((h) => <Badge key={h} tone="new">#{h}</Badge>)}</div>
@@ -762,6 +767,12 @@ export default function AIStudio() {
           ) : (
             <div className="flex-1 grid place-items-center text-center p-8">
               <div className="w-full max-w-md flex flex-col items-center">
+                {genErr && (
+                  <div role="alert" className="mb-6 w-full flex items-start gap-2.5 rounded-xl bg-error-soft px-4 py-3 text-left text-sm text-error">
+                    <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                    <span><strong className="font-semibold">Couldn’t draft this {format.label.toLowerCase()}.</strong> {genErr}</span>
+                  </div>
+                )}
                 {/* A real canvas surface at the format's true aspect — a dimmed sample
                     fills it so it reads as an editor, not an empty page. */}
                 <div className="mx-auto mb-7 w-full relative rounded-2xl overflow-hidden border-2 border-dashed border-line bg-surface2/40"
