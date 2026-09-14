@@ -609,7 +609,8 @@ export default function FilmMaker() {
                     for (const s of scenes.filter((x) => !x.still)) {
                       const r = await effyApi.filmStill(id, s.id, {});
                       note(r);
-                      refetch();
+                      // Wait for the film to show the new still, so bulk actions never see a partial set.
+                      await refetch();
                     }
                   })}>
                   {busy === 'bulkgen' ? <RefreshCw size={14} className="animate-spin" /> : <Sparkles size={14} />}
@@ -622,7 +623,7 @@ export default function FilmMaker() {
                     for (const s of scenes.filter((x) => x.still && x.stillStatus !== 'approved')) {
                       await effyApi.filmApprove(id, s.id, true);
                     }
-                    refetch();
+                    await refetch();
                   })}>
                   <Check size={14} /> Approve all
                 </Btn>
