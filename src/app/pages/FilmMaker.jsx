@@ -169,7 +169,12 @@ export default function FilmMaker() {
         try {
           const r = await effyApi.filmAnimateStatus(id, s.id);
           if (r.status === 'ready') refetch();
-        } catch { refetch(); }
+        } catch (e) {
+          // A refused or failed render (quota, safety filter…) — say why instead of
+          // silently dropping the spinner. The engine has already refunded it.
+          setNotice({ kind: 'error', text: `Scene ${s.idx + 1}: ${e.message || 'the render failed.'}` });
+          refetch();
+        }
       }
     }, 8000);
     return () => clearInterval(t);
