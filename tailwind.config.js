@@ -8,7 +8,6 @@ export default {
     './src/ui/**/*.{js,jsx}',
     './src/components/**/*.{js,jsx}',
     './src/marketing/**/*.{js,jsx}',
-    './src/event/**/*.{js,jsx}',
     // Test code must not add classes to the production stylesheet.
     '!./src/**/*.test.{js,jsx}',
     '!./src/test/**',

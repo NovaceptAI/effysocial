@@ -34,3 +34,10 @@ test.describe('signed out', () => {
     await expect(page).toHaveURL(/\/login$/);
   });
 });
+
+test('the retired event kiosk route sends visitors to the landing page', async ({ page }) => {
+  await stubApi(page, signedOut);
+  await page.goto('/event');
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Create. Publish. Grow.');
+});
