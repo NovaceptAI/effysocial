@@ -64,6 +64,14 @@ function StatusDot({ color }) {
   return <span style={{ width: 8, height: 8, borderRadius: 99, background: color, display: 'inline-block' }} />;
 }
 
+function OutOfDate({ children = 'Out of date', title }) {
+  return (
+    <span title={title} style={{ fontSize: 11, fontWeight: 700, color: T.amber, background: '#3a2c10', borderRadius: 99, padding: '2px 8px', whiteSpace: 'nowrap' }}>
+      {children}
+    </span>
+  );
+}
+
 export default function FilmMaker() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -153,6 +161,12 @@ export default function FilmMaker() {
   const allClips = scenes.length > 0 && scenes.every((s) => s.clip);
   const master = film.renders?.master;
   const qa = film.renders?.qa;
+  // What can be assembled and which renders are out of date — the engine works this
+  // out by comparing what each render was made from with the film as it is now.
+  const cut = film.cut || {
+    canAssemble: allClips, blockers: allClips ? [] : ['Animate every scene first.'],
+    masterStale: false, exportsStale: false, dealersStale: false,
+  };
 
   return (
     <div style={{
@@ -634,13 +648,17 @@ export default function FilmMaker() {
                   </div>
                   <div style={{ padding: 12 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, minHeight: 18 }}>
-                      {s.clipStatus === 'audio_clean' && (<><StatusDot color={T.green} /><span style={{ fontSize: 12, color: T.green, fontWeight: 600 }}>Audio clean (AI-checked)</span></>)}
-                      {s.clipStatus === 'audio_flagged' && (<><StatusDot color={T.amber} /><span style={{ fontSize: 12, color: T.amber, fontWeight: 600 }}>Voice detected</span></>)}
-                      {s.takes > 0 && <span style={{ fontSize: 11, color: T.dim, marginLeft: 'auto' }}>take {s.takes}</span>}
+                      {s.clipStale && s.clipStatus !== 'animating' ? (
+                        <><StatusDot color={T.amber} /><span style={{ fontSize: 12, color: T.amber, fontWeight: 600 }}>Out of date — the still, motion or length changed. Retake to use it.</span></>
+                      ) : (<>
+                        {s.clipStatus === 'audio_clean' && (<><StatusDot color={T.green} /><span style={{ fontSize: 12, color: T.green, fontWeight: 600 }}>Audio clean (AI-checked)</span></>)}
+                        {s.clipStatus === 'audio_flagged' && (<><StatusDot color={T.amber} /><span style={{ fontSize: 12, color: T.amber, fontWeight: 600 }}>Voice detected</span></>)}
+                      </>)}
+                      {s.takes > 0 && <span style={{ fontSize: 11, color: T.dim, marginLeft: 'auto', whiteSpace: 'nowrap' }}>take {s.takes}</span>}
                     </div>
                     {s.audioNote && <div style={{ fontSize: 11.5, color: T.dim, marginBottom: 8 }}>{s.audioNote}</div>}
                     <Btn disabled={!allApproved || s.clipStatus === 'animating' || !!busy}
-                      kind={s.clip ? 'quiet' : 'coral'} style={{ padding: '6px 12px', fontSize: 12 }}
+                      kind={s.clip && !s.clipStale ? 'quiet' : 'coral'} style={{ padding: '6px 12px', fontSize: 12 }}
                       onClick={() => run(`anim${s.id}`, async () => {
                         const r = await effyApi.filmAnimate(id, s.id);
                         note(r); refetch();
@@ -731,7 +749,9 @@ export default function FilmMaker() {
                       onBlur={(e) => { const val = e.target.value; if (val !== s.line) run(`ln${s.id}`, async () => { await effyApi.filmSceneUpdate(id, s.id, { line: val }); await refetch(); }); }}
                       title="Edit the line — fix a mispronounced word, then Regenerate"
                       style={{ ...inputStyle, flex: 1, minWidth: 0, fontSize: 12.5, padding: '5px 8px' }} />
-                    <span style={{ fontSize: 11.5, whiteSpace: 'nowrap', color: (s.voSeconds > s.seconds + 0.4 || s.voSeconds < s.seconds * 0.55) ? T.amber : T.green }}>{s.voSeconds?.toFixed(1)}s / {s.seconds}s</span>
+                    {s.voStale
+                      ? <OutOfDate title="The line or the narrator changed after this voiceover was made">Out of date — regenerate</OutOfDate>
+                      : <span style={{ fontSize: 11.5, whiteSpace: 'nowrap', color: (s.voSeconds > s.seconds + 0.4 || s.voSeconds < s.seconds * 0.55) ? T.amber : T.green }}>{s.voSeconds?.toFixed(1)}s / {s.seconds}s</span>}
                     <audio src={s.voUrl} controls style={{ height: 28, width: 170 }} />
                     <Btn kind="quiet" disabled={busy === `vo${s.id}`} style={{ padding: '4px 9px', fontSize: 11.5 }}
                       title="Regenerate this line's audio"
@@ -756,19 +776,31 @@ export default function FilmMaker() {
           <section style={{ display: 'grid', gap: 16, gridTemplateColumns: 'minmax(0, 1fr) 320px' }}>
             <div style={{ ...panel, padding: 20 }}>
               <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 10 }}>The cut</h2>
+              {master && cut.masterStale && (
+                <div role="status" style={{ display: 'flex', gap: 8, alignItems: 'center', background: '#3a2c10', color: T.amber, borderRadius: 10, padding: '9px 12px', fontSize: 12.5, marginBottom: 10 }}>
+                  <AlertTriangle size={14} /> This cut is out of date — the film changed after it was assembled. Re-assemble to include the changes.
+                </div>
+              )}
               <div style={{ background: '#000', borderRadius: 10, aspectRatio: film.aspect === '16:9' ? '16/9' : '9/16', display: 'grid', placeItems: 'center', marginBottom: 12 }}>
                 {master
                   ? <video src={master} controls style={{ width: '100%', height: '100%' }} />
                   : <span style={{ color: T.dim, fontSize: 13 }}>Assemble to see the film here</span>}
               </div>
-              <Btn disabled={!allClips || busy === 'asm'} onClick={() => run('asm', async () => {
+              <Btn disabled={!cut.canAssemble || busy === 'asm'} onClick={() => run('asm', async () => {
                 const f = await effyApi.filmAssemble(id);
                 qc.setQueryData(['film', id], f);
               })}>
                 {busy === 'asm' ? <RefreshCw size={15} className="animate-spin" /> : <Layers size={15} />}
                 {master ? 'Re-assemble' : 'Assemble the film'}
               </Btn>
-              {!allClips && <p style={{ fontSize: 12, color: T.dim, marginTop: 8 }}>Animate every scene first.</p>}
+              {!cut.canAssemble && (
+                <div style={{ fontSize: 12, color: T.dim, marginTop: 8 }}>
+                  <div style={{ fontWeight: 600, color: T.text, marginBottom: 4 }}>Before assembling:</div>
+                  <ul aria-label="Before assembling" style={{ margin: 0, paddingLeft: 18, display: 'grid', gap: 2, listStyle: 'disc' }}>
+                    {cut.blockers.map((b) => <li key={b}>{b}</li>)}
+                  </ul>
+                </div>
+              )}
               {qa && (
                 <div style={{
                   marginTop: 14, padding: '10px 14px', borderRadius: 10, fontSize: 12.5,
@@ -813,9 +845,16 @@ export default function FilmMaker() {
               Exports are auto-filed into the Media Library, reusable across posts and campaigns.
             </p>
             {!master && <p style={{ fontSize: 13, color: T.amber }}>Assemble the film first (stage 6).</p>}
+            {master && cut.masterStale && (
+              <div role="status" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', background: '#3a2c10', color: T.amber, borderRadius: 10, padding: '10px 14px', fontSize: 12.5, marginBottom: 14 }}>
+                <AlertTriangle size={14} />
+                <span style={{ flex: 1, minWidth: 200 }}>The film changed after it was assembled. Re-assemble it before building exports or dealer versions.</span>
+                <Btn kind="quiet" onClick={() => goStage(6)} style={{ padding: '5px 10px', fontSize: 12 }}>Go to assemble</Btn>
+              </div>
+            )}
             {master && (
               <>
-                <Btn disabled={busy === 'exp'} onClick={() => run('exp', async () => {
+                <Btn disabled={busy === 'exp' || cut.masterStale} onClick={() => run('exp', async () => {
                   const f = await effyApi.filmExports(id);
                   qc.setQueryData(['film', id], f);
                 })} style={{ marginBottom: 16 }}>
@@ -828,6 +867,7 @@ export default function FilmMaker() {
                       <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 10, background: T.raised, borderRadius: 10, padding: '10px 14px' }}>
                         <Play size={14} color={T.dim} />
                         <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>{label}</span>
+                        {(k === 'master' ? cut.masterStale : cut.exportsStale) && <OutOfDate />}
                         <button type="button" title="Copy link"
                           onClick={() => { navigator.clipboard?.writeText(film.renders[k]); setNotice({ kind: 'warn', text: `${label} link copied.` }); }}
                           style={{ background: 'none', color: T.dim, cursor: 'pointer', fontSize: 12.5, fontWeight: 600 }}>
@@ -867,7 +907,7 @@ export default function FilmMaker() {
                   <textarea value={dealerText} onChange={(e) => setDealerText(e.target.value)} rows={3}
                     placeholder={'Sharma Hardware, Sharma Traders, Pune\nGupta Paints, Gupta & Sons, Nagpur'}
                     style={{ ...inputStyle, background: T.surface, resize: 'vertical', marginBottom: 8 }} />
-                  <Btn kind="quiet" disabled={busy === 'pers' || !dealerText.trim()} onClick={() => run('pers', async () => {
+                  <Btn kind="quiet" disabled={busy === 'pers' || !dealerText.trim() || cut.masterStale} onClick={() => run('pers', async () => {
                     const dealers = dealerText.split('\n').map((l) => {
                       const [name, shop, city] = l.split(',').map((x) => x.trim());
                       return name ? { name, shop: shop || '', city: city || '' } : null;
@@ -883,6 +923,7 @@ export default function FilmMaker() {
                       {film.renders.personalized.map((p) => (
                         <div key={p.media} style={{ display: 'flex', alignItems: 'center', gap: 10, background: T.surface, borderRadius: 8, padding: '8px 12px' }}>
                           <span style={{ fontSize: 12.5, fontWeight: 600, flex: 1 }}>{p.name}</span>
+                          {cut.dealersStale && <OutOfDate />}
                           <a href={p.url} target="_blank" rel="noreferrer" style={{ color: T.coral, fontSize: 12, fontWeight: 600, display: 'inline-flex', gap: 4, alignItems: 'center' }}>
                             <Download size={12} /> Download
                           </a>
