@@ -4,7 +4,7 @@ import { ArrowRight, MailCheck } from 'lucide-react';
 import { useAppAuth } from '../app/context/AppAuth';
 
 export default function Login() {
-  const { login, register, resendPublic } = useAppAuth();
+  const { login, verifyTwoFactor, register, resendPublic } = useAppAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   // Only an invite link may be the place to return to after signing in.
@@ -15,6 +15,9 @@ export default function Login() {
   const [busy, setBusy] = useState(false);
   const [verify, setVerify] = useState(null); // { email, devLink? } → "check inbox" screen
   const [resent, setResent] = useState(false);
+  const [twoFactor, setTwoFactor] = useState(false); // password accepted; waiting for the code
+  const [code, setCode] = useState('');
+  const [useRecovery, setUseRecovery] = useState(false);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -22,7 +25,18 @@ export default function Login() {
     const r = await login(email, password);
     setBusy(false);
     if (r.ok) navigate(next || '/app');
+    else if (r.needsTwoFactor) { setTwoFactor(true); setCode(''); }
     else if (r.needsVerification) setVerify({ email: r.email });
+    else setError(r.message);
+  };
+
+  const submitCode = async (e) => {
+    e.preventDefault();
+    setError(''); setBusy(true);
+    const r = await verifyTwoFactor(code);
+    setBusy(false);
+    if (r.ok) navigate(next || '/app');
+    else if (r.restart) { setTwoFactor(false); setPassword(''); setError(r.message); }
     else setError(r.message);
   };
 
@@ -62,7 +76,32 @@ export default function Login() {
 
       {/* form */}
       <div className="flex items-center justify-center p-6">
-        {verify ? (
+        {twoFactor ? (
+          <div className="w-full max-w-sm">
+            <h1 className="text-2xl font-extrabold tracking-tight">Two-factor sign-in</h1>
+            <p className="text-ink-soft text-sm mt-1 mb-7">
+              {useRecovery ? 'Enter one of the recovery codes you saved when you turned on two-factor sign-in.' : 'Enter the 6-digit code from your authenticator app.'}
+            </p>
+            {error && <div role="alert" className="mb-4 text-sm rounded-lg bg-error-soft text-error px-3.5 py-2.5">{error}</div>}
+            <form onSubmit={submitCode} className="space-y-4">
+              <label className="block">
+                <span className="block text-sm font-semibold text-ink-soft mb-1.5">{useRecovery ? 'Recovery code' : 'Authentication code'}</span>
+                <input value={code} onChange={(e) => setCode(e.target.value)} autoFocus required
+                  inputMode={useRecovery ? 'text' : 'numeric'} autoComplete="one-time-code" placeholder={useRecovery ? 'xxxx-xxxx' : '123456'}
+                  className="w-full rounded-lg border border-line bg-surface px-3.5 py-3 text-lg tracking-widest focus:border-coral focus:ring-2 focus:ring-coral/30 outline-none" />
+              </label>
+              <button type="submit" disabled={busy || !code.trim()} className="w-full flex items-center justify-center gap-2 rounded-lg bg-coral text-white font-bold py-3 disabled:opacity-60">
+                {busy ? 'Checking…' : <>Verify <ArrowRight className="w-4 h-4" /></>}
+              </button>
+            </form>
+            <div className="flex items-center justify-between mt-5 text-sm">
+              <button type="button" onClick={() => { setUseRecovery((v) => !v); setCode(''); setError(''); }} className="font-bold text-coral-ink bg-transparent">
+                {useRecovery ? 'Use the authenticator app' : 'Use a recovery code'}
+              </button>
+              <button type="button" onClick={() => { setTwoFactor(false); setPassword(''); setError(''); }} className="text-ink-soft bg-transparent">Start again</button>
+            </div>
+          </div>
+        ) : verify ? (
           <div className="w-full max-w-sm text-center">
             <div className="grid place-items-center w-14 h-14 rounded-2xl bg-coral-tint text-coral-ink mx-auto mb-4"><MailCheck className="w-7 h-7" /></div>
             <h1 className="text-2xl font-extrabold tracking-tight">Check your inbox</h1>
@@ -87,7 +126,7 @@ export default function Login() {
           <h1 className="text-2xl font-extrabold tracking-tight">Welcome back</h1>
           <p className="text-ink-soft text-sm mt-1 mb-7">{next ? 'Log in to accept your invite.' : 'Log in to continue to your workspace.'}</p>
 
-          {error && <div className="mb-4 text-sm rounded-lg bg-error-soft text-error px-3.5 py-2.5">{error}</div>}
+          {error && <div role="alert" className="mb-4 text-sm rounded-lg bg-error-soft text-error px-3.5 py-2.5">{error}</div>}
 
           <form onSubmit={submit} className="space-y-4">
             <div>

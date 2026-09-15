@@ -41,7 +41,23 @@ Legend: 🔓 no auth · 🔒 requires session · 🏢 org-ownership enforced
 | POST | `/api/effy/auth/forgot` | 🔓 | `{email}` → `{status, dev_link?}` (always ok) |
 | POST | `/api/effy/auth/reset` | 🔓 | `{token, password}` → `{status}` · 400 invalid/expired |
 
-**Bootstrap shape:** `{ user:{id,name,email,email_verified}, org:{id,name,type,plan,onboarding:{completed,offer}}, role, workspaces:[{id:"ws_N", dbId, name, industry, location, logo, accent, managerId}] }`
+### Account and two-factor sign-in
+| Method | Path | Auth | Body → Response |
+|---|---|---|---|
+| POST | `/api/effy/auth/login` (2FA on) | 🔓 | password right → `{status:"ok", needsTwoFactor:true}` and no session yet |
+| POST | `/api/effy/auth/2fa/verify` | pending sign-in | `{code}` (authenticator or recovery code) → bootstrap, signed in · 400 wrong · 401 `restart` after 10 minutes or with no pending sign-in · 429 after 5 wrong codes in 15 min |
+| GET | `/api/effy/auth/2fa` | 🔒 | → `{enabled, enabledAt, recoveryCodesLeft}` |
+| POST | `/api/effy/auth/2fa/setup` | 🔒 | `{password}` → `{secret, otpauthUrl}` (not on until enabled) |
+| POST | `/api/effy/auth/2fa/enable` | 🔒 | `{code}` → `{enabled, recoveryCodes[8]}` (shown once) |
+| POST | `/api/effy/auth/2fa/disable` | 🔒 | `{password, code}` → `{enabled:false}` |
+| POST | `/api/effy/auth/2fa/recovery-codes` | 🔒 | `{code}` → `{recoveryCodes}` (old ones stop working) |
+| PATCH | `/api/effy/auth/me` | 🔒 | `{name}` → `{user}` |
+| GET/PATCH | `/api/effy/me/preferences` | 🔒 | `{notifications:{approvals, failures, leads, reportsEmail}, density: comfortable\|compact}` (merged) → `{preferences}` |
+| POST | `/api/effy/auth/reset-link` | 🔒 | → `{emailSent, email}` · emails a reset link to the signed-in address; the link is never returned |
+
+An email verification link doesn't sign in an account with two-factor on (`{verified, needsSignIn}`).
+
+**Bootstrap shape:** `{ user:{id,name,email,email_verified,is_admin,twoFactor,preferences}, org:{id,name,type,plan,onboarding:{completed,offer}}, role, workspaces:[{id:"ws_N", dbId, name, industry, location, logo, accent, managerId}] }`
 
 ## Plans and billing  ([Administration.md](modules/Administration.md))
 Every session-authenticated route under a gated prefix answers **403** `{code: "plan_required", feature, plan, requiredPlan, message}` when the organisation's plan doesn't include it (engine `plans.py`, before-request hook). *marketing* (Growth and above): `/campaigns`, `/workflows`, `/strategy`, `/marketing-plan`, `/posts`, `/publish`, `/conversations`, `/reviews`, `/analytics/organic`, `/insights`, `/gbp`. *conversion* (Pro and above): `/ads`, `/landing`, `/forms`, `/leads`, `/followups`, `/tracking`, `/bio`, `/sites`, `/analytics/leads`, `/analytics/revenue`, `/analytics/creative`. Public pages aren't gated. New workspaces and invites past the plan's limit answer 403 `{code: "plan_limit", limit, plan, upgradeTo, message}`.

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { MailWarning, Check, Zap, Clock } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -71,7 +71,13 @@ const FULL_BLEED = new Set(['/app/studio']);
 
 export default function AppShell() {
   const { pathname } = useLocation();
-  const { loading } = useAppAuth();
+  const { loading, user } = useAppAuth();
+  // Compact density scales the app's rem-based sizes down a notch; the marketing site is unaffected.
+  const compact = user?.preferences?.density === 'compact';
+  useEffect(() => {
+    document.documentElement.style.fontSize = compact ? '14.5px' : '';
+    return () => { document.documentElement.style.fontSize = ''; };
+  }, [compact]);
   const { theme } = useTheme();
   const { workspaceId, planInfo } = useWorkspace();
   const lockedFeature = hasFeature(planInfo, featureForPath(pathname)) ? null : featureForPath(pathname);

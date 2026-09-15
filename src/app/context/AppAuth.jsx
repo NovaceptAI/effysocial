@@ -38,8 +38,16 @@ export function AppAuthProvider({ children }) {
   const login = useCallback(async (email, password) => {
     const { ok, data } = await post('/auth/login', { email, password });
     if (ok && data.user) { setUser(data.user); setBootstrap(data); return { ok: true }; }
+    if (ok && data.needsTwoFactor) return { ok: false, needsTwoFactor: true };
     if (data.needs_verification) return { ok: false, needsVerification: true, email: data.email };
     return { ok: false, message: data.message || 'Login failed.' };
+  }, []);
+
+  // The second step of a sign-in with two-factor on: an authenticator or recovery code.
+  const verifyTwoFactor = useCallback(async (code) => {
+    const { ok, data } = await post('/auth/2fa/verify', { code });
+    if (ok && data.user) { setUser(data.user); setBootstrap(data); return { ok: true }; }
+    return { ok: false, restart: !!data.restart, message: data.message || 'That code didn’t work.' };
   }, []);
 
   const register = useCallback(async (payload) => {
@@ -73,7 +81,7 @@ export function AppAuthProvider({ children }) {
 
   return (
     <Ctx.Provider value={{
-      user, bootstrap, loading, login, register, logout, refresh,
+      user, bootstrap, loading, login, verifyTwoFactor, register, logout, refresh,
       verifyEmail, resendVerification, resendPublic, forgotPassword, resetPassword,
     }}>
       {children}

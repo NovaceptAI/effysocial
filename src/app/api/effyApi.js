@@ -379,6 +379,21 @@ export const effyApi = {
 
   // Team
   listTeam: () => http('/team').then((d) => d.members),
+  // Account: profile, preferences, two-factor sign-in (G44)
+  updateMe: (payload) =>
+    http('/auth/me', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.user),
+  savePreferences: (payload) =>
+    http('/me/preferences', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.preferences),
+  sendMyResetLink: () => http('/auth/reset-link', { method: 'POST' }),
+  twoFactorStatus: () => http('/auth/2fa'),
+  twoFactorSetup: (password) =>
+    http('/auth/2fa/setup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) }),
+  twoFactorEnable: (code) =>
+    http('/auth/2fa/enable', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) }),
+  twoFactorDisable: (password, code) =>
+    http('/auth/2fa/disable', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password, code }) }),
+  twoFactorRecoveryCodes: (code) =>
+    http('/auth/2fa/recovery-codes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) }),
   // Team and invites (G23)
   getTeam: () => http('/team'),
   inviteTeammate: (email, role) =>

@@ -158,7 +158,7 @@ export default function TopBar({ onOpenPalette, onOpenAssistant, onOpenNav }) {
             ))}
           </div>
 
-          <button className="w-full text-left px-3 py-2 text-sm text-ink bg-transparent hover:bg-surface2">Profile &amp; settings</button>
+          <button onClick={() => { setProfileOpen(false); navigate('/app/settings'); }} className="w-full text-left px-3 py-2 text-sm text-ink bg-transparent hover:bg-surface2">Profile &amp; settings</button>
           <button
             onClick={() => { setProfileOpen(false); logout(); navigate('/'); }}
             className="w-full flex items-center gap-2 text-left px-3 py-2 text-sm text-error bg-transparent hover:bg-error-soft"
