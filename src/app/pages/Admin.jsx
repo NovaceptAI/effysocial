@@ -17,6 +17,62 @@ const ENGINES = [
               { v: 'free', name: 'Free animator', hint: 'free · Ken-Burns from image' }] },
 ];
 
+// Plans by hand until checkout exists (G22): every organisation, its plan in force,
+// trial and usage; changing the plan applies on the organisation's next request.
+function OrgPlans() {
+  const qc = useQueryClient();
+  const { data } = useQuery({ queryKey: ['admin-orgs'], queryFn: () => effyApi.adminOrgs(), retry: false });
+  const [problem, setProblem] = React.useState('');
+  const save = useMutation({
+    mutationFn: ({ id, plan }) => effyApi.adminSetPlan(id, plan, plan === 'Trial' ? 14 : undefined),
+    onSuccess: () => { setProblem(''); qc.invalidateQueries({ queryKey: ['admin-orgs'] }); },
+    onError: (e) => setProblem(e.message),
+  });
+  if (!data) return null;
+  return (
+    <Card className="p-5 mb-6">
+      <section aria-label="Organisations and plans">
+        <h3 className="font-bold text-ink mb-1">Organisations and plans</h3>
+        <p className="text-xs text-ink-faint mb-4">Change a plan here until online checkout is live. Choosing Trial starts a fresh 14-day trial.</p>
+        {problem && <p role="alert" className="text-sm text-error mb-3">{problem}</p>}
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[720px]">
+            <thead>
+              <tr className="text-left text-xs font-bold text-ink-faint uppercase tracking-wide border-b border-line">
+                {['Organisation', 'Plan', 'In force', 'Workspaces', 'Seats', 'Credits'].map((h) => <th key={h} className="py-2 pr-3 font-bold">{h}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {data.orgs.map((o) => (
+                <tr key={o.id} className="border-b border-line/60 last:border-0">
+                  <td className="py-3 pr-3">
+                    <span className="block font-semibold text-ink">{o.name}</span>
+                    <span className="block text-xs text-ink-faint">{o.owner || '—'} · {o.type}</span>
+                  </td>
+                  <td className="py-3 pr-3">
+                    <select aria-label={`Plan for ${o.name}`} value={o.storedPlan} disabled={save.isPending}
+                      onChange={(e) => save.mutate({ id: o.id, plan: e.target.value })}
+                      className="rounded-lg bg-surface2 px-2.5 py-1.5 text-sm text-ink">
+                      {data.plans.map((p) => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                  </td>
+                  <td className="py-3 pr-3 text-xs">
+                    <Badge tone={o.trial?.expired ? 'warning' : 'default'}>{o.plan}</Badge>
+                    {o.trial && <span className="block text-ink-faint mt-1">{o.trial.expired ? 'trial ended' : `${o.trial.daysLeft} days left`}</span>}
+                  </td>
+                  <td className="py-3 pr-3 tabular-nums">{o.usage.workspaces} / {o.limits.workspaces}</td>
+                  <td className="py-3 pr-3 tabular-nums">{o.usage.seats} / {o.limits.seats}</td>
+                  <td className="py-3 pr-3 tabular-nums">{o.creditsUsed} / {o.limits.credits}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </Card>
+  );
+}
+
 function EngineSwitch() {
   const qc = useQueryClient();
   const { data: settings } = useQuery({ queryKey: ['admin-settings'], queryFn: () => effyApi.adminSettings(), retry: false });
@@ -88,6 +144,7 @@ export default function Admin() {
         actions={<Badge tone="coral"><ShieldCheck className="w-3 h-3" /> Platform owner</Badge>}
       />
 
+      <OrgPlans />
       <EngineSwitch />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

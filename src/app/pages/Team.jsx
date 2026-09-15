@@ -115,7 +115,7 @@ function InviteDialog({ org, roles, onClose, onSent }) {
 }
 
 export default function Team() {
-  const { org, canManageWorkspaces: canManage } = useWorkspace();
+  const { org, canManageWorkspaces: canManage, planInfo } = useWorkspace();
   const qc = useQueryClient();
   const { data, isLoading, isError, error } = useQuery({ queryKey: ['team-full'], queryFn: effyApi.getTeam });
   const [inviting, setInviting] = useState(false);
@@ -136,6 +136,11 @@ export default function Team() {
   const members = data?.members || [];
   const invites = data?.invites || [];
   const roles = data?.roles || [];
+  const seats = planInfo?.limits?.seats;
+  const seatsUsed = members.length + invites.filter((i) => i.status === 'pending').length;
+  const seatsFull = data && seats != null && seatsUsed >= seats
+    ? `${seats === 1 ? 'The only seat' : `All ${seats} seats`} on your ${planInfo.plan === 'Trial' ? 'trial' : `${planInfo.plan} plan`} ${seats === 1 ? 'is' : 'are'} taken by members and pending invites. Upgrade in Billing, or remove someone.`
+    : null;
 
   return (
     <div>
@@ -143,12 +148,13 @@ export default function Team() {
         title="Team"
         subtitle={`People with access to ${org?.name || 'your organisation'}`}
         actions={(
-          <Button onClick={() => setInviting(true)} disabled={!canManage} title={canManage ? undefined : 'Only owners and admins can invite teammates.'}>
+          <Button onClick={() => setInviting(true)} disabled={!canManage || !!seatsFull} title={canManage ? (seatsFull || undefined) : 'Only owners and admins can invite teammates.'}>
             <UserPlus className="w-4 h-4" /> Invite member
           </Button>
         )}
       />
       {problem && <p role="alert" className="mb-3 text-sm rounded-lg bg-error-soft text-error px-3.5 py-2.5">{problem}</p>}
+      {canManage && seatsFull && <p role="status" className="mb-3 text-sm rounded-lg bg-warning-soft text-warning px-3.5 py-2.5">{seatsFull}</p>}
 
       <Card className="overflow-x-auto">
         {isLoading ? (

@@ -264,6 +264,9 @@ export const effyApi = {
   // Admin (platform owner only)
   billingCredits: (workspaceId) => http(`/billing/credits?workspace=${encodeURIComponent(workspaceId)}`),
   adminUsage: () => http('/admin/usage'),
+  adminOrgs: () => http('/admin/orgs'),
+  adminSetPlan: (orgId, plan, trialDays) =>
+    http(`/admin/orgs/${orgId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(plan === 'Trial' && trialDays ? { plan, trialDays } : { plan }) }).then((d) => d.org),
   adminSettings: () => http('/admin/settings').then((d) => d.settings),
   adminSetSettings: (payload) =>
     http('/admin/settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.settings),

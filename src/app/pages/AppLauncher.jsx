@@ -1,10 +1,11 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Wand2, Clapperboard, Target, ArrowRight, Clapperboard as FilmIcon, Package, Images, Play } from 'lucide-react';
+import { Wand2, Clapperboard, Target, ArrowRight, Clapperboard as FilmIcon, Package, Images, Play, Lock } from 'lucide-react';
 import { useAppAuth } from '../context/AppAuth';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
+import { FEATURES, hasFeature } from '../plans';
 
 // Post-login dashboard — three app cards (video-driven) + your recent work.
 const APPS = [
@@ -19,7 +20,7 @@ const APPS = [
     tagline: 'A full ad film, brief to broadcast',
   },
   {
-    key: 'pm', title: 'Performance Marketing', to: '/app/home', icon: Target,
+    key: 'pm', title: 'Performance Marketing', to: '/app/home', icon: Target, feature: 'marketing',
     video: '/landing/pm.mp4', poster: '/landing/pm-analytics.jpg',
     tagline: 'Campaigns, pipeline & analytics',
   },
@@ -43,7 +44,7 @@ function SectionHead({ title, to, navigate }) {
 export default function AppLauncher() {
   const navigate = useNavigate();
   const { user } = useAppAuth();
-  const { workspace, org, canManageWorkspaces } = useWorkspace();
+  const { workspace, org, canManageWorkspaces, planInfo } = useWorkspace();
   const setupPending = canManageWorkspaces && org?.onboarding && !org.onboarding.completed;
   const first = (user?.name || '').trim().split(' ')[0];
 
@@ -102,7 +103,12 @@ export default function AppLauncher() {
               </div>
               <div className="flex items-center justify-between gap-2 p-4">
                 <div className="min-w-0">
-                  <h2 className="font-display text-[15px] font-semibold tracking-tight truncate">{a.title}</h2>
+                  <h2 className="font-display text-[15px] font-semibold tracking-tight truncate">
+                    {a.title}
+                    {a.feature && !hasFeature(planInfo, a.feature) && (
+                      <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold align-middle"><Lock className="w-3 h-3" /> {FEATURES[a.feature].plan}</span>
+                    )}
+                  </h2>
                   <p className="text-[12px] mt-0.5 truncate" style={{ color: 'rgba(237,238,240,0.5)' }}>{a.tagline}</p>
                 </div>
                 <ArrowRight className="w-4 h-4 shrink-0 transition-transform group-hover:translate-x-1" style={{ color: '#EDEEF0' }} />

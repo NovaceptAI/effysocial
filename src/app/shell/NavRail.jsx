@@ -2,9 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
-  Compass, Wand2, Send, Inbox, Target, FileInput, BarChart3, Settings,
+  Compass, Wand2, Send, Inbox, Target, FileInput, BarChart3, Settings, Lock,
 } from 'lucide-react';
 import { NAV, HUB_NAV, isHubRoute } from '../nav';
+import { FEATURES, featureForPath, hasFeature } from '../plans';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useAppAuth } from '../context/AppAuth';
 import { cn } from '../../lib/cn';
@@ -60,7 +61,7 @@ const GROUP_SHORT = { Administration: 'Admin' };
 const RAIL_W = 74; // px — icon + label column
 
 export default function NavRail({ mobileOpen = false, onNavigate }) {
-  const { org } = useWorkspace();
+  const { org, planInfo } = useWorkspace();
   const { user: authUser } = useAppAuth();
   const { pathname } = useLocation();
   const isAgency = org?.type === 'agency';
@@ -175,6 +176,9 @@ export default function NavRail({ mobileOpen = false, onNavigate }) {
                           <>
                             <item.icon className="w-4 h-4 shrink-0" strokeWidth={2} />
                             <span style={isActive ? { color: 'rgb(var(--ui-rail-active-ink))' } : undefined}>{item.label}</span>
+                            {!hasFeature(planInfo, featureForPath(item.to)) && (
+                              <Lock className="w-3 h-3 ml-auto shrink-0 opacity-60" aria-label={`Needs the ${FEATURES[featureForPath(item.to)].plan} plan`} />
+                            )}
                           </>
                         )}
                       </NavLink>

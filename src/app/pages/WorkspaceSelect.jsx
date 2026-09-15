@@ -9,7 +9,7 @@ import { Card, PageHeader, Button } from '../../ui';
 import { cn } from '../../lib/cn';
 
 export default function WorkspaceSelect() {
-  const { org, workspaces, workspaceId, setWorkspaceId, canManageWorkspaces } = useWorkspace();
+  const { org, workspaces, workspaceId, setWorkspaceId, canManageWorkspaces, workspaceLimit } = useWorkspace();
   const { data: figures } = useClientSummary();
   const [creating, setCreating] = useState(false);
   const navigate = useNavigate();
@@ -22,8 +22,8 @@ export default function WorkspaceSelect() {
         title="Choose a workspace"
         subtitle={org.name}
         actions={(
-          <Button variant="secondary" onClick={() => setCreating(true)} disabled={!canManageWorkspaces}
-            title={canManageWorkspaces ? undefined : 'Only owners and admins can create workspaces.'}>
+          <Button variant="secondary" onClick={() => setCreating(true)} disabled={!canManageWorkspaces || !!workspaceLimit}
+            title={canManageWorkspaces ? (workspaceLimit || undefined) : 'Only owners and admins can create workspaces.'}>
             <Plus className="w-4 h-4" /> New workspace
           </Button>
         )}

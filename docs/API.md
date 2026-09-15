@@ -43,6 +43,17 @@ Legend: 🔓 no auth · 🔒 requires session · 🏢 org-ownership enforced
 
 **Bootstrap shape:** `{ user:{id,name,email,email_verified}, org:{id,name,type,plan,onboarding:{completed,offer}}, role, workspaces:[{id:"ws_N", dbId, name, industry, location, logo, accent, managerId}] }`
 
+## Plans and billing  ([Administration.md](modules/Administration.md))
+Every session-authenticated route under a gated prefix answers **403** `{code: "plan_required", feature, plan, requiredPlan, message}` when the organisation's plan doesn't include it (engine `plans.py`, before-request hook). *marketing* (Growth and above): `/campaigns`, `/workflows`, `/strategy`, `/marketing-plan`, `/posts`, `/publish`, `/conversations`, `/reviews`, `/analytics/organic`, `/insights`, `/gbp`. *conversion* (Pro and above): `/ads`, `/landing`, `/forms`, `/leads`, `/followups`, `/tracking`, `/bio`, `/sites`, `/analytics/leads`, `/analytics/revenue`, `/analytics/creative`. Public pages aren't gated. New workspaces and invites past the plan's limit answer 403 `{code: "plan_limit", limit, plan, upgradeTo, message}`.
+
+| Method | Path | Auth | Body → Response |
+|---|---|---|---|
+| GET | `/api/effy/billing/credits?workspace=ws_N` | 🔒🏢 | → `{plan, planInfo, used, allowance, remaining, warning: null\|"near"\|"over", hasPerformanceMarketing}` · credits count across the organisation; warnings don't block |
+| GET | `/api/effy/admin/orgs` | 🔒 platform admin | → `{orgs:[{id, name, type, owner, createdAt, creditsUsed, ...planInfo}], plans}` |
+| PATCH | `/api/effy/admin/orgs/:id` | 🔒 platform admin | `{plan, trialDays?}` → `{org}` · `Trial` starts a trial of `trialDays` (1–90, default 14) · 400 unknown plan · 404 |
+
+`planInfo` (also on bootstrap `org`): `{plan (in force), storedPlan, features[], limits:{workspaces, seats, credits}, usage:{workspaces, seats}, trial: null | {endsAt, daysLeft, expired}}`.
+
 ## Campaigns  ([Campaigns.md](modules/Campaigns.md))
 | Method | Path | Auth | Body → Response |
 |---|---|---|---|

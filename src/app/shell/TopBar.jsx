@@ -8,6 +8,7 @@ import { useTheme } from '../context/ThemeContext';
 import { usePosts } from '../api/hooks';
 import { effyApi } from '../api/effyApi';
 import WorkspaceDialog from '../components/WorkspaceDialog';
+import { hasFeature } from '../plans';
 import { cn } from '../../lib/cn';
 
 function Dropdown({ open, onClose, children, className }) {
@@ -29,7 +30,7 @@ const SEV_CLS = { error: 'text-error', warning: 'text-warning', info: 'text-info
 // Notification centre (spec §18) — real signals: Effy recommendations for the
 // active workspace + pending approvals count.
 function Notifications() {
-  const { workspace } = useWorkspace();
+  const { workspace, planInfo } = useWorkspace();
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const { data: recs = [] } = useQuery({
@@ -37,7 +38,7 @@ function Notifications() {
     queryFn: () => effyApi.assistantRecommendations(workspace.id),
     enabled: !!workspace,
   });
-  const { data: posts = [] } = usePosts(workspace);
+  const { data: posts = [] } = usePosts(hasFeature(planInfo, 'marketing') ? workspace : null);
   const approvals = posts.filter((p) => p.status === 'internal_review' || p.status === 'client_review').length;
 
   const items = [
@@ -72,7 +73,7 @@ function Notifications() {
 }
 
 export default function TopBar({ onOpenPalette, onOpenAssistant, onOpenNav }) {
-  const { user, org, workspaces, workspace, setWorkspaceId, canManageWorkspaces } = useWorkspace();
+  const { user, org, workspaces, workspace, setWorkspaceId, canManageWorkspaces, workspaceLimit } = useWorkspace();
   const { user: authUser, logout } = useAppAuth();
   const { theme, toggleTheme } = useTheme();
   const [wsExpanded, setWsExpanded] = useState(false);
@@ -102,9 +103,9 @@ export default function TopBar({ onOpenPalette, onOpenAssistant, onOpenNav }) {
         </button>
         <Dropdown open={createOpen} onClose={() => setCreateOpen(false)} className="right-0 w-52">
           {createItems.map((c) => (
-            <button key={c} onClick={() => { setCreateOpen(false); if (c === WORKSPACE_ITEM && canManageWorkspaces) setNewWorkspace(true); }}
-              disabled={c === WORKSPACE_ITEM && !canManageWorkspaces}
-              title={c === WORKSPACE_ITEM && !canManageWorkspaces ? 'Only owners and admins can create workspaces.' : undefined}
+            <button key={c} onClick={() => { setCreateOpen(false); if (c === WORKSPACE_ITEM && canManageWorkspaces && !workspaceLimit) setNewWorkspace(true); }}
+              disabled={c === WORKSPACE_ITEM && (!canManageWorkspaces || !!workspaceLimit)}
+              title={c === WORKSPACE_ITEM ? (!canManageWorkspaces ? 'Only owners and admins can create workspaces.' : workspaceLimit || undefined) : undefined}
               className="w-full text-left px-3 py-2 text-sm text-ink bg-transparent hover:bg-surface2 transition disabled:opacity-50">
               {c === WORKSPACE_ITEM && org?.type !== 'agency' ? 'Workspace' : c}
             </button>

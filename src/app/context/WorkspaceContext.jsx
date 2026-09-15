@@ -59,13 +59,19 @@ export function WorkspaceProvider({ children }) {
   const role = bootstrap?.role || null;
   const canManageWorkspaces = WORKSPACE_ADMIN_ROLES.has(role);
   const canWrite = !!role && !READ_ONLY_ROLES.has(role);
+  const planInfo = bootstrap?.org?.planInfo || null;
+  // Why a new workspace can't be added on this plan, or null when it can.
+  const cap = planInfo?.limits?.workspaces;
+  const workspaceLimit = cap != null && workspaces.length >= cap
+    ? `Your ${planInfo.plan === 'Trial' ? 'trial' : `${planInfo.plan} plan`} includes ${cap} workspace${cap === 1 ? '' : 's'}. Upgrade in Billing for more.`
+    : null;
 
   const value = useMemo(
     () => ({
-      org, user, role, canManageWorkspaces, canWrite, workspaces, workspace, workspaceId: workspace?.id, setWorkspaceId,
+      org, user, role, canManageWorkspaces, canWrite, planInfo, workspaceLimit, workspaces, workspace, workspaceId: workspace?.id, setWorkspaceId,
       refreshWorkspaces: refresh,
     }),
-    [org, user, role, canManageWorkspaces, canWrite, workspaces, workspace, setWorkspaceId, refresh],
+    [org, user, role, canManageWorkspaces, canWrite, planInfo, workspaceLimit, workspaces, workspace, setWorkspaceId, refresh],
   );
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
 }

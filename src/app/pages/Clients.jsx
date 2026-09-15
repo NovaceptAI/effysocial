@@ -16,7 +16,7 @@ const COLUMNS = [
 ];
 
 export default function Clients() {
-  const { workspaces, setWorkspaceId, canManageWorkspaces } = useWorkspace();
+  const { workspaces, setWorkspaceId, canManageWorkspaces, workspaceLimit } = useWorkspace();
   const { data: figures, isLoading, isError } = useClientSummary();
   const [view, setView] = useState('table');
   const [dialog, setDialog] = useState(null); // null | 'new' | workspace being edited
@@ -26,6 +26,7 @@ export default function Clients() {
   const fig = (w) => figures?.[w.id];
   const value = (w, render) => (fig(w) ? render(fig(w)) : <span className="text-ink-faint">{isError ? '—' : '…'}</span>);
   const manageTitle = canManageWorkspaces ? undefined : 'Only owners and admins can add or edit clients.';
+  const addTitle = manageTitle || workspaceLimit || undefined;
 
   return (
     <div>
@@ -38,7 +39,7 @@ export default function Clients() {
               <button aria-label="Table view" aria-pressed={view === 'table'} onClick={() => setView('table')} className={cn('grid place-items-center w-8 h-8 rounded-md', view === 'table' ? 'bg-surface2 text-coral-ink' : 'text-ink-faint')}><Table2 className="w-4 h-4" /></button>
               <button aria-label="Card view" aria-pressed={view === 'cards'} onClick={() => setView('cards')} className={cn('grid place-items-center w-8 h-8 rounded-md', view === 'cards' ? 'bg-surface2 text-coral-ink' : 'text-ink-faint')}><LayoutGrid className="w-4 h-4" /></button>
             </div>
-            <Button onClick={() => setDialog('new')} disabled={!canManageWorkspaces} title={manageTitle}><Plus className="w-4 h-4" /> Add client</Button>
+            <Button onClick={() => setDialog('new')} disabled={!canManageWorkspaces || !!workspaceLimit} title={addTitle}><Plus className="w-4 h-4" /> Add client</Button>
           </>
         }
       />

@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
-import { MailWarning, Check } from 'lucide-react';
+import { Link, Outlet, useLocation } from 'react-router-dom';
+import { MailWarning, Check, Zap, Clock } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import NavRail from './NavRail';
 import TopBar from './TopBar';
 import CommandPalette from './CommandPalette';
 import AssistantPanel from '../components/AssistantPanel';
 import { useAppAuth } from '../context/AppAuth';
 import { useWorkspace } from '../context/WorkspaceContext';
+import { effyApi } from '../api/effyApi';
+import { featureForPath, hasFeature } from '../plans';
+import PlanGate from '../components/PlanGate';
 import { useTheme } from '../context/ThemeContext';
 import { cn } from '../../lib/cn';
 
@@ -30,6 +34,38 @@ function VerifyBanner() {
   );
 }
 
+// Plan notices (G22): a trial about to end or ended, and credits near or over the month's
+// allowance. Credits warn but don't block until top-ups exist.
+function PlanBanner() {
+  const { workspace, planInfo } = useWorkspace();
+  const { data } = useQuery({
+    queryKey: ['billing-credits', workspace?.id],
+    queryFn: () => effyApi.billingCredits(workspace.id),
+    enabled: !!workspace,
+    staleTime: 60_000,
+  });
+  const trial = planInfo?.trial;
+  let notice = null;
+  if (trial?.expired) {
+    notice = { icon: Clock, text: 'Your free trial has ended, so you’re on the free Creative plan. Performance Marketing is paused until you upgrade.' };
+  } else if (trial && trial.daysLeft <= 3) {
+    notice = { icon: Clock, text: `Your free trial ends in ${trial.daysLeft} day${trial.daysLeft === 1 ? '' : 's'}. After that you’ll be on the free Creative plan.` };
+  } else if (data?.warning === 'over') {
+    notice = { icon: Zap, text: `You’ve used all ${data.allowance.toLocaleString('en-IN')} of this month’s credits. They reset on the 1st.` };
+  } else if (data?.warning === 'near') {
+    notice = { icon: Zap, text: `You’ve used ${Math.round((data.used / data.allowance) * 100)}% of this month’s ${data.allowance.toLocaleString('en-IN')} credits.` };
+  }
+  if (!notice) return null;
+  const Icon = notice.icon;
+  return (
+    <div role="status" aria-label="Plan notice" className="flex items-center gap-2.5 px-5 sm:px-8 py-2.5 bg-coral-tint/70 text-sm text-ink">
+      <Icon className="w-4 h-4 text-coral-ink shrink-0" />
+      <span className="flex-1">{notice.text}</span>
+      <Link to="/app/billing" className="text-xs font-bold text-coral-ink whitespace-nowrap">See plan</Link>
+    </div>
+  );
+}
+
 // Routes that want the full viewport width (editor-style, no page gutter/cap).
 const FULL_BLEED = new Set(['/app/studio']);
 
@@ -37,7 +73,8 @@ export default function AppShell() {
   const { pathname } = useLocation();
   const { loading } = useAppAuth();
   const { theme } = useTheme();
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, planInfo } = useWorkspace();
+  const lockedFeature = hasFeature(planInfo, featureForPath(pathname)) ? null : featureForPath(pathname);
   const fullBleed = FULL_BLEED.has(pathname);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
@@ -57,11 +94,12 @@ export default function AppShell() {
           onOpenNav={() => setNavOpen(true)}
         />
         <VerifyBanner />
+        <PlanBanner />
         <main className={fullBleed
           ? 'flex-1 min-w-0 w-full px-4 sm:px-6 py-5'
           : 'flex-1 min-w-0 p-5 sm:p-8 max-w-[1360px] w-full mx-auto'}>
           {/* Keyed by workspace: switching remounts the page, so no list or form keeps the last workspace's rows. */}
-          <Outlet key={workspaceId || 'none'} />
+          {lockedFeature ? <PlanGate feature={lockedFeature} planInfo={planInfo} /> : <Outlet key={workspaceId || 'none'} />}
         </main>
       </div>
       <CommandPalette open={paletteOpen} setOpen={setPaletteOpen} />
