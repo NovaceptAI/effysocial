@@ -266,7 +266,7 @@ export default function Onboarding() {
   }
   if (!canSetUp) {
     return (
-      <div className="min-h-dvh grid place-items-center bg-canvas text-ink p-6 text-center">
+      <div className="onboarding-page min-h-dvh grid place-items-center bg-canvas text-ink p-6 text-center">
         <div className="max-w-sm">
           <h1 className="text-2xl font-extrabold tracking-tight">{data.org.name} is set up by its owner</h1>
           <p className="text-ink-soft mt-2 mb-6">Your role ({bootstrap?.role}) can use EffySocial straight away.</p>
@@ -280,23 +280,23 @@ export default function Onboarding() {
   const primary = 'flex items-center gap-1.5 px-5 py-2.5 rounded-lg bg-coral text-white font-bold shadow-[0_8px_20px_rgba(232,74,51,0.24)] disabled:opacity-50 hover:-translate-y-0.5 transition';
 
   return (
-    <div className="min-h-dvh bg-canvas text-ink font-sans grid lg:grid-cols-[280px_1fr]">
-      <aside className="hidden lg:flex flex-col bg-rail text-white p-7">
-        <div className="flex items-center gap-2.5 font-extrabold text-lg mb-10">
-          <span className="grid place-items-center w-8 h-8 rounded-[9px] bg-coral text-white">✦</span> EffySocial
-        </div>
+    <div className="onboarding-page min-h-dvh bg-canvas text-ink font-sans grid lg:grid-cols-[280px_1fr]">
+      {/* A fixed dark rail, like the sign-in page's brand panel: the app's rail colours
+          live under .app-root and would render white here. */}
+      <aside className="hidden lg:flex flex-col bg-[#0B0C0E] text-white p-7" aria-label="Setup progress">
+        <img src="/brand/effysocial-logo-trim.png" alt="EffySocial" className="w-auto self-start mb-10" style={{ height: 24 }} />
         <ol className="space-y-1 flex-1" aria-label="Onboarding steps">
           {steps.map((id, i) => (
-            <li key={id} aria-current={i === index ? 'step' : undefined} className={cn('flex items-center gap-3 px-3 py-2.5 rounded-lg', i === index ? 'bg-rail-soft' : '')}>
+            <li key={id} aria-current={i === index ? 'step' : undefined} className={cn('flex items-center gap-3 px-3 py-2.5 rounded-lg', i === index ? 'bg-white/10' : '')}>
               <span className={cn('grid place-items-center w-7 h-7 rounded-full text-xs font-bold',
-                i < index ? 'bg-success text-white' : i === index ? 'bg-coral text-white' : 'bg-rail-line text-rail-muted')}>
+                i < index ? 'bg-success text-white' : i === index ? 'bg-coral text-white' : 'bg-white/10 text-white/60')}>
                 {i < index ? <Check className="w-4 h-4" /> : i + 1}
               </span>
-              <span className={cn('text-sm font-semibold', i === index ? 'text-white' : 'text-rail-muted')}>{STEP_META[id].label}</span>
+              <span className={cn('text-sm font-semibold', i === index ? 'text-white' : 'text-white/60')}>{STEP_META[id].label}</span>
             </li>
           ))}
         </ol>
-        <p className="text-xs text-white/40">Step {index + 1} of {steps.length}</p>
+        <p className="text-xs text-white/50">Step {index + 1} of {steps.length}</p>
       </aside>
 
       <main className="flex flex-col">

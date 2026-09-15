@@ -20,6 +20,17 @@ describe('Marketing Plan page', () => {
     expect(screen.getByRole('button', { name: /write a new plan/i })).toBeInTheDocument();
   });
 
+  it('a channel without a weekly cadence doesn’t say “0 a week”', async () => {
+    const record = ob.plan.plan;
+    const plan = { ...record, plan: { ...record.plan, channels: [...record.plan.channels, { channel: 'google_business', postsPerWeek: 0, role: 'Answer reviews' }] } };
+    mockApi({ 'GET /bootstrap': ob.bootstrapCompleted, 'GET /marketing-plan': { status: 'ok', plan } });
+    renderApp(<MarketingPlan />, { route: '/app/plan' });
+    const channels = await screen.findByRole('region', { name: 'Channels and cadence' });
+    expect(channels).toHaveTextContent('Instagram · 4 a week');
+    expect(channels).toHaveTextContent('Google Business Profile · no set cadence');
+    expect(channels).not.toHaveTextContent('0 a week');
+  });
+
   it('generates a plan when there is none', async () => {
     const user = userEvent.setup();
     const api = mockApi({

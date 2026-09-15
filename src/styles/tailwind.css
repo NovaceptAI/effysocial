@@ -20,3 +20,14 @@
    borders set inline (quiet buttons, chips, inputs) still win. */
 .film-room button { border-width: 0; border-style: solid; font-family: inherit; }
 .film-room input, .film-room select, .film-room textarea { font-family: inherit; }
+
+/* Onboarding also renders outside .app-root, so native buttons showed the browser's
+   grey fill and bevelled border, and `border` utilities drew nothing (no preflight,
+   so border-style stays none). Same baseline as the app, wrapped in :where() so it
+   has zero specificity and every Tailwind utility still wins. */
+:where(.onboarding-page) *,
+:where(.onboarding-page) *::before,
+:where(.onboarding-page) *::after { border-width: 0; border-style: solid; border-color: rgb(var(--ui-line)); }
+:where(.onboarding-page) button { background-color: transparent; color: inherit; font-family: inherit; cursor: pointer; }
+:where(.onboarding-page) :is(h1, h2, h3, p) { margin: 0; }
+:where(.onboarding-page) :is(ul, ol) { margin: 0; padding: 0; list-style: none; }

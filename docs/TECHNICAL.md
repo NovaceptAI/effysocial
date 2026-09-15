@@ -121,6 +121,7 @@ to revenue (spec §3.2).
   address (5 / h) and per IP (20 / h), link attempts per IP (30 / 15 min). Over the
   limit returns 429 with `Retry-After`. The client IP is nginx's `X-Real-IP`,
   trusted only from loopback. Passwords are 8–128 characters.
+- **Caching:** `deploy/content-security-policy.conf` also sets `Cache-Control`: `no-cache` on the HTML so a deploy is picked up on the next load, a year and `immutable` on hashed `/assets/`.
 - **Legal pages:** `/privacy` and `/terms` (`src/marketing/Privacy.jsx`, `Terms.jsx`).
   They show a draft notice and highlighted placeholders while `LEGAL.draft` in
   `src/marketing/legal/meta.js` is true; set it to false only after approval.

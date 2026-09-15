@@ -44,7 +44,7 @@ export default function PlanView({ plan: record }) {
             {(plan.channels || []).map((c) => (
               <li key={c.channel}>
                 <span className="font-semibold text-ink">{CHANNEL_NAMES[c.channel] || c.channel}</span>
-                <span className="text-ink-soft"> · {c.postsPerWeek} a week</span>
+                <span className="text-ink-soft"> · {c.postsPerWeek ? `${c.postsPerWeek} a week` : 'no set cadence'}</span>
                 {c.role && <span className="block text-xs text-ink-faint">{c.role}</span>}
               </li>
             ))}
