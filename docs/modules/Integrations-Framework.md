@@ -33,7 +33,7 @@ Catalogue merge, connect → pending_credentials without env creds, disconnect, 
 
 
 ## 7. OAuth flow (real — shipped)
-`oauth.py` holds provider-agnostic OAuth 2.0: authorize-code flow, CSRF `state` via EffyToken (single-use, 15-min), token exchange + identity fetch, and **Fernet token encryption at rest** (key derived from SECRET_KEY; tokens never serialized to the client). Providers are data in `PROVIDERS` — adding Meta/Google is config, not new flow code.
+`oauth.py` holds provider-agnostic OAuth 2.0: authorize-code flow, CSRF `state` via EffyToken (single-use, 15-min; owned by the connecting user and naming the workspace in `workspace_id`; `returnTo: "onboarding"` on connect sends the browser back to onboarding, anything else to Integrations), token exchange + identity fetch, and **Fernet token encryption at rest** (key derived from SECRET_KEY; tokens never serialized to the client). Providers are data in `PROVIDERS` — adding Meta/Google is config, not new flow code.
 - `POST /integrations/:provider/connect` → `{state:"redirect", redirect}` when creds exist, else `{state:"pending_credentials", setup[]}`.
 - `GET /integrations/:provider/callback` (public) → exchanges code, stores encrypted token, redirects to `/app/integrations?connected=…&status=…`.
 - **LinkedIn is live** (real creds). **Google Business Profile OAuth is configured** (`GOOGLE_CLIENT_ID/SECRET`, scope `business.manage`, offline access + consent for refresh tokens) — pending the client secret + GBP API access approval in Google Cloud. **Redirect URI to register in each provider app:** `https://effysocial.effybiz.in/api/effy/integrations/<provider>/callback`.

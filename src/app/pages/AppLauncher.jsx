@@ -43,7 +43,8 @@ function SectionHead({ title, to, navigate }) {
 export default function AppLauncher() {
   const navigate = useNavigate();
   const { user } = useAppAuth();
-  const { workspace } = useWorkspace();
+  const { workspace, org, canManageWorkspaces } = useWorkspace();
+  const setupPending = canManageWorkspaces && org?.onboarding && !org.onboarding.completed;
   const first = (user?.name || '').trim().split(' ')[0];
 
   const { data: films = [] } = useQuery({ queryKey: ['films', workspace?.id], queryFn: () => effyApi.listFilms(workspace.id), enabled: !!workspace });
@@ -69,6 +70,17 @@ export default function AppLauncher() {
         </h1>
         <p className="mt-2 text-ink-soft">Where do you want to start today?</p>
       </div>
+
+      {setupPending && (
+        <div role="region" aria-label="Finish setting up" className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3">
+          <span className="flex-1 min-w-[200px] text-sm text-ink-soft">
+            <span className="font-semibold text-ink">Finish setting up EffySocial.</span> Your answers so far are saved — pick up where you left off.
+          </span>
+          <button type="button" onClick={() => navigate('/onboarding')} className="inline-flex items-center gap-1 rounded-lg bg-coral px-3.5 py-2 text-xs font-bold text-white">
+            Continue setup <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* App cards — 3 across, compact */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">

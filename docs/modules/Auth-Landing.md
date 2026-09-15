@@ -1,6 +1,6 @@
 # Module: Marketing Landing, Login & Auth
 
-> The public front door → login → onboarding → gated product. _Status: ✅ landing + login + onboarding frontend · 🔌 real auth pending._
+> The public front door → login → onboarding → gated product. _Status: ✅ landing + real login · ✅ onboarding saved on the organisation, routed by offer, with a real first plan (15 Sep 2026, G20)._
 > Spec ref: §6 (onboarding), screens #1–3 · Phase 0
 
 ## 1. What it does
@@ -24,7 +24,7 @@ Backend: `user`, `session`, plus onboarding writes `organization` + first `works
 - Onboarding (§6) feeds Brand Brain, Integrations, and generates the first Marketing Plan.
 
 ## 6. AI involvement
-Onboarding step 7 = Strategy agent generates the first marketing plan; Brand Brain extraction from imported site/docs.
+**Onboarding (G20)** — `src/marketing/Onboarding.jsx`, engine `onboarding.py`. Each Continue saves that step's answers and the next step on `effy_orgs.onboarding`, so a reload or a later visit (Home shows *Finish setting up*) resumes there. Steps by offer: *Create content* → organisation, details, offer, Brand Brain, start (AI Studio or Ad Films; no connections, no plan). *Market and grow* / *Both* → organisation, details, offer, goals, connect (real integration states; Connect starts the real OAuth flow and returns to onboarding), Brand Brain (documents and website links), first plan (generated from the answers, Brand Brain and its documents; Finish stays disabled until it exists) → `/app/home` (marketing) or `/app` (both). The plan is stored in `effy_marketing_plans` and shown on Marketing Plan. Only owners and admins set up the organisation. Tests: `tests/test_effy_onboarding.py`, `Onboarding.test.jsx`, `MarketingPlan.test.jsx`, `e2e-film/onboarding.spec.js` (real engine).
 
 ## 7. Integrations
 Onboarding "connect accounts" step uses the Integrations adapter (OAuth) with connected/partial/expired states.

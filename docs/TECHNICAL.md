@@ -262,7 +262,7 @@ contract file plus an entry in the tenancy matrix (401/404 cross-org).
 check` sets `EFFY_ROUTE_GATE=1`, which fails the run and lists any `/api/effy`
 route that no test calls, so a new endpoint can't ship untested. Set
 `EFFY_ROUTE_COVERAGE=<file>` to write the called routes out. As of 14 Sep 2026
-all 209 routes are called.
+all 214 routes are called.
 
 **Frontend unit and component** (Vitest + React Testing Library, jsdom):
 `npm test` (or `npm run test:watch`). Tests sit beside the code as
@@ -279,13 +279,14 @@ is pinned to exactly 1.63.0 because that version uses the Chromium build cached
 in `~/.cache/ms-playwright`; an upgrade needs `npx playwright install chromium`.
 
 **Real engine** (`e2e-film/`, `npm run test:e2e:film`): the strategy's primary demo
-(`demo-film.spec.js`) and workspaces and clients (`workspaces.spec.js`) in Chromium
+(`demo-film.spec.js`), workspaces and clients (`workspaces.spec.js`) and onboarding
+(`onboarding.spec.js`) in Chromium
 against the real engine. `playwright.film.config.js` starts
 `scripts/e2e_film_server.py` from the engine checkout (the sibling `../engine` in a
 phase worktree, else `/srv/novalab-engine`; `EFFY_ENGINE_DIR` overrides) on port
 5099 with a throwaway SQLite database and temporary media folder, and serves the
 build on 4293 with `/api/effy` proxied to it. Only paid providers are stubbed
-(script beats, stills, Veo clips, voice-overs, the audio check); ffmpeg assembles
+(script beats, stills, Veo clips, voice-overs, the audio check, the marketing plan); ffmpeg assembles
 and exports for real, and the run downloads the master, 9:16 reel and WhatsApp
 exports and checks them with ffprobe. The engine runs under `env -i` without the
 production `.env`, so an unstubbed provider fails instead of spending money. It

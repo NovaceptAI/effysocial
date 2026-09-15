@@ -7,6 +7,8 @@ import { useAppAuth } from './AppAuth';
 
 // Roles that may create and edit workspaces — mirrors tenancy.ORG_ADMIN_ROLES.
 export const WORKSPACE_ADMIN_ROLES = new Set(['Agency owner', 'Agency admin', 'Workspace admin']);
+// Roles that can't create or edit content — mirrors tenancy._NO_WRITE and _APPROVAL_ONLY.
+export const READ_ONLY_ROLES = new Set(['View-only', 'Client approver']);
 
 const STORAGE_KEY = 'effy.workspace';
 
@@ -56,13 +58,14 @@ export function WorkspaceProvider({ children }) {
   const org = bootstrap?.org || { name: 'EffySocial' };
   const role = bootstrap?.role || null;
   const canManageWorkspaces = WORKSPACE_ADMIN_ROLES.has(role);
+  const canWrite = !!role && !READ_ONLY_ROLES.has(role);
 
   const value = useMemo(
     () => ({
-      org, user, role, canManageWorkspaces, workspaces, workspace, workspaceId: workspace?.id, setWorkspaceId,
+      org, user, role, canManageWorkspaces, canWrite, workspaces, workspace, workspaceId: workspace?.id, setWorkspaceId,
       refreshWorkspaces: refresh,
     }),
-    [org, user, role, canManageWorkspaces, workspaces, workspace, setWorkspaceId, refresh],
+    [org, user, role, canManageWorkspaces, canWrite, workspaces, workspace, setWorkspaceId, refresh],
   );
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
 }

@@ -1,30 +1,55 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, ArrowRight, Rocket } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Sparkles, ArrowRight, Loader2 } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
-import { PageHeader, EmptyState, Button } from '../../ui';
+import { effyApi } from '../api/effyApi';
+import PlanView from '../components/PlanView';
+import { PageHeader, EmptyState, Button, Card } from '../../ui';
 
-// Marketing Plan will generate from real campaigns + Brand Brain (backend TBD).
-// No mock data — honest empty state until that lands.
+// The workspace's newest generated marketing plan (onboarding.py). Generated from
+// the onboarding answers and the Brand Brain; writing it again keeps the old ones.
 export default function MarketingPlan() {
-  const { workspace } = useWorkspace();
+  const { workspace, canWrite } = useWorkspace();
+  const qc = useQueryClient();
+  const key = ['marketing-plan', workspace.id];
+  const { data: plan, isLoading, isError, error } = useQuery({ queryKey: key, queryFn: () => effyApi.getMarketingPlan(workspace.id) });
+  const generate = useMutation({
+    mutationFn: () => effyApi.createMarketingPlan(workspace.id),
+    onSuccess: (p) => qc.setQueryData(key, p),
+  });
+
+  const action = canWrite ? (
+    <Button onClick={() => generate.mutate()} disabled={generate.isPending}>
+      {generate.isPending ? <><Loader2 className="w-4 h-4 animate-spin" /> Writing your plan…</> : <><Sparkles className="w-4 h-4" /> {plan ? 'Write a new plan' : 'Generate plan'}</>}
+    </Button>
+  ) : null;
+
   return (
     <div>
-      <PageHeader
-        title="Marketing Plan"
-        subtitle={`AI-guided monthly strategy for ${workspace.name}`}
-      />
-      <EmptyState
-        icon="🧭"
-        title="No plan yet"
-        body="Your AI marketing plan — content pillars, organic/paid split, budget and KPIs — will be generated from your Brand Brain and live campaigns. Start by launching a campaign; plan generation lands with it."
-        action={
-          <div className="flex flex-wrap justify-center gap-2">
-            <Link to="/app/launch"><Button><Rocket className="w-4 h-4" /> Launch a campaign</Button></Link>
-            <Link to="/app/brand"><Button variant="secondary"><Sparkles className="w-4 h-4" /> Build Brand Brain <ArrowRight className="w-3.5 h-3.5" /></Button></Link>
-          </div>
-        }
-      />
+      <PageHeader title="Marketing Plan" subtitle={`AI-guided monthly strategy for ${workspace.name}`} actions={plan ? action : null} />
+      {generate.isError && <p role="alert" className="mb-4 text-sm rounded-lg bg-error-soft text-error px-3.5 py-2.5">{generate.error.message}</p>}
+      {isLoading ? (
+        <p className="text-sm text-ink-soft">Loading plan…</p>
+      ) : isError ? (
+        <p role="alert" className="text-sm text-error">{error.message}</p>
+      ) : plan ? (
+        <Card className="p-5"><PlanView plan={plan} /></Card>
+      ) : (
+        <EmptyState
+          icon="🧭"
+          title="No plan yet"
+          body={canWrite
+            ? 'Generate a month of strategy — content pillars, channels and cadence, post ideas and what to aim for — from your goals and Brand Brain. The more Brand Brain knows, the sharper it gets.'
+            : 'No plan has been generated for this workspace yet. Someone who can edit content can generate one.'}
+          action={(
+            <div className="flex flex-wrap justify-center gap-2">
+              {action}
+              <Link to="/app/brand"><Button variant="secondary">Build Brand Brain <ArrowRight className="w-3.5 h-3.5" /></Button></Link>
+            </div>
+          )}
+        />
+      )}
     </div>
   );
 }

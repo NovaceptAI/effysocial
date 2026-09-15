@@ -9,6 +9,7 @@ The planning layer that feeds everything downstream. Marketing Plan turns a brie
 ## 2. Where it lives
 - **Routes:** `/app/plan`, `/app/trends`, `/app/competitors`, `/app/listening`
 - **Frontend files:** `src/app/pages/MarketingPlan.jsx`, `Trends.jsx`, `Competitors.jsx`, `SocialListening.jsx`; data `src/app/data/strategyData.js`.
+- **Marketing Plan (real, 15 Sep 2026):** shows the workspace's newest plan from `GET /marketing-plan` (`components/PlanView.jsx`); *Generate plan* / *Write a new plan* calls `POST /marketing-plan` (engine `onboarding.py`: Groq, grounded in the onboarding answers, Brand Brain and its documents; output normalised — 3–5 pillars adding to 100%, known channels only, up to 12 ideas — or refused with 503). Plans are kept per workspace in `effy_marketing_plans`. Read-only roles see the plan but can't generate. Budget split is not part of the plan yet.
 - **Backend (when built):** Strategy agent (Groq) + Trends signals (Google News/YouTube — already used by the legacy social tool) + listening ingestion.
 
 ## 3. Screens & key UI

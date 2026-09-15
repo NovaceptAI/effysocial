@@ -368,6 +368,14 @@ export const effyApi = {
 
   // Team
   listTeam: () => http('/team').then((d) => d.members),
+  // Onboarding and marketing plans (G20)
+  getOnboarding: () => http('/onboarding'),
+  saveOnboarding: (payload) =>
+    http('/onboarding', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
+  completeOnboarding: () => http('/onboarding/complete', { method: 'POST' }).then((d) => d.onboarding),
+  getMarketingPlan: (workspaceId) => http(`/marketing-plan?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.plan),
+  createMarketingPlan: (workspaceId, source) =>
+    http('/marketing-plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(source ? { workspace: workspaceId, source } : { workspace: workspaceId }) }).then((d) => d.plan),
   // Workspaces and client workspaces (G21)
   createWorkspace: (payload) =>
     http('/workspaces', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.workspace),
@@ -377,8 +385,9 @@ export const effyApi = {
 
   // Integrations (Phase 3)
   listIntegrations: (workspaceId) => http(`/integrations?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.integrations),
-  connectIntegration: (provider, workspaceId) =>
-    http(`/integrations/${provider}/connect`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId }) }),
+  // returnTo: 'onboarding' sends the browser back to onboarding after the provider's consent screen.
+  connectIntegration: (provider, workspaceId, returnTo) =>
+    http(`/integrations/${provider}/connect`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(returnTo ? { workspace: workspaceId, returnTo } : { workspace: workspaceId }) }),
   disconnectIntegration: (provider, workspaceId) =>
     http(`/integrations/${provider}/disconnect`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId }) }),
   // Google Business Profile — mock-first; the same flow syncs to Google once connected

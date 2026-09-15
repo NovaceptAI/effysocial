@@ -19,6 +19,11 @@ Legend: 🔓 no auth · 🔒 requires session · 🏢 org-ownership enforced
 | POST | `/api/effy/workspaces` | 🔒🏢 | `{name, industry?, location?, logo?, accent?, managerId?}` → `{workspace}` · owners/admins only (403) · 400 no name, outside manager or 100-workspace limit · 409 name taken in the org. `managerId` defaults to the creator; `null` leaves it unassigned |
 | PATCH | `/api/effy/workspaces/:id` | 🔒🏢 | any of the create fields → `{workspace}` · 404 outside your org · same 400/403/409 rules |
 | GET | `/api/effy/workspaces/summary` | 🔒🏢 | → `{clients:[{id, manager:{id,name}\|null, channels[], spend, leads, leads30d, approvals, alerts, organic:{level,reason}, paid:{level,reason}, lastActivity}]}` — see [Clients.md](modules/Clients.md) |
+| GET | `/api/effy/onboarding` | 🔒🏢 | → `{onboarding:{orgType?, details?, offer?, goals?, step?, completedAt?}, options:{orgTypes, offers, goals, timezones, currencies, teamSizes}, org, workspace, plan}` (first workspace and its newest plan) · 404 no organisation |
+| PATCH | `/api/effy/onboarding` | 🔒🏢 | any of `{orgType, details:{name, website, industry, location, timezone, currency, teamSize}, offer: creation\|marketing\|both, goals[], step}` → `{onboarding, org}` · merges; owners/admins only (403); 400 names the bad answer and saves nothing. Also sets org type and name, the first workspace's industry/location (and its name while it still matches the organisation's), and the owner's default role |
+| POST | `/api/effy/onboarding/complete` | 🔒🏢 | → `{onboarding}` with `completedAt` · 400 without an offer, or when a marketing offer has no plan yet |
+| GET | `/api/effy/marketing-plan?workspace=ws_N` | 🔒🏢 | → `{plan: {id, workspace, source, month, inputs, plan:{summary, pillars[], channels[], ideas[], funnel[], kpis[], firstWeek[]}, createdAt} \| null}` (newest) |
+| POST | `/api/effy/marketing-plan` | 🔒🏢 write | `{workspace, source?: "onboarding"}` → `{plan}` · generated from the onboarding answers, Brand Brain and its documents · 503 when the model fails or returns an unusable plan (nothing stored) · 429 after 10 an hour per workspace |
 
 ### Email verification & password reset
 | Method | Path | Auth | Body → Response |
@@ -28,7 +33,7 @@ Legend: 🔓 no auth · 🔒 requires session · 🏢 org-ownership enforced
 | POST | `/api/effy/auth/forgot` | 🔓 | `{email}` → `{status, dev_link?}` (always ok) |
 | POST | `/api/effy/auth/reset` | 🔓 | `{token, password}` → `{status}` · 400 invalid/expired |
 
-**Bootstrap shape:** `{ user:{id,name,email,email_verified}, org:{id,name,type,plan}, role, workspaces:[{id:"ws_N", dbId, name, industry, location, logo, accent, managerId}] }`
+**Bootstrap shape:** `{ user:{id,name,email,email_verified}, org:{id,name,type,plan,onboarding:{completed,offer}}, role, workspaces:[{id:"ws_N", dbId, name, industry, location, logo, accent, managerId}] }`
 
 ## Campaigns  ([Campaigns.md](modules/Campaigns.md))
 | Method | Path | Auth | Body → Response |
