@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { MailWarning, Check, Zap, Clock } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -105,7 +105,11 @@ export default function AppShell() {
           ? 'flex-1 min-w-0 w-full px-4 sm:px-6 py-5'
           : 'flex-1 min-w-0 p-5 sm:p-8 max-w-[1360px] w-full mx-auto'}>
           {/* Keyed by workspace: switching remounts the page, so no list or form keeps the last workspace's rows. */}
-          {lockedFeature ? <PlanGate feature={lockedFeature} planInfo={planInfo} /> : <Outlet key={workspaceId || 'none'} />}
+          {lockedFeature ? <PlanGate feature={lockedFeature} planInfo={planInfo} /> : (
+            <Suspense fallback={<p role="status" className="py-24 text-center text-sm text-ink-soft">Loading…</p>}>
+              <Outlet key={workspaceId || 'none'} />
+            </Suspense>
+          )}
         </main>
       </div>
       <CommandPalette open={paletteOpen} setOpen={setPaletteOpen} />

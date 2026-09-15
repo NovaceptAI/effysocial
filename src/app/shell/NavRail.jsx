@@ -4,7 +4,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
   Compass, Wand2, Send, Inbox, Target, FileInput, BarChart3, Settings, Lock,
 } from 'lucide-react';
-import { NAV, HUB_NAV, isHubRoute } from '../nav';
+import { NAV, HUB_NAV, railMode } from '../nav';
 import { FEATURES, featureForPath, hasFeature } from '../plans';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useAppAuth } from '../context/AppAuth';
@@ -68,7 +68,15 @@ export default function NavRail({ mobileOpen = false, onNavigate }) {
   const home = NAV.find((grp) => grp.group === 'Overview')?.items[0];
   const groups = NAV.filter((grp) => grp.group !== 'Overview');
   const [flyout, setFlyout] = useState(null); // {group, top}
-  const hub = isHubRoute(pathname); // hub (generic) menu vs deep PM menu
+  // Hub (generic) menu vs the deep Performance Marketing menu; remembered for this tab.
+  const lastMode = useRef(null);
+  if (lastMode.current === null) {
+    try { lastMode.current = sessionStorage.getItem('effy.rail') || 'hub'; } catch { lastMode.current = 'hub'; }
+  }
+  const mode = railMode(pathname, lastMode.current);
+  lastMode.current = mode;
+  useEffect(() => { try { sessionStorage.setItem('effy.rail', mode); } catch { /* private mode */ } }, [mode]);
+  const hub = mode === 'hub';
 
   // Logo easter-egg: a brief screen sparkle. Nothing renders until clicked,
   // then a handful of pure-CSS glints self-remove after ~2s — no libs, no idle cost.

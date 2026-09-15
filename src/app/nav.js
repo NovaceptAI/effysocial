@@ -104,3 +104,13 @@ export function isHubRoute(pathname) {
   if (pathname === '/app' || pathname === '/app/') return true;
   return HUB_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
+
+// Which rail to show (G45). Home is always the hub and Performance Marketing routes
+// always the deep menu; the routes both menus share (AI Studio, Ad Films, Media
+// Library, Settings…) keep whichever rail brought you there, so opening AI Studio from
+// the marketing rail no longer collapses it to the hub.
+export function railMode(pathname, previous) {
+  if (pathname === '/app' || pathname === '/app/') return 'hub';
+  if (!isHubRoute(pathname)) return 'pm';
+  return previous === 'pm' ? 'pm' : 'hub';
+}

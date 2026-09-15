@@ -3,30 +3,30 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
 import { AppAuthProvider, useAppAuth } from './app/context/AppAuth';
 import Landing from './marketing/Landing';
-import Login from './marketing/Login';
-import Onboarding from './marketing/Onboarding';
-import Join from './marketing/Join';
-import Verify from './marketing/Verify';
-import Forgot from './marketing/Forgot';
-import Reset from './marketing/Reset';
-import PublicForm from './marketing/PublicForm';
-import Pricing from './marketing/Pricing';
-import Privacy from './marketing/Privacy';
-import Terms from './marketing/Terms';
-import PublicLanding from './marketing/PublicLanding';
-import PublicSite from './marketing/PublicSite';
-import PublicBio from './marketing/PublicBio';
-import Hub from './Hub';
 
 // The full product app shell (Phase 0+). Code-split so the marketing site stays light.
 const AppRoot = lazy(() => import('./app/AppRoot'));
-import Studio from './studio/Studio';
-import LipSync from './modules/lipsync/LipSync';
-import VoiceCaller from './modules/caller/VoiceCaller';
-import CampaignGenerator from './modules/campaign/CampaignGenerator';
-import PhotoExperience from './modules/photo/PhotoExperience';
-import StyleGuide from './styleguide/StyleGuide';
-import BrightStyleGuide from './marketing/StyleGuide';
+// Everything but the landing page loads on demand, so / stays small (G45).
+const Login = lazy(() => import('./marketing/Login'));
+const Onboarding = lazy(() => import('./marketing/Onboarding'));
+const Join = lazy(() => import('./marketing/Join'));
+const Verify = lazy(() => import('./marketing/Verify'));
+const Forgot = lazy(() => import('./marketing/Forgot'));
+const Reset = lazy(() => import('./marketing/Reset'));
+const PublicForm = lazy(() => import('./marketing/PublicForm'));
+const Pricing = lazy(() => import('./marketing/Pricing'));
+const Privacy = lazy(() => import('./marketing/Privacy'));
+const Terms = lazy(() => import('./marketing/Terms'));
+const PublicLanding = lazy(() => import('./marketing/PublicLanding'));
+const PublicSite = lazy(() => import('./marketing/PublicSite'));
+const PublicBio = lazy(() => import('./marketing/PublicBio'));
+const Hub = lazy(() => import('./Hub'));
+const Studio = lazy(() => import('./studio/Studio'));
+const LipSync = lazy(() => import('./modules/lipsync/LipSync'));
+const VoiceCaller = lazy(() => import('./modules/caller/VoiceCaller'));
+const CampaignGenerator = lazy(() => import('./modules/campaign/CampaignGenerator'));
+const PhotoExperience = lazy(() => import('./modules/photo/PhotoExperience'));
+const BrightStyleGuide = lazy(() => import('./marketing/StyleGuide'));
 
 // Gate the product: unauthenticated visitors are sent to the login screen.
 // Waits for the async session check so we don't flash a redirect on refresh.
@@ -57,6 +57,7 @@ export default function App() {
     <AuthProvider>
       <AppAuthProvider>
         <BrowserRouter>
+          <Suspense fallback={<AppLoading />}>
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
@@ -97,6 +98,7 @@ export default function App() {
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </Suspense>
         </BrowserRouter>
       </AppAuthProvider>
     </AuthProvider>

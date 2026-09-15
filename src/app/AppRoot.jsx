@@ -1,71 +1,73 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WorkspaceProvider } from './context/WorkspaceContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { NAV_ITEMS } from './nav';
 import AppShell from './shell/AppShell';
-import AppLauncher from './pages/AppLauncher';
-import Overview from './pages/Overview';
-import Clients from './pages/Clients';
-import Campaigns from './pages/Campaigns';
-import CampaignWorkspace from './pages/CampaignWorkspace';
-import BrandBrain from './pages/BrandBrain';
-import AIStudio from './pages/AIStudio';
-import Calendar from './pages/Calendar';
-import Scheduled from './pages/Scheduled';
-import Approvals from './pages/Approvals';
-import Published from './pages/Published';
-import Inbox from './pages/Inbox';
-import Reviews from './pages/Reviews';
-import OrganicAnalytics from './pages/OrganicAnalytics';
-import Reports from './pages/Reports';
-import Integrations from './pages/Integrations';
-import GoogleBusiness from './pages/GoogleBusiness';
-import Team from './pages/Team';
-import MarketingPlan from './pages/MarketingPlan';
-import Trends from './pages/Trends';
-import Competitors from './pages/Competitors';
-import SocialListening from './pages/SocialListening';
-import Ideas from './pages/Ideas';
-import MediaLibrary from './pages/MediaLibrary';
-import Templates from './pages/Templates';
-import Billing from './pages/Billing';
-import Settings from './pages/Settings';
-import Comments from './pages/Comments';
-import EngageLeads from './pages/EngageLeads';
-import WorkspaceSelect from './pages/WorkspaceSelect';
-import Pipeline from './pages/Pipeline';
-import LeadDetail from './pages/LeadDetail';
-import Forms from './pages/Forms';
-import Playbooks from './pages/Playbooks';
-import Workflows from './pages/Workflows';
-import WorkflowRunner from './pages/WorkflowRunner';
-import Admin from './pages/Admin';
-import CampaignLaunch from './pages/CampaignLaunch';
-import LandingPages from './pages/LandingPages';
-import SiteBuilder from './pages/SiteBuilder';
-import Blog from './pages/Blog';
-import WhatsNew from './pages/WhatsNew';
-import PricingApp from './pages/PricingApp';
-import Films from './pages/Films';
-import FilmMaker from './pages/FilmMaker';
-import Tracking from './pages/Tracking';
-import Followups from './pages/Followups';
-import BioPages from './pages/BioPages';
-import AdsDashboard from './pages/AdsDashboard';
-import Creatives from './pages/Creatives';
-import Audiences from './pages/Audiences';
-import Budgets from './pages/Budgets';
-import Rules from './pages/Rules';
-import AdsAnalytics from './pages/AdsAnalytics';
-import LeadAnalytics from './pages/LeadAnalytics';
-import RevenueAnalytics from './pages/RevenueAnalytics';
-import CreativeAnalytics from './pages/CreativeAnalytics';
-import Acceptance from './pages/Acceptance';
-import ModulePlaceholder from './pages/ModulePlaceholder';
 import NoOrganisation from './pages/NoOrganisation';
 import { useAppAuth } from './context/AppAuth';
+
+// Every page is its own chunk, loaded when first opened (G45).
+const AppLauncher = lazy(() => import('./pages/AppLauncher'));
+const Overview = lazy(() => import('./pages/Overview'));
+const Clients = lazy(() => import('./pages/Clients'));
+const Campaigns = lazy(() => import('./pages/Campaigns'));
+const CampaignWorkspace = lazy(() => import('./pages/CampaignWorkspace'));
+const BrandBrain = lazy(() => import('./pages/BrandBrain'));
+const AIStudio = lazy(() => import('./pages/AIStudio'));
+const Calendar = lazy(() => import('./pages/Calendar'));
+const Scheduled = lazy(() => import('./pages/Scheduled'));
+const Approvals = lazy(() => import('./pages/Approvals'));
+const Published = lazy(() => import('./pages/Published'));
+const Inbox = lazy(() => import('./pages/Inbox'));
+const Reviews = lazy(() => import('./pages/Reviews'));
+const OrganicAnalytics = lazy(() => import('./pages/OrganicAnalytics'));
+const Reports = lazy(() => import('./pages/Reports'));
+const Integrations = lazy(() => import('./pages/Integrations'));
+const GoogleBusiness = lazy(() => import('./pages/GoogleBusiness'));
+const Team = lazy(() => import('./pages/Team'));
+const MarketingPlan = lazy(() => import('./pages/MarketingPlan'));
+const Trends = lazy(() => import('./pages/Trends'));
+const Competitors = lazy(() => import('./pages/Competitors'));
+const SocialListening = lazy(() => import('./pages/SocialListening'));
+const Ideas = lazy(() => import('./pages/Ideas'));
+const MediaLibrary = lazy(() => import('./pages/MediaLibrary'));
+const Templates = lazy(() => import('./pages/Templates'));
+const Billing = lazy(() => import('./pages/Billing'));
+const Settings = lazy(() => import('./pages/Settings'));
+const Comments = lazy(() => import('./pages/Comments'));
+const EngageLeads = lazy(() => import('./pages/EngageLeads'));
+const WorkspaceSelect = lazy(() => import('./pages/WorkspaceSelect'));
+const Pipeline = lazy(() => import('./pages/Pipeline'));
+const LeadDetail = lazy(() => import('./pages/LeadDetail'));
+const Forms = lazy(() => import('./pages/Forms'));
+const Playbooks = lazy(() => import('./pages/Playbooks'));
+const Workflows = lazy(() => import('./pages/Workflows'));
+const WorkflowRunner = lazy(() => import('./pages/WorkflowRunner'));
+const Admin = lazy(() => import('./pages/Admin'));
+const CampaignLaunch = lazy(() => import('./pages/CampaignLaunch'));
+const LandingPages = lazy(() => import('./pages/LandingPages'));
+const SiteBuilder = lazy(() => import('./pages/SiteBuilder'));
+const Blog = lazy(() => import('./pages/Blog'));
+const WhatsNew = lazy(() => import('./pages/WhatsNew'));
+const PricingApp = lazy(() => import('./pages/PricingApp'));
+const Films = lazy(() => import('./pages/Films'));
+const FilmMaker = lazy(() => import('./pages/FilmMaker'));
+const Tracking = lazy(() => import('./pages/Tracking'));
+const Followups = lazy(() => import('./pages/Followups'));
+const BioPages = lazy(() => import('./pages/BioPages'));
+const AdsDashboard = lazy(() => import('./pages/AdsDashboard'));
+const Creatives = lazy(() => import('./pages/Creatives'));
+const Audiences = lazy(() => import('./pages/Audiences'));
+const Budgets = lazy(() => import('./pages/Budgets'));
+const Rules = lazy(() => import('./pages/Rules'));
+const AdsAnalytics = lazy(() => import('./pages/AdsAnalytics'));
+const LeadAnalytics = lazy(() => import('./pages/LeadAnalytics'));
+const RevenueAnalytics = lazy(() => import('./pages/RevenueAnalytics'));
+const CreativeAnalytics = lazy(() => import('./pages/CreativeAnalytics'));
+const Acceptance = lazy(() => import('./pages/Acceptance'));
+const ModulePlaceholder = lazy(() => import('./pages/ModulePlaceholder'));
 
 const queryClient = new QueryClient();
 
@@ -168,7 +170,7 @@ export default function AppRoot() {
             <Route path="*" element={<ModulePlaceholder />} />
           </Route>
           {/* The film Maker is a deliberate full-screen theatre takeover. */}
-          <Route path="films/:id" element={<FilmMaker />} />
+          <Route path="films/:id" element={<Suspense fallback={<div className="min-h-dvh bg-[#0B0C0E]" />}><FilmMaker /></Suspense>} />
         </Routes>
       </WorkspaceProvider>
       </ThemeProvider>

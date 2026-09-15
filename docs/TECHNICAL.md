@@ -124,6 +124,8 @@ to revenue (spec §3.2).
   address (5 / h) and per IP (20 / h), link attempts per IP (30 / 15 min). Over the
   limit returns 429 with `Retry-After`. The client IP is nginx's `X-Real-IP`,
   trusted only from loopback. Passwords are 8–128 characters.
+- **Loading (G45):** every route in `App.jsx` except the landing page, and every page in `AppRoot.jsx`, is `React.lazy`, so `/` loads about 267 KB of JavaScript instead of 1 MB and heavy libraries (charts, LiveKit) load only on their pages. `deploy/content-security-policy.conf` also turns on gzip for CSS, JavaScript, JSON and SVG (nginx.conf only compressed HTML).
+- **Rail:** `railMode()` in `nav.js` keeps the Performance Marketing rail when it opens a page both menus share (AI Studio, Ad Films, Media Library, Settings); Home is always the hub. Remembered per tab in `sessionStorage`.
 - **Caching:** `deploy/content-security-policy.conf` also sets `Cache-Control`: `no-cache` on the HTML so a deploy is picked up on the next load, a year and `immutable` on hashed `/assets/`.
 - **Legal pages:** `/privacy` and `/terms` (`src/marketing/Privacy.jsx`, `Terms.jsx`).
   They show a draft notice and highlighted placeholders while `LEGAL.draft` in
