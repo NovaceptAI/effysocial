@@ -73,6 +73,28 @@ function OrgPlans() {
   );
 }
 
+// Who asked to hear about coming features (G49).
+function Interest() {
+  const { data } = useQuery({ queryKey: ['admin-interest'], queryFn: () => effyApi.adminInterest(), retry: false });
+  if (!data) return null;
+  return (
+    <Card className="p-5 mb-6">
+      <section aria-label="Interest in coming features">
+        <h3 className="font-bold text-ink mb-1">Interest in coming features</h3>
+        <p className="text-xs text-ink-faint mb-3">People who pressed “Notify me when ready” — tell them first when it ships.</p>
+        <ul className="divide-y divide-line/60">
+          {data.map((f) => (
+            <li key={f.feature} className="py-2.5">
+              <div className="flex items-center justify-between text-sm"><span className="font-semibold text-ink">{f.label}</span><Badge>{f.count}</Badge></div>
+              {f.people.length > 0 && <p className="text-xs text-ink-faint mt-1">{f.people.map((p) => (p.org ? `${p.email} (${p.org})` : p.email)).join(', ')}</p>}
+            </li>
+          ))}
+        </ul>
+      </section>
+    </Card>
+  );
+}
+
 function EngineSwitch() {
   const qc = useQueryClient();
   const { data: settings } = useQuery({ queryKey: ['admin-settings'], queryFn: () => effyApi.adminSettings(), retry: false });
@@ -145,6 +167,7 @@ export default function Admin() {
       />
 
       <OrgPlans />
+      <Interest />
       <EngineSwitch />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

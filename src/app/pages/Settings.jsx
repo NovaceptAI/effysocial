@@ -8,6 +8,7 @@ import { useTheme } from '../context/ThemeContext';
 import { effyApi } from '../api/effyApi';
 import { Card, PageHeader, Button, Badge } from '../../ui';
 import { cn } from '../../lib/cn';
+import NotifyMe from '../components/NotifyMe';
 
 // Settings (G44): your profile and preferences, the organisation's time zone and
 // currency, two-factor sign-in with an authenticator app, and a password reset link.
@@ -222,7 +223,7 @@ export default function Settings() {
                   <Toggle label={title} on={!!prefs.notifications[key]} disabled={busy === 'prefs'} onChange={(v) => savePrefs({ notifications: { [key]: v } })} />
                 </Row>
               ))}
-              <Row title="WhatsApp alerts" desc="Critical alerts on WhatsApp."><Badge tone="new">Coming soon</Badge></Row>
+              <Row title="WhatsApp alerts" desc="Critical alerts on WhatsApp. Coming soon."><NotifyMe feature="whatsapp-alerts" /></Row>
             </section>
           </Card>
         </div>

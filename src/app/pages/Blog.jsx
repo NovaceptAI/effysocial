@@ -1,8 +1,9 @@
 import React from 'react';
 import { BookOpen } from 'lucide-react';
 import { PageHeader, EmptyState } from '../../ui';
+import NotifyMe from '../components/NotifyMe';
 
-// Placeholder — the marketing/education blog lands here later.
+// The marketing and education blog lands here later; people can ask to hear when it does (G49).
 export default function Blog() {
   return (
     <div>
@@ -10,7 +11,8 @@ export default function Blog() {
       <EmptyState
         icon={<BookOpen className="w-6 h-6" />}
         title="Coming soon"
-        body="We're putting together practical guides on content, ads and growth. Check back shortly."
+        body="We're putting together practical guides on content, ads and growth."
+        action={<NotifyMe feature="blog" />}
       />
     </div>
   );

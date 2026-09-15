@@ -41,6 +41,13 @@ Legend: 🔓 no auth · 🔒 requires session · 🏢 org-ownership enforced
 | POST | `/api/effy/auth/forgot` | 🔓 | `{email}` → `{status, dev_link?}` (always ok) |
 | POST | `/api/effy/auth/reset` | 🔓 | `{token, password}` → `{status}` · 400 invalid/expired |
 
+### Notify me when ready
+| Method | Path | Auth | Body → Response |
+|---|---|---|---|
+| GET | `/api/effy/interest` | 🔒 | → `{features[]}` the signed-in person asked about |
+| POST | `/api/effy/interest` | 🔒 | `{feature}` (blog, whatsapp-alerts, voice-cloning, playbook-post-to-ad, playbook-competitor-response) → `{feature, label, alreadyAsked, email}` · once per person · 400 unknown feature |
+| GET | `/api/effy/admin/interest` | 🔒 platform admin | → `{features:[{feature, label, count, people:[{email, name, org, at}]}]}` |
+
 ### Account and two-factor sign-in
 | Method | Path | Auth | Body → Response |
 |---|---|---|---|

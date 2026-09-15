@@ -46,3 +46,6 @@ Loading (suspense fallback while `/app` chunk loads), workspace-switching, reduc
 - Right context panel component + API.
 - Login/onboarding screens (Phase 0 remaining).
 - Density modes (comfortable/compact) per §4.
+
+## Coming features and unknown addresses (15 Sep 2026, G49)
+Every menu item has a real page, so `ModulePlaceholder` is now the in-shell *Page not found* for mistyped addresses (no notify button). Features that aren't built yet — the blog, WhatsApp alerts, dealer voice cloning, two playbooks — carry `components/NotifyMe`, which records the ask once per person (`effy_interest`, engine `interest.py`) and confirms who will be told; Admin lists who asked.

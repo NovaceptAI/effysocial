@@ -379,6 +379,11 @@ export const effyApi = {
 
   // Team
   listTeam: () => http('/team').then((d) => d.members),
+  // “Notify me when ready” (G49)
+  myInterest: () => http('/interest').then((d) => d.features),
+  registerInterest: (feature) =>
+    http('/interest', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ feature }) }),
+  adminInterest: () => http('/admin/interest').then((d) => d.features),
   // Account: profile, preferences, two-factor sign-in (G44)
   updateMe: (payload) =>
     http('/auth/me', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.user),

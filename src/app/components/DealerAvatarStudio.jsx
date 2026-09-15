@@ -8,6 +8,7 @@ import { useWorkspace } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
 import { Button, Badge, Card } from '../../ui';
 import ShareRow from './ShareRow';
+import NotifyMe from './NotifyMe';
 import BrandMasterCard, { mastersKey } from './BrandMasterCard';
 import { cn } from '../../lib/cn';
 
@@ -259,12 +260,14 @@ export default function DealerAvatarStudio({ onBack }) {
                 className="flex-1 rounded-xl bg-surface2 px-3 py-2.5 text-sm font-semibold">
                 <option value="">Auto voice</option>
                 {voices.map((v) => <option key={v.key} value={v.key}>{v.name} · {v.lang}</option>)}
-                <option value="" disabled>Clone dealer's voice (coming soon)</option>
               </select>
               <select value={dealer.language} onChange={(e) => saveField('language', e.target.value)}
                 className="rounded-xl bg-surface2 px-3 py-2.5 text-sm font-semibold">
                 {LANGS.map((l) => <option key={l}>{l}</option>)}
               </select>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-xs text-ink-faint">
+              Cloning the dealer’s own voice is coming. <NotifyMe feature="voice-cloning" variant="ghost" />
             </div>
             <Button variant="secondary" size="sm" disabled={!!busy}
               onClick={() => run('voice', async () => {

@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Sparkles, Flame, Swords, ArrowRight, Wand2, CalendarCheck, Rocket, Target, Repeat, Lock } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
+import NotifyMe from '../components/NotifyMe';
 import { Card, PageHeader, Button, Badge, EmptyState } from '../../ui';
 import { cn } from '../../lib/cn';
 
@@ -16,8 +17,8 @@ const STEPS = [
 ];
 
 const OTHER_PLAYBOOKS = [
-  { icon: Target, title: 'Winning post → Ad', body: 'Take a top-performing post and turn it into an ad creative + campaign.' },
-  { icon: Repeat, title: 'Competitor Response', body: 'A rival moves → draft an on-brand counter-angle → schedule.' },
+  { icon: Target, title: 'Winning post → Ad', body: 'Take a top-performing post and turn it into an ad creative + campaign.', feature: 'playbook-post-to-ad' },
+  { icon: Repeat, title: 'Competitor Response', body: 'A rival moves → draft an on-brand counter-angle → schedule.', feature: 'playbook-competitor-response' },
 ];
 
 // Compose angle cards from REAL strategy data (trends × competitor gaps × brand).
@@ -138,7 +139,8 @@ export default function Playbooks() {
               <Badge><Lock className="w-3 h-3" /> Soon</Badge>
             </div>
             <h4 className="font-display text-lg font-semibold tracking-tight mb-1">{p.title}</h4>
-            <p className="text-sm text-ink-soft leading-relaxed">{p.body}</p>
+            <p className="text-sm text-ink-soft leading-relaxed mb-3">{p.body}</p>
+            <NotifyMe feature={p.feature} />
           </Card>
         ))}
       </div>
