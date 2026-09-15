@@ -3,6 +3,8 @@
 > The living knowledge centre for a workspace; every AI output draws from it. _Status: ✅ frontend + ✅ backend (facts/sources persistence + Groq-grounded test voice). RAG over large docs (pgvector) pending an embedder._
 > Spec ref: §8.3 · Phase 1
 
+**Sources (15 Sep 2026):** documents are text-extracted on upload; **websites are read** (home page + up to four about/services/products/pricing/FAQ pages, via `webread.py`) and their text stored like a document; a **written brief** is saved as a `manual` source. All of it grounds Draft with AI, the voice test and the marketing plan (newest three sources with text, ~6k characters). Sites that build their pages with JavaScript return little text and say so. The first plan also reads the website given in onboarding if it hasn't been read. `EFFY_WEB_READ=off` switches reading off (tests do).
+
 ## 1. What it does
 Stores everything the AI needs to sound like the brand and stay compliant: summary, tone, approved/prohibited words, products, offers, personas, FAQs, objection handling, competitors, visual identity, and legal/compliance rules. Content is extracted from uploaded sources (website, docs) or entered manually, each item tracking which sources influenced it and a confidence/freshness signal. A "Test brand voice" area lets users verify generations before relying on them.
 

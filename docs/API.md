@@ -52,7 +52,7 @@ Legend: 🔓 no auth · 🔒 requires session · 🏢 org-ownership enforced
 |---|---|---|---|
 | GET | `/api/effy/brand?workspace=ws_N` | 🔒🏢 | → `{brain}` — default template overlaid with stored facts + sources |
 | POST | `/api/effy/brand/fact` | 🔒🏢 | `{workspace, section, data, status?, sources?, kind?}` → `{status}` (upsert per section) |
-| POST | `/api/effy/brand/source` | 🔒🏢 | `{workspace, name, type?, ref?, confidence?}` → `{source}` |
+| POST | `/api/effy/brand/source` | 🔒🏢 write | multipart `file` (PDF/DOCX/TXT/MD, text extracted) → `{source}` · or JSON `{workspace, type: "website", ref, name?}` → `{source, read:{ok, pages, chars, already?} \| {ok:false, message}}` — reads the home page and up to 4 main pages once (webread.py: public addresses only, redirects re-checked, 8 s/1.5 MB a page, 20 s total); an unreadable site is still recorded · or JSON `{workspace, type: "manual", name, content}` for a written brief |
 | POST | `/api/effy/brand/test` | 🔒🏢 | `{workspace, prompt}` → `{output, cited[]}` — Groq generation grounded in the workspace's tone/approved/prohibited facts |
 
 **Brain shape:** `{ completeness, needsReview, lastUpdated, <section>:{status, sources[], data} }` where sections = summary, tone, approved, prohibited, products, offers, personas, faqs, objections, competitors, visual, legal, sources. `data` shape varies by section kind (paragraph/chips/list/personas/faqs/visual/sources).

@@ -24,7 +24,7 @@ test('a business that wants both gets a saved, resumable onboarding and a real f
     await cont(page).click();
     await page.getByLabel('Name', { exact: true }).fill('Roofseal Pune');
     await page.getByLabel('Website', { exact: true }).fill('https://roofseal.in');
-    await page.getByLabel('Industry', { exact: true }).fill('Waterproofing');
+    await page.getByLabel('Industry', { exact: true }).selectOption('Waterproofing, paints & coatings');
     await page.getByLabel('Primary location').fill('Pune');
     await cont(page).click();
     await page.getByRole('radio', { name: /^Both/ }).click();
@@ -58,10 +58,15 @@ test('a business that wants both gets a saved, resumable onboarding and a real f
     await cont(page).click();
   });
 
-  await test.step('add a brand source', async () => {
-    await expect(page.getByLabel('Website address')).toHaveValue('https://roofseal.in');
-    await page.getByRole('button', { name: /add website/i }).click();
-    await expect(page.getByRole('region', { name: 'Brand sources' }).getByText('roofseal.in').first()).toBeVisible();
+  await test.step('add the website and a brief', async () => {
+    await expect(page.getByRole('note', { name: 'Why a brief helps' })).toContainText('A brief goes a long way.');
+    const sources = page.getByRole('region', { name: 'Brand sources' });
+    await expect(sources.getByLabel('Website address')).toHaveValue('https://roofseal.in');
+    await sources.getByRole('button', { name: /add website/i }).click();
+    await expect(sources.getByRole('status')).toHaveText('Read 1 page from roofseal.in.');
+    await sources.getByLabel('Business brief').fill('Terrace and wall waterproofing for homes and housing societies in Pune.');
+    await sources.getByRole('button', { name: 'Save brief' }).click();
+    await expect(sources.getByText('Business brief')).toBeVisible();
     await cont(page).click();
   });
 
@@ -70,7 +75,7 @@ test('a business that wants both gets a saved, resumable onboarding and a real f
     await expect(finish).toBeDisabled();
     await page.getByRole('button', { name: /generate first plan/i }).click();
     await expect(page.getByText('Your plan is ready')).toBeVisible();
-    await expect(page.getByText('Plan for Roofseal Pune — a Waterproofing in Pune aiming at: Generate leads, Get phone calls.')).toBeVisible();
+    await expect(page.getByText('Plan for Roofseal Pune — a Waterproofing, paints & coatings in Pune aiming at: Generate leads, Get phone calls. Grounded in the website.')).toBeVisible();
     await finish.click();
     await expect(page).toHaveURL(/\/app$/);
     await expect(page.getByRole('region', { name: 'Finish setting up' })).toHaveCount(0);
@@ -78,7 +83,7 @@ test('a business that wants both gets a saved, resumable onboarding and a real f
 
   await test.step('the plan stays visible on Marketing Plan', async () => {
     await page.goto('/app/plan');
-    await expect(page.getByText('Plan for Roofseal Pune — a Waterproofing in Pune aiming at: Generate leads, Get phone calls.')).toBeVisible();
+    await expect(page.getByText(/^Plan for Roofseal Pune — a Waterproofing, paints & coatings in Pune/)).toBeVisible();
     await expect(page.getByRole('region', { name: '12 post ideas' })).toBeVisible();
   });
 });
@@ -94,6 +99,8 @@ test('creation only skips connections and the plan and lands in AI Studio (ONB-0
   await page.getByRole('radio', { name: /^Freelancer/ }).click();
   await cont(page).click();
   await page.getByLabel('Name', { exact: true }).fill('Meera Studio');
+  await page.getByLabel('Industry', { exact: true }).selectOption({ label: 'Other — not listed' });
+  await page.getByLabel('Which business are you in?').fill('Children’s book illustration');
   await cont(page).click();
   await page.getByRole('radio', { name: /^Create content/ }).click();
   await expect(page.getByRole('list', { name: 'Onboarding steps' }).getByRole('listitem')).toHaveText(

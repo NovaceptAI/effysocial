@@ -10,6 +10,7 @@ import { effyApi } from '../app/api/effyApi';
 import BrandSources from '../app/components/BrandSources';
 import PlanView from '../app/components/PlanView';
 import { cn } from '../lib/cn';
+import { INDUSTRY_GROUPS, INDUSTRIES } from './industries';
 
 // Onboarding (G20). Answers are saved on the organisation as you go, so a reload
 // resumes at the same step. What you want from EffySocial decides the route:
@@ -42,7 +43,7 @@ const OFFERS = [
 ];
 const TZ_LABELS = { 'Asia/Kolkata': 'Asia/Kolkata (IST)', 'Asia/Dubai': 'Asia/Dubai', 'Asia/Singapore': 'Asia/Singapore', 'Europe/London': 'Europe/London', 'America/New_York': 'America/New_York', UTC: 'UTC' };
 const CURRENCY_LABELS = { INR: 'INR (₹)', USD: 'USD ($)', AED: 'AED', SGD: 'SGD', GBP: 'GBP (£)', EUR: 'EUR (€)' };
-const INDUSTRIES = ['Dental clinic', 'Cooperative bank', 'Real estate', 'Restaurant', 'D2C ecommerce', 'Automotive', 'Education', 'Construction materials'];
+const OTHER = '__other';
 const CONNECT_RESULT = {
   denied: 'was cancelled on its sign-in screen',
   invalid_state: 'took too long — try again',
@@ -52,8 +53,13 @@ const DEFAULT_DETAILS = { name: '', website: '', industry: '', location: '', tim
 
 const input = 'w-full rounded-lg border border-line bg-surface px-3.5 py-2.5 text-sm focus:border-coral focus:ring-2 focus:ring-coral/30 outline-none';
 
-function Field({ label, children }) {
-  return <label className="block"><span className="block text-sm font-semibold text-ink-soft mb-1.5">{label}</span>{children}</label>;
+function Field({ label, hint, className, children }) {
+  return (
+    <div className={className}>
+      <label className="block"><span className="block text-sm font-semibold text-ink-soft mb-1.5">{label}</span>{children}</label>
+      {hint && <p className="text-xs text-ink-faint mt-1.5">{hint}</p>}
+    </div>
+  );
 }
 
 function Choice({ selected, onClick, label, desc }) {
@@ -142,7 +148,15 @@ function BrandStep({ workspace, website }) {
   useEffect(load, [load]);
   return (
     <Step title="Build your Brand Brain" sub="Give the AI your brand's own words so everything it writes sounds like you.">
-      {sources ? <BrandSources workspaceId={workspace.id} sources={sources} onChanged={load} defaultLink={website} /> : <p className="text-sm text-ink-soft">Loading…</p>}
+      <div role="note" aria-label="Why a brief helps" className="mb-4 flex gap-3 rounded-xl border border-coral/30 bg-coral-tint px-4 py-3">
+        <FileText className="w-5 h-5 text-coral-ink shrink-0 mt-0.5" />
+        <p className="text-sm text-ink-soft">
+          <span className="font-semibold text-ink">A brief goes a long way.</span> Your first plan is only as specific as what we know about you.
+          Upload a brochure, pitch deck or company profile, or write a few lines about what you sell, who buys it and what makes you different.
+          {website ? ' We’ll also read your website.' : ''}
+        </p>
+      </div>
+      {sources ? <BrandSources workspaceId={workspace.id} sources={sources} onChanged={load} defaultLink={website} briefOpen /> : <p className="text-sm text-ink-soft">Loading…</p>}
       <p className="text-sm text-ink-faint text-center pt-3">You can fill in tone, products and more later in Brand Brain.</p>
     </Step>
   );
@@ -161,6 +175,10 @@ function PlanStep({ workspace, plan, onPlan }) {
       {error && <p role="alert" className="mb-4 text-sm rounded-lg bg-error-soft text-error px-3.5 py-2.5">{error}</p>}
       {!plan ? (
         <div className="text-center py-8">
+          <p className="text-sm text-ink-soft max-w-md mx-auto mb-5">
+            We use your answers, your website and anything you added in Brand Brain. No brief or document yet?
+            Go back a step and add one — the plan will be far more specific.
+          </p>
           <button type="button" onClick={generate} disabled={busy}
             className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-coral text-white font-bold shadow-[0_10px_26px_rgba(232,74,51,0.3)] disabled:opacity-70">
             {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Writing your plan…</> : <><Sparkles className="w-4 h-4" /> Generate first plan</>}
@@ -175,6 +193,11 @@ function PlanStep({ workspace, plan, onPlan }) {
               {busy ? 'Writing…' : 'Write it again'}
             </button>
           </div>
+          {plan.inputs?.websiteNote && (
+            <p role="status" className="mb-3 text-sm rounded-lg bg-warning-soft text-warning px-3.5 py-2.5">
+              We couldn’t use your website for this plan: {plan.inputs.websiteNote}
+            </p>
+          )}
           <PlanView plan={plan} />
         </div>
       )}
@@ -189,6 +212,7 @@ export default function Onboarding() {
   const [loadError, setLoadError] = useState('');
   const [orgType, setOrgType] = useState('business');
   const [details, setDetails] = useState(DEFAULT_DETAILS);
+  const [otherIndustry, setOtherIndustry] = useState(false);
   const [offer, setOffer] = useState('');
   const [goals, setGoals] = useState([]);
   const [plan, setPlan] = useState(null);
@@ -204,6 +228,7 @@ export default function Onboarding() {
       setData(d);
       setOrgType(ob.orgType || d.org.type || 'business');
       setDetails({ ...DEFAULT_DETAILS, ...(ob.details || {}) });
+      setOtherIndustry(!!ob.details?.industry && !INDUSTRIES.includes(ob.details.industry));
       setOffer(ob.offer || '');
       setGoals(ob.goals || []);
       setPlan(d.plan);
@@ -223,6 +248,9 @@ export default function Onboarding() {
 
   const problem = () => {
     if (cur === 'details' && !details.name.trim()) return 'Enter your business or agency name.';
+    if (cur === 'details' && !details.industry.trim()) {
+      return otherIndustry ? 'Tell us which business you’re in.' : 'Choose your industry, or pick Other and describe it.';
+    }
     if (cur === 'offer' && !offer) return 'Choose what you want to do with EffySocial.';
     if (cur === 'goals' && !goals.length) return 'Pick at least one goal.';
     return '';
@@ -313,24 +341,41 @@ export default function Onboarding() {
             <Step title={orgType === 'agency' ? 'Tell us about your agency' : 'Tell us about your business'} sub="This personalises your workspace, plans and reports.">
               <div className="grid sm:grid-cols-2 gap-4">
                 <Field label="Name"><input className={input} value={details.name} onChange={setDetail('name')} maxLength={160} placeholder="e.g. Roofseal Pune" /></Field>
-                <Field label="Website"><input className={input} value={details.website} onChange={setDetail('website')} maxLength={300} placeholder="https://…" /></Field>
-                <Field label="Industry">
-                  <input className={input} value={details.industry} onChange={setDetail('industry')} maxLength={80} list="onboarding-industries" placeholder="e.g. Dental clinic" />
-                  <datalist id="onboarding-industries">{INDUSTRIES.map((i) => <option key={i} value={i} />)}</datalist>
+                <Field label="Website" hint="Optional — we’ll read your home page and main pages to learn what you do.">
+                  <input className={input} value={details.website} onChange={setDetail('website')} maxLength={300} placeholder="https://…" />
                 </Field>
+                <Field label="Industry">
+                  <select aria-label="Industry" className={input} value={otherIndustry ? OTHER : details.industry}
+                    onChange={(e) => {
+                      const other = e.target.value === OTHER;
+                      setOtherIndustry(other);
+                      setDetails((d) => ({ ...d, industry: other ? '' : e.target.value }));
+                    }}>
+                    <option value="">Choose your industry…</option>
+                    {INDUSTRY_GROUPS.map(([group, items]) => (
+                      <optgroup key={group} label={group}>{items.map((i) => <option key={i} value={i}>{i}</option>)}</optgroup>
+                    ))}
+                    <option value={OTHER}>Other — not listed</option>
+                  </select>
+                </Field>
+                {otherIndustry && (
+                  <Field label="Which business are you in?" hint="A few words is enough, e.g. “AI voice agents for banks”." className="sm:col-span-2">
+                    <input className={input} value={details.industry} onChange={setDetail('industry')} maxLength={80} autoFocus placeholder="Describe your business" />
+                  </Field>
+                )}
                 <Field label="Primary location"><input className={input} value={details.location} onChange={setDetail('location')} maxLength={80} placeholder="e.g. Pune, India" /></Field>
                 <Field label="Time zone">
-                  <select className={input} value={details.timezone} onChange={setDetail('timezone')}>
+                  <select aria-label="Time zone" className={input} value={details.timezone} onChange={setDetail('timezone')}>
                     {data.options.timezones.map((t) => <option key={t} value={t}>{TZ_LABELS[t] || t}</option>)}
                   </select>
                 </Field>
                 <Field label="Currency">
-                  <select className={input} value={details.currency} onChange={setDetail('currency')}>
+                  <select aria-label="Currency" className={input} value={details.currency} onChange={setDetail('currency')}>
                     {data.options.currencies.map((c) => <option key={c} value={c}>{CURRENCY_LABELS[c] || c}</option>)}
                   </select>
                 </Field>
                 <Field label="Team size">
-                  <select className={input} value={details.teamSize} onChange={setDetail('teamSize')}>
+                  <select aria-label="Team size" className={input} value={details.teamSize} onChange={setDetail('teamSize')}>
                     {data.options.teamSizes.map((t) => <option key={t} value={t}>{t.replace('-', '–')}</option>)}
                   </select>
                 </Field>

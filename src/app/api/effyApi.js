@@ -50,8 +50,11 @@ export const effyApi = {
     if (name) fd.append('name', name);
     return http('/brand/source', { method: 'POST', body: fd }).then((d) => d.source);
   },
+  // Adds a website and reads it; returns { source, read: { ok, pages?, chars?, already?, message? } }.
   addBrandLink: (workspaceId, { name, ref }) =>
-    http('/brand/source', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId, type: 'website', name, ref }) }).then((d) => d.source),
+    http('/brand/source', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId, type: 'website', name, ref }) }),
+  addBrandBrief: (workspaceId, content) =>
+    http('/brand/source', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId, type: 'manual', name: 'Business brief', content }) }).then((d) => d.source),
   deleteBrandSource: (id) => http(`/brand/source/${id}`, { method: 'DELETE' }),
   uploadBrandLogo: (workspaceId, file) => {
     const fd = new FormData();

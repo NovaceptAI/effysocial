@@ -7,6 +7,7 @@ import { AppAuthProvider } from '../app/context/AppAuth';
 import Onboarding from './Onboarding';
 import { mockApi } from '../test/mockApi';
 import ob from '../test/fixtures/onboarding';
+import sources from '../test/fixtures/brandSources';
 
 // Onboarding (G20; ONB-001..005). Payloads come from the engine's test flow: a
 // business choosing both offers through to a plan, and a creation-only freelancer.
@@ -72,6 +73,12 @@ describe('Onboarding answers (ONB-001)', () => {
     await user.click(screen.getByRole('button', { name: /continue/i }));
     expect(screen.getByRole('alert')).toHaveTextContent('Enter your business or agency name.');
     await user.type(screen.getByLabelText('Name'), 'Northwind Digital');
+    await user.click(screen.getByRole('button', { name: /continue/i }));
+    expect(screen.getByRole('alert')).toHaveTextContent('Choose your industry, or pick Other and describe it.');
+    await user.selectOptions(screen.getByLabelText('Industry'), 'Other — not listed');
+    await user.click(screen.getByRole('button', { name: /continue/i }));
+    expect(screen.getByRole('alert')).toHaveTextContent('Tell us which business you’re in.');
+    await user.type(screen.getByLabelText('Which business are you in?'), 'AI voice agents for banks');
     await user.type(screen.getByLabelText('Website'), 'roofseal.in');
     await user.click(screen.getByRole('button', { name: /continue/i }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Enter the website address, starting with https://.');
@@ -92,10 +99,32 @@ describe('Onboarding answers (ONB-001)', () => {
 
     expect(api.callsTo('PATCH /onboarding').map((c) => c.body)).toEqual([
       { orgType: 'agency', step: 'details' },
-      { details: { name: 'Northwind Digital', website: 'roofseal.in', industry: '', location: '', timezone: 'Asia/Kolkata', currency: 'INR', teamSize: '1-5' }, step: 'offer' },
-      { details: { name: 'Northwind Digital', website: 'https://northwind.in', industry: '', location: '', timezone: 'Asia/Kolkata', currency: 'USD', teamSize: '1-5' }, step: 'offer' },
+      { details: { name: 'Northwind Digital', website: 'roofseal.in', industry: 'AI voice agents for banks', location: '', timezone: 'Asia/Kolkata', currency: 'INR', teamSize: '1-5' }, step: 'offer' },
+      { details: { name: 'Northwind Digital', website: 'https://northwind.in', industry: 'AI voice agents for banks', location: '', timezone: 'Asia/Kolkata', currency: 'USD', teamSize: '1-5' }, step: 'offer' },
       { offer: 'marketing', step: 'goals' },
     ]);
+  });
+
+  it('the industry list covers many businesses, and a saved answer not on it comes back as Other', async () => {
+    const user = userEvent.setup();
+    const listed = withStep({ ...ob.saved, onboarding: { ...ob.saved.onboarding, details: { ...ob.saved.onboarding.details, industry: 'Dental clinic' } } }, 'details');
+    mockApi({ 'GET /bootstrap': ob.bootstrapFresh, 'GET /onboarding': listed });
+    const first = open();
+    const select = await screen.findByLabelText('Industry');
+    expect(select).toHaveValue('Dental clinic');
+    expect(within(select).getAllByRole('option').length).toBeGreaterThan(120);
+    expect(within(select).getByRole('option', { name: 'AI & automation services' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Which business are you in?')).not.toBeInTheDocument();
+    expect(screen.getByText(/we’ll read your home page and main pages/)).toBeInTheDocument();
+    first.unmount();
+
+    const custom = withStep({ ...ob.saved, onboarding: { ...ob.saved.onboarding, details: { ...ob.saved.onboarding.details, industry: 'AI voice agents for banks' } } }, 'details');
+    mockApi({ 'GET /bootstrap': ob.bootstrapFresh, 'GET /onboarding': custom });
+    open();
+    expect(await screen.findByLabelText('Which business are you in?')).toHaveValue('AI voice agents for banks');
+    expect(screen.getByLabelText('Industry')).toHaveValue('__other');
+    await user.selectOptions(screen.getByLabelText('Industry'), 'Software & SaaS');
+    expect(screen.queryByLabelText('Which business are you in?')).not.toBeInTheDocument();
   });
 
   it('only owners and admins set up the organisation', async () => {
@@ -200,6 +229,30 @@ describe('First plan and finishing (ONB-003, ONB-005)', () => {
     open();
     await user.click(await screen.findByRole('button', { name: /go to dashboard/i }));
     expect(await screen.findByLabelText('Current page')).toHaveTextContent('/app/home');
+  });
+});
+
+describe('Telling EffySocial what the business does', () => {
+  it('the Brand Brain step says a brief goes a long way and that the website will be read', async () => {
+    mockApi({ 'GET /bootstrap': ob.bootstrapFresh, 'GET /onboarding': withStep(ob.saved, 'brand'), 'GET /brand': ob.brand });
+    open();
+    const note = await screen.findByRole('note', { name: 'Why a brief helps' });
+    expect(note).toHaveTextContent('A brief goes a long way.');
+    expect(note).toHaveTextContent('We’ll also read your website.');
+    expect(await screen.findByLabelText('Business brief')).toBeInTheDocument();
+  });
+
+  it('the plan step nudges for a brief first, and says when the website couldn’t be used', async () => {
+    const user = userEvent.setup();
+    mockApi({
+      'GET /bootstrap': ob.bootstrapFresh,
+      'GET /onboarding': withStep(ob.saved, 'plan'),
+      'POST /marketing-plan': sources.planWebsiteUnread,
+    });
+    open();
+    expect(await screen.findByText(/No brief or document yet\?/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /generate first plan/i }));
+    expect(await screen.findByRole('status')).toHaveTextContent(`We couldn’t use your website for this plan: ${sources.planWebsiteUnread.plan.inputs.websiteNote}`);
   });
 });
 
