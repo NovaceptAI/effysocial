@@ -64,6 +64,8 @@ import RevenueAnalytics from './pages/RevenueAnalytics';
 import CreativeAnalytics from './pages/CreativeAnalytics';
 import Acceptance from './pages/Acceptance';
 import ModulePlaceholder from './pages/ModulePlaceholder';
+import NoOrganisation from './pages/NoOrganisation';
+import { useAppAuth } from './context/AppAuth';
 
 const queryClient = new QueryClient();
 
@@ -87,6 +89,8 @@ const BUILT = new Set([
 const childPath = (to) => (to === '/app' ? '' : to.replace(/^\/app\//, ''));
 
 export default function AppRoot() {
+  const { bootstrap } = useAppAuth();
+  if (bootstrap && !bootstrap.org) return <NoOrganisation />;
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>

@@ -107,6 +107,7 @@ to revenue (spec §3.2).
   session and (b) **404** for a workspace in another org — no cross-tenant reads.
   Enforced and regression-tested by the **tenancy matrix** in
   `tests/test_effy_tenancy.py` (every new endpoint is added to it).
+- **Team (G23, `team.py`):** owners and admins invite by email with a role; the invite is a single-use 7-day link (`effy_invites`, token stored as a SHA-256 hash) that is emailed and also returned to the inviter to share, since email only reaches the Resend owner until the domain is verified. `/join` creates the account or asks the invited email to sign in (`/login?next=/join?…` — only `/join?` paths are honoured). An account belongs to one organisation; a removed member keeps the account and sees *You're not part of a team*. Roles are read per request, so a change applies at once.
 - **RBAC roles:** View-only (read-only), Client approver (approval actions only),
   writers (full). `require_write()` blocks the first two on mutations;
   `require_approval_rights()` blocks View-only on approve/reject.

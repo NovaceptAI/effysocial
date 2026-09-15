@@ -5,7 +5,12 @@ const BASE = '/api/effy';
 async function http(path, opts = {}) {
   const res = await fetch(BASE + path, { credentials: 'include', ...opts });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.message || `Request failed (${res.status})`);
+  if (!res.ok) {
+    const err = new Error(data.message || `Request failed (${res.status})`);
+    err.status = res.status;
+    err.data = data;
+    throw err;
+  }
   return data;
 }
 
@@ -371,6 +376,18 @@ export const effyApi = {
 
   // Team
   listTeam: () => http('/team').then((d) => d.members),
+  // Team and invites (G23)
+  getTeam: () => http('/team'),
+  inviteTeammate: (email, role) =>
+    http('/team/invites', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, role }) }),
+  resendInvite: (id) => http(`/team/invites/${id}/resend`, { method: 'POST' }),
+  revokeInvite: (id) => http(`/team/invites/${id}`, { method: 'DELETE' }),
+  changeMemberRole: (id, role) =>
+    http(`/team/members/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role }) }).then((d) => d.member),
+  removeMember: (id) => http(`/team/members/${id}`, { method: 'DELETE' }),
+  getInvite: (token) => http(`/invites/${encodeURIComponent(token)}`).then((d) => d.invite),
+  acceptInvite: (token, body = {}) =>
+    http(`/invites/${encodeURIComponent(token)}/accept`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }),
   // Onboarding and marketing plans (G20)
   getOnboarding: () => http('/onboarding'),
   saveOnboarding: (payload) =>

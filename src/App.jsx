@@ -5,6 +5,7 @@ import { AppAuthProvider, useAppAuth } from './app/context/AppAuth';
 import Landing from './marketing/Landing';
 import Login from './marketing/Login';
 import Onboarding from './marketing/Onboarding';
+import Join from './marketing/Join';
 import Verify from './marketing/Verify';
 import Forgot from './marketing/Forgot';
 import Reset from './marketing/Reset';
@@ -60,6 +61,7 @@ export default function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/verify" element={<Verify />} />
+            <Route path="/join" element={<Join />} />
             <Route path="/forgot" element={<Forgot />} />
             <Route path="/reset" element={<Reset />} />
             <Route path="/f/:slug" element={<PublicForm />} />

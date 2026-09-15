@@ -3,6 +3,8 @@
 > Workspace administration: connections, people/roles, plan and configuration. _Status: ✅ Integrations + Team frontend · 🔌 backend + Billing/Settings pending._
 > Spec ref: §17 · Phase 1
 
+**Team (15 Sep 2026, G23):** `/app/team` lists real members (owner and *You* marked) and, for owners and admins, pending and expired invites. *Invite member* takes an email and a role (Agency admin or Workspace admin by organisation type, Account manager, Copywriter, Client approver, View-only, each with a one-line description) and shows the join link to copy — the email may not arrive until the sending domain is verified. Admins change roles inline, remove members after a confirm, and resend (new link) or cancel invites. The owner can't be changed or removed. Invitees join at `/join`. Engine `team.py`; tests `test_effy_team.py`, `Team.test.jsx`, `Join.test.jsx`, `e2e-film/team.spec.js`.
+
 ## 1. What it does
 Manage the operational backbone: which external accounts are connected (and healthy), who's on the team and what they can do, the subscription/usage, and white-label + security settings.
 

@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { ArrowRight, MailCheck } from 'lucide-react';
 import { useAppAuth } from '../app/context/AppAuth';
 
 export default function Login() {
   const { login, register, resendPublic } = useAppAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
+  const [params] = useSearchParams();
+  // Only an invite link may be the place to return to after signing in.
+  const next = (params.get('next') || '').startsWith('/join?') ? params.get('next') : '';
+  const [email, setEmail] = useState(params.get('email') || '');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -18,7 +21,7 @@ export default function Login() {
     setError(''); setBusy(true);
     const r = await login(email, password);
     setBusy(false);
-    if (r.ok) navigate('/app');
+    if (r.ok) navigate(next || '/app');
     else if (r.needsVerification) setVerify({ email: r.email });
     else setError(r.message);
   };
@@ -82,7 +85,7 @@ export default function Login() {
             <span className="grid place-items-center w-8 h-8 rounded-[9px] bg-coral text-white">✦</span> EffySocial
           </Link>
           <h1 className="text-2xl font-extrabold tracking-tight">Welcome back</h1>
-          <p className="text-ink-soft text-sm mt-1 mb-7">Log in to continue to your workspace.</p>
+          <p className="text-ink-soft text-sm mt-1 mb-7">{next ? 'Log in to accept your invite.' : 'Log in to continue to your workspace.'}</p>
 
           {error && <div className="mb-4 text-sm rounded-lg bg-error-soft text-error px-3.5 py-2.5">{error}</div>}
 
