@@ -137,9 +137,23 @@ export default function FilmMaker() {
   const scenes = film?.scenes || [];
   const d = film?.direction || {};
 
+  // When an action last put the film the engine returned into the cache.
+  const lastPut = useRef(0);
+  const putFilm = (f) => { lastPut.current = Date.now(); qc.setQueryData(['film', id], f); };
   const patch = useMutation({
     mutationFn: (payload) => effyApi.updateFilm(id, payload),
-    onSuccess: (f) => qc.setQueryData(['film', id], f),
+    onMutate: () => ({ startedAt: Date.now() }),
+    onSuccess: (f, payload, context) => {
+      if (lastPut.current >= context.startedAt) {
+        // An autosave (the brief on blur, the stage) answered after an action that changed
+        // more — Draft the script, say. Its copy of the film is older: keep what it saved
+        // and fetch the rest afresh.
+        qc.setQueryData(['film', id], (old) => (old ? { ...old, ...Object.fromEntries(Object.keys(payload).map((key) => [key, f[key]])) } : f));
+        qc.invalidateQueries({ queryKey: ['film', id] });
+      } else {
+        qc.setQueryData(['film', id], f);
+      }
+    },
   });
 
   const goStage = (n) => {
@@ -202,7 +216,7 @@ export default function FilmMaker() {
   };
   const signoffs = film.signoffs || { master: null, masterApproved: false, cutdowns: {}, history: [] };
   const signOff = (payload, label) => run(label, async () => {
-    qc.setQueryData(['film', id], await effyApi.filmSignoff(id, payload));
+    putFilm(await effyApi.filmSignoff(id, payload));
   });
   const deliverableLabel = (h) => {
     if (h.stage === 'master') return 'Master';
@@ -329,7 +343,7 @@ export default function FilmMaker() {
                       // Options are rebuilt from the full asset set after every upload.
                       try {
                         const fu = await effyApi.filmDirectionOptions(id);
-                        qc.setQueryData(['film', id], fu);
+                        putFilm(fu);
                       } catch { refetch(); }
                     });
                   }} />
@@ -343,7 +357,7 @@ export default function FilmMaker() {
                   <Btn kind="quiet" disabled={busy === 'opts'} style={{ padding: '5px 10px', fontSize: 12 }}
                     onClick={() => run('opts', async () => {
                       const fu = await effyApi.filmDirectionOptions(id);
-                      qc.setQueryData(['film', id], fu);
+                      putFilm(fu);
                     })}>
                     {busy === 'opts' ? <RefreshCw size={13} className="animate-spin" /> : <Sparkles size={13} />}
                     {d.options ? 'Rebuild options from assets' : 'Build options from assets'}
@@ -475,7 +489,7 @@ export default function FilmMaker() {
                   // request, and the engine would draft from the previous brief.
                   const brief = briefRef.current?.value ?? film.brief;
                   const f = await effyApi.filmScript(id, { brief, scenes: sceneCount || film.sceneCount || 4, sceneSeconds: sceneSecs });
-                  qc.setQueryData(['film', id], f);
+                  putFilm(f);
                 })}>
                   {busy === 'script' ? <RefreshCw size={15} className="animate-spin" /> : <Sparkles size={15} />}
                   {scenes.length ? 'Re-draft script' : 'Draft the script'}
@@ -503,7 +517,7 @@ export default function FilmMaker() {
                       <Btn disabled={busy === 'import' || pasteText.trim().length < 10}
                         onClick={() => run('import', async () => {
                           const f = await effyApi.filmScriptImport(id, { text: pasteText, sceneSeconds: sceneSecs });
-                          qc.setQueryData(['film', id], f);
+                          putFilm(f);
                           setShowPaste(false); setPasteText('');
                         })}>
                         {busy === 'import' ? <RefreshCw size={15} className="animate-spin" /> : <Sparkles size={15} />} Import script
@@ -770,7 +784,7 @@ export default function FilmMaker() {
               </select>
               <Btn disabled={busy === 'vo' || !scenes.length} onClick={() => run('vo', async () => {
                 const r = await effyApi.filmVo(id, { voice: film.voice });
-                qc.setQueryData(['film', id], r.film);
+                putFilm(r.film);
                 setVoEdits({});
                 const msgs = [];
                 if (r.overruns?.length) msgs.push(`Scene ${r.overruns.map((o) => o.idx + 1).join(', ')} runs LONG — shorten the line or it crowds the next beat.`);
@@ -805,7 +819,7 @@ export default function FilmMaker() {
                   <Btn kind="quiet" style={{ padding: '5px 10px', fontSize: 12 }} disabled={!!busy}
                     onClick={() => run('adopt', async () => {
                       const f = await effyApi.filmVoiceAdopt(id, { voiceId: v.voiceId, ownerId: v.ownerId, name: v.name });
-                      qc.setQueryData(['film', id], f);
+                      putFilm(f);
                       setNotice({ kind: 'warn', text: `${v.name} is now this film's narrator — regenerate the lines below.` });
                     })}>
                     Use
@@ -862,7 +876,7 @@ export default function FilmMaker() {
               </div>
               <Btn disabled={!cut.canAssemble || busy === 'asm'} onClick={() => run('asm', async () => {
                 const f = await effyApi.filmAssemble(id);
-                qc.setQueryData(['film', id], f);
+                putFilm(f);
               })}>
                 {busy === 'asm' ? <RefreshCw size={15} className="animate-spin" /> : <Layers size={15} />}
                 {master ? 'Re-assemble' : 'Assemble the film'}
@@ -905,7 +919,7 @@ export default function FilmMaker() {
                       placeholder="What needs to change?" style={{ ...inputStyle, flex: 1, minWidth: 160, fontSize: 12, padding: '6px 10px' }} />
                     <Btn kind="quiet" disabled={!changeNote.trim() || !!busy} style={{ padding: '6px 12px', fontSize: 12.5 }}
                       onClick={() => run('mchg', async () => {
-                        qc.setQueryData(['film', id], await effyApi.filmSignoff(id, { stage: 'master', decision: 'changes_requested', note: changeNote }));
+                        putFilm(await effyApi.filmSignoff(id, { stage: 'master', decision: 'changes_requested', note: changeNote }));
                         setChangeNote('');
                       })}>
                       Request changes
@@ -965,7 +979,7 @@ export default function FilmMaker() {
               <>
                 <Btn disabled={busy === 'exp' || cut.masterStale || !signoffs.masterApproved} onClick={() => run('exp', async () => {
                   const f = await effyApi.filmExports(id);
-                  qc.setQueryData(['film', id], f);
+                  putFilm(f);
                 })} style={{ marginBottom: 16 }}>
                   {busy === 'exp' ? <RefreshCw size={15} className="animate-spin" /> : <Send size={15} />}
                   {film.status === 'delivered' ? 'Rebuild exports' : 'Build exports & mark delivered'}
@@ -1040,7 +1054,7 @@ export default function FilmMaker() {
                       return name ? { name, shop: shop || '', city: city || '' } : null;
                     }).filter(Boolean);
                     const r = await effyApi.filmPersonalize(id, dealers);
-                    qc.setQueryData(['film', id], r.film);
+                    putFilm(r.film);
                   })}>
                     {busy === 'pers' ? <RefreshCw size={14} className="animate-spin" /> : <Layers size={14} />}
                     Build dealer versions
