@@ -324,6 +324,14 @@ export const effyApi = {
     http(`/posts/${id}/comment`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) }),
   schedulePost: (id, payload = {}) =>
     http(`/posts/${id}/schedule`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
+  unschedulePost: (id) => http(`/posts/${id}/unschedule`, { method: 'POST' }),
+  updatePost: (id, payload) =>
+    http(`/posts/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.post),
+  bulkApprove: (workspaceId, ids) =>
+    http('/posts/bulk-approve', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId, ids }) }),
+  fillGaps: (workspaceId, from, to) =>
+    http('/posts/fill-gaps', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId, from, to }) }),
+  postInsights: (id) => http(`/posts/${id}/insights`, { method: 'POST' }),
 
   // Engage
   listConversations: (workspaceId) => http(`/conversations?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.conversations),

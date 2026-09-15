@@ -7,6 +7,7 @@ export const CHANNELS = {
   linkedin: { label: 'LinkedIn', color: '#0A66C2' },
   youtube: { label: 'YouTube', color: '#FF0000' },
   twitter: { label: 'X', color: '#0f1419' },
+  whatsapp: { label: 'WhatsApp', color: '#25D366' },
 };
 
 export const POST_STATUS = {

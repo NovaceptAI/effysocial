@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Rocket, Check, Circle, Wand2, Globe, FileInput, Megaphone, ArrowRight, ArrowLeft, Loader2, Sparkles } from 'lucide-react';
 import { useWorkspace, inr } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
+import { usePosts } from '../api/hooks';
 import { Card, PageHeader, Button, Badge, EmptyState } from '../../ui';
 import { cn } from '../../lib/cn';
 
@@ -12,6 +13,12 @@ const OBJECTIVES = ['Lead generation', 'WhatsApp conversations', 'Website traffi
 export default function CampaignLaunch() {
   const { workspace } = useWorkspace();
   const navigate = useNavigate();
+  // Published → Create ad: the published post becomes the campaign's creative.
+  const [params] = useSearchParams();
+  const sourceId = Number(params.get('post')) || null;
+  const { data: posts = [] } = usePosts(sourceId ? workspace : null);
+  const source = sourceId ? posts.find((p) => p.id === sourceId) : null;
+  const [linkError, setLinkError] = useState('');
   const [step, setStep] = useState(1);
   const [campaign, setCampaign] = useState(null);
   const [busy, setBusy] = useState('');
@@ -21,6 +28,12 @@ export default function CampaignLaunch() {
   const [budget, setBudget] = useState(40000);
   const [pillar, setPillar] = useState('');
   const [channels, setChannels] = useState([]);
+  useEffect(() => {
+    if (!source) return;
+    setName((n) => n || `${source.title} — ad`.slice(0, 200));
+    setObjective('Awareness');
+    setChannels((c) => (c.length ? c : [source.channel]));
+  }, [source?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   // brand-brain suggestions
   const [suggestions, setSuggestions] = useState([]);
   const [suggBusy, setSuggBusy] = useState(false);
@@ -57,6 +70,10 @@ export default function CampaignLaunch() {
         ? await effyApi.updateCampaign(campaign.id, payload)
         : await effyApi.createCampaign(payload);
       setCampaign(c);
+      if (source && source.campaignId !== c.id) {
+        try { await effyApi.updatePost(source.id, { campaignId: c.id }); }
+        catch (e) { setLinkError(`The campaign is saved, but the post couldn’t be attached: ${e.message}`); }
+      }
       setStep(2);
     } finally { setBusy(''); }
   };
@@ -94,6 +111,21 @@ export default function CampaignLaunch() {
         title="Launch a Campaign"
         subtitle="One guided flow: strategy → content → landing + form → launch. Everything links under one campaign."
       />
+
+      {source && (
+        <Card className="p-3 mb-4 flex items-center gap-3">
+          <div className="w-14 h-14 rounded-lg overflow-hidden bg-aurora shrink-0">
+            {source.mediaUrl && (source.mediaKind === 'video'
+              ? <video src={source.mediaUrl} muted preload="metadata" className="w-full h-full object-cover" aria-label="Post video" />
+              : <img src={source.mediaUrl} alt="" className="w-full h-full object-cover" />)}
+          </div>
+          <div className="min-w-0">
+            <div className="text-xs font-bold uppercase tracking-wide text-ink-faint">Creating an ad from a post</div>
+            <div className="text-sm font-semibold text-ink truncate">{source.title}</div>
+          </div>
+        </Card>
+      )}
+      {linkError && <div role="alert" className="mb-4 text-sm rounded-xl bg-error-soft text-error px-4 py-2.5">{linkError}</div>}
 
       {/* stepper */}
       <div className="flex items-center gap-2 mb-6">
@@ -165,6 +197,9 @@ export default function CampaignLaunch() {
         <Card className="p-6">
           <h3 className="font-display text-lg font-semibold tracking-tight mb-1 flex items-center gap-2"><Wand2 className="w-5 h-5 text-coral-ink" /> Create content</h3>
           <p className="text-sm text-ink-soft mb-4">Generate on-brand posts (grounded in trends + your Brand Brain) or add a placeholder to fill later. All tagged to <strong>{campaign.name}</strong>.</p>
+          {source && (
+            <p role="status" className="mb-4 flex items-center gap-2 text-sm text-success"><Check className="w-4 h-4" /> “{source.title}” is this campaign’s creative.</p>
+          )}
           <div className="grid sm:grid-cols-2 gap-3 mb-5">
             <button onClick={generateInStudio} className="text-left p-4 rounded-xl border border-line hover:border-coral bg-card-sheen transition">
               <Sparkles className="w-5 h-5 text-coral-ink mb-2" />
@@ -222,6 +257,11 @@ export default function CampaignLaunch() {
               </div>
             ))}
           </div>
+          {source && (
+            <div className="text-xs text-ink-soft bg-info-soft/60 rounded-lg px-3 py-2 mb-4">
+              The ad itself runs on Meta once Meta Ads is connected in <Link to="/app/integrations" className="font-bold underline">Integrations</Link>. Until then this campaign keeps “{source.title}” as its creative.
+            </div>
+          )}
           {!assembly?.ready && (
             <div className="text-xs text-ink-soft bg-warning-soft/60 rounded-lg px-3 py-2 mb-4">
               You can launch now and complete the rest later — or go back and finish the checklist.

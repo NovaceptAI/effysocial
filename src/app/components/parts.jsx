@@ -2,7 +2,7 @@ import React from 'react';
 import { CHANNELS, POST_STATUS } from '../constants';
 import { Badge } from '../../ui';
 
-const LETTER = { instagram: 'Ig', facebook: 'f', linkedin: 'in', youtube: 'Yt', twitter: 'X' };
+const LETTER = { instagram: 'Ig', facebook: 'f', linkedin: 'in', youtube: 'Yt', twitter: 'X', whatsapp: 'Wa' };
 
 // Brand icons were removed from lucide-react (trademark) — we render a small
 // colored letter badge per channel instead. Consistent + dependency-free.

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import {
   Sparkles, Smartphone, Monitor, RefreshCw, Image as ImageIcon,
   Check, FileText, Film, Images, Square, MessageCircle, Video, Briefcase,
@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import Storyboard from '../components/Storyboard';
 import ShareRow from '../components/ShareRow';
+import PostDialog from '../components/PostDialog';
 import { withHashtags } from '../publishing';
 import AvatarStudio from '../components/AvatarStudio';
 import DealerAvatarStudio from '../components/DealerAvatarStudio';
@@ -92,7 +93,7 @@ function SocialPlatformIcon({ platform, className = 'w-4 h-4' }) {
 }
 
 /* ───────────────────────── Format chooser ───────────────────────── */
-function FormatChooser({ onPick }) {
+function FormatChooser({ onPick, repurposing }) {
   const [filter, setFilter] = useState('Popular');
   const [q, setQ] = useState('');
   const shown = FORMATS.filter((f) =>
@@ -101,8 +102,10 @@ function FormatChooser({ onPick }) {
 
   return (
     <div className="max-w-5xl mx-auto">
-      <h1 className="font-display text-[2.2rem] font-semibold tracking-tightest mb-1.5">Create a post</h1>
-      <p className="text-ink-soft mb-6">Pick a format to start — you can change it later.</p>
+      <h1 className="font-display text-[2.2rem] font-semibold tracking-tightest mb-1.5">{repurposing ? 'Repurpose a post' : 'Create a post'}</h1>
+      <p className="text-ink-soft mb-6">
+        {repurposing ? 'Pick the format to turn it into. Its caption is already in your brief.' : 'Pick a format to start — you can change it later.'}
+      </p>
 
       <div className="relative mb-5">
         <Search className="w-4 h-4 text-ink-faint absolute left-4 top-1/2 -translate-y-1/2" />
@@ -161,14 +164,15 @@ const TOOLS = [
 
 export default function AIStudio() {
   const { workspace } = useWorkspace();
-  const navigate = useNavigate();
   const [params] = useSearchParams();
 
   // Deep-linked from a playbook, workflow or Media Library? Skip the chooser.
   const reusedImage = params.get('image') || '';
   const reusedVideo = params.get('video') || '';
   const campaignId = params.get('campaign') ? Number(params.get('campaign')) : null;
-  const seeded = params.get('trend') || params.get('angle') || params.get('topic') || reusedImage || reusedVideo || campaignId;
+  // Repurposing a published post starts at the format chooser, with its caption as the brief.
+  const repurposing = !!params.get('repurpose');
+  const seeded = !repurposing && (params.get('trend') || params.get('angle') || params.get('topic') || reusedImage || reusedVideo || campaignId);
   // Opened from Home's recent sessions: go straight into that Product Shot project.
   const productShotId = Number(params.get('productShot')) || null;
   const [format, setFormat] = useState(productShotId ? FORMATS.find((f) => f.product)
@@ -226,6 +230,7 @@ export default function AIStudio() {
   const [varSent, setVarSent] = useState(false);
   const [refining, setRefining] = useState('');  // which tool is running
   const captionRef = useRef(null);
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   const { data: ctx } = useQuery({
     queryKey: ['studio-context', workspace?.id],
@@ -410,7 +415,7 @@ export default function AIStudio() {
   };
 
   if (!format) {
-    return <FormatChooser onPick={(f) => { setFormat(f); setPanel('brief'); }} />;
+    return <FormatChooser repurposing={repurposing} onPick={(f) => { setFormat(f); setPanel('brief'); }} />;
   }
 
   if (format.avatar) {
@@ -455,7 +460,7 @@ export default function AIStudio() {
         <select value={lang} onChange={(e) => setLang(e.target.value)} className="rounded-lg bg-surface2 px-3 py-2 text-sm font-medium">
           {LANGS.map((l) => <option key={l}>{l}</option>)}
         </select>
-        <Button variant="secondary" disabled={!result} onClick={() => navigate('/app/calendar')}><CalendarPlus className="w-4 h-4" /> Calendar</Button>
+        <Button variant="secondary" disabled={!result} onClick={() => setCalendarOpen(true)}><CalendarPlus className="w-4 h-4" /> Add to calendar</Button>
         <Button disabled={!result || sent || sending} onClick={sendToApproval}>
           {sent ? <><Check className="w-4 h-4" /> Sent</> : sending ? <><RefreshCw className="w-4 h-4 animate-spin" /> Sending…</> : <><Send className="w-4 h-4" /> Send to approval</>}
         </Button>
@@ -852,6 +857,13 @@ export default function AIStudio() {
           </div>
         )}
       </div>
+      <PostDialog open={calendarOpen} onClose={() => setCalendarOpen(false)} initial={result ? {
+        title: (result.hook || topic || format.label).slice(0, 200),
+        caption: withHashtags(result.caption, result.hashtags),
+        channel: format.platform,
+        type: { short: 'video', promo: 'post' }[format.id.split('_')[1]] || format.id.split('_')[1] || 'post',
+        mediaUrl: video || image || '', mediaKind: video ? 'video' : image ? 'image' : '',
+      } : null} />
     </div>
   );
 }

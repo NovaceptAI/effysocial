@@ -4,6 +4,7 @@ import { CHANNELS } from '../constants';
 import { usePosts } from '../api/hooks';
 import { Card, PageHeader, EmptyState } from '../../ui';
 import { ChannelIcon, PostStatus } from '../components/parts';
+import PostDialog from '../components/PostDialog';
 import { cn } from '../../lib/cn';
 
 export default function Scheduled() {
@@ -11,6 +12,7 @@ export default function Scheduled() {
   const { data: posts = [] } = usePosts(workspace);
   const all = posts.filter((p) => ['scheduled', 'approved', 'internal_review', 'client_review', 'draft'].includes(p.status));
   const [channel, setChannel] = useState('all');
+  const [open, setOpen] = useState(null);
   const items = all
     .filter((p) => channel === 'all' || p.channel === channel)
     .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
@@ -40,7 +42,10 @@ export default function Scheduled() {
               {items.map((p) => (
                 <tr key={p.id} className="border-b border-line/70 last:border-0 hover:bg-surface2/60">
                   <td className="px-4 py-3 w-8"><ChannelIcon channel={p.channel} /></td>
-                  <td className="px-4 py-3"><span className="font-semibold text-ink">{p.title}</span><span className="block text-xs text-ink-faint capitalize">{p.type}</span></td>
+                  <td className="px-4 py-3">
+                    <button onClick={() => setOpen(p)} className="text-left font-semibold text-ink hover:text-coral-ink">{p.title}</button>
+                    <span className="block text-xs text-ink-faint capitalize">{p.type}</span>
+                  </td>
                   <td className="px-4 py-3 text-ink-soft tabular-nums whitespace-nowrap">{p.date} · {p.time}</td>
                   <td className="px-4 py-3 text-ink-soft">{p.assignee}</td>
                   <td className="px-4 py-3"><PostStatus status={p.status} /></td>
@@ -50,6 +55,7 @@ export default function Scheduled() {
           </table>
         </Card>
       ) : <EmptyState icon="🗓️" title="Nothing scheduled" body="Approve content and schedule it to see it here." />}
+      <PostDialog open={!!open} post={open} onClose={() => setOpen(null)} />
     </div>
   );
 }

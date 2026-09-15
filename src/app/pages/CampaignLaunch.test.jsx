@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import CampaignLaunch from './CampaignLaunch';
 import { mockApi, bootstrapFixture } from '../../test/mockApi';
 import { renderApp } from '../../test/render';
+import actions from '../../test/fixtures/postActions';
 
 const campaign = (overrides = {}) => ({ id: 42, name: 'Monsoon Checkup Drive', objective: 'Lead generation', budget: 40000, ...overrides });
 const assembly = { steps: [], counts: {} };
@@ -73,3 +74,28 @@ describe('Campaign Launch — step 1 (CAMP-001, CAMP-002, CAMP-003)', () => {
     expect(api.unhandled).toEqual([]);
   });
 });
+
+describe('Campaign Launch — Create ad from a published post (PUBL-018)', () => {
+  it('starts from the post and attaches it to the new campaign', async () => {
+    const user = userEvent.setup();
+    const live = actions.publishedNow.post;
+    const api = mockApi({
+      'GET /bootstrap': actions.bootstrap,
+      'GET /posts': actions.posts,
+      'POST /campaigns': actions.campaign,
+      [`PATCH /posts/${live.id}`]: actions.postLinked,
+      [`GET /campaigns/${actions.campaign.campaign.id}/assembly`]: { status: 'ok', checklist: [], counts: {} },
+    });
+    renderApp(<CampaignLaunch />, { route: `/app/launch?post=${live.id}` });
+    expect(await screen.findByText('Creating an ad from a post')).toBeInTheDocument();
+    const name = screen.getByPlaceholderText('e.g. Monsoon Checkup Drive');
+    await waitFor(() => expect(name).toHaveValue(`${live.title} — ad`));
+    expect(screen.getByRole('combobox')).toHaveValue('Awareness');
+    await user.click(screen.getByRole('button', { name: /create & continue/i }));
+
+    expect(await screen.findByText(`“${live.title}” is this campaign’s creative.`)).toBeInTheDocument();
+    expect(api.callsTo('POST /campaigns')[0].body).toMatchObject({ name: `${live.title} — ad`, objective: 'Awareness', channels: ['instagram'] });
+    expect(api.callsTo(`PATCH /posts/${live.id}`)[0].body).toEqual({ campaignId: actions.campaign.campaign.id });
+  });
+});
+

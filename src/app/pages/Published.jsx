@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { RefreshCw, Repeat2, Target, FileBarChart, AlertTriangle, ExternalLink, Loader2 } from 'lucide-react';
 import { useWorkspace, num } from '../context/WorkspaceContext';
 import { usePosts } from '../api/hooks';
 import { effyApi } from '../api/effyApi';
 import { PUBLISH_CHECK_MS } from '../publishing';
+import { formatInZone, orgZone } from '../timezone';
+import ReportDialog from '../components/ReportDialog';
 import { Card, PageHeader, Button, EmptyState } from '../../ui';
 import { ChannelIcon, PostStatus } from '../components/parts';
 
@@ -18,15 +20,19 @@ function byAttention(a, b) {
     || b.id - a.id;
 }
 
-function when(post) {
+function when(post, zone) {
   if (!post.publishedAt) return [post.date, post.time].filter(Boolean).join(' · ');
-  return new Date(post.publishedAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+  return formatInZone(post.publishedAt, zone);
 }
 
+// The brief AI Studio starts from when a post is repurposed: its caption, or its title.
+const repurposeBrief = (post) => (post.caption || post.title).slice(0, 600);
+
 export default function Published() {
-  const { workspace, canWrite } = useWorkspace();
+  const { workspace, org, canWrite } = useWorkspace();
   const queryClient = useQueryClient();
   const { data: posts = [] } = usePosts(workspace);
+  const [reportId, setReportId] = useState(null);
   const items = posts.filter((p) => ORDER[p.status] !== undefined).sort(byAttention);
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['posts', workspace?.id] });
 
@@ -36,13 +42,15 @@ export default function Published() {
     <div>
       <PageHeader title="Published" subtitle="Live content and how it's performing." />
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {items.map((p) => <PublishedCard key={p.id} post={p} canWrite={canWrite} onChange={refresh} />)}
+        {items.map((p) => <PublishedCard key={p.id} post={p} zone={orgZone(org)} canWrite={canWrite} onChange={refresh} onReport={() => setReportId(p.id)} />)}
       </div>
+      <ReportDialog post={posts.find((p) => p.id === reportId) || null} onClose={() => setReportId(null)} onChange={refresh} />
     </div>
   );
 }
 
-function PublishedCard({ post: p, canWrite, onChange }) {
+function PublishedCard({ post: p, zone, canWrite, onChange, onReport }) {
+  const navigate = useNavigate();
   const [busy, setBusy] = useState('');   // '' | 'retry' | 'check'
   const [note, setNote] = useState('');
 
@@ -91,7 +99,7 @@ function PublishedCard({ post: p, canWrite, onChange }) {
           <h3 className="font-bold text-ink text-sm truncate">{p.title}</h3>
           <PostStatus status={p.status} />
         </div>
-        <p className="text-xs text-ink-faint mb-3">{p.status === 'published' ? 'Published ' : ''}{when(p)} · {p.type}</p>
+        <p className="text-xs text-ink-faint mb-3">{p.status === 'published' ? 'Published ' : ''}{when(p, zone)} · {p.type}</p>
 
         {p.status === 'failed' && (
           <div role="alert" className="p-2.5 rounded-lg bg-error-soft text-error text-xs flex items-start gap-2 mb-3">
@@ -107,6 +115,7 @@ function PublishedCard({ post: p, canWrite, onChange }) {
             <Loader2 className="w-4 h-4 shrink-0 animate-spin" /> Instagram is processing this {isVideo ? 'video' : 'image'}.
           </div>
         )}
+        {p.status === 'published' && p.error && <p className="text-xs text-warning mb-3">{p.error}</p>}
         {p.status === 'published' && (p.metrics ? (
           <div className="grid grid-cols-3 gap-2 mb-3 text-center">
             <div><div className="text-sm font-extrabold tabular-nums">{num(p.metrics.reach)}</div><div className="text-[0.65rem] text-ink-faint">Reach</div></div>
@@ -114,7 +123,7 @@ function PublishedCard({ post: p, canWrite, onChange }) {
             <div><div className="text-sm font-extrabold tabular-nums">{num(p.metrics.likes)}</div><div className="text-[0.65rem] text-ink-faint">Likes</div></div>
           </div>
         ) : (
-          <p className="text-xs text-ink-soft mb-3">Reach and likes aren’t synced yet. Instagram shows them on the post.</p>
+          <p className="text-xs text-ink-soft mb-3">{p.externalId && p.channel === 'instagram' ? 'Open Report for reach, likes and saves from Instagram.' : 'No numbers for this post yet.'}</p>
         ))}
         {note && <p role="alert" className="text-xs text-error mb-2">{note}</p>}
 
@@ -137,9 +146,16 @@ function PublishedCard({ post: p, canWrite, onChange }) {
                   <ExternalLink className="w-3.5 h-3.5" /> View on Instagram
                 </a>
               )}
-              <Button size="sm" variant="ghost"><Repeat2 className="w-3.5 h-3.5" /> Repurpose</Button>
-              <Button size="sm" variant="ghost"><Target className="w-3.5 h-3.5" /> Create ad</Button>
-              <Button size="sm" variant="ghost"><FileBarChart className="w-3.5 h-3.5" /> Report</Button>
+              <Button size="sm" variant="ghost" disabled={!canWrite}
+                onClick={() => navigate(`/app/studio?${new URLSearchParams({ repurpose: String(p.id), topic: repurposeBrief(p) })}`)}>
+                <Repeat2 className="w-3.5 h-3.5" /> Repurpose
+              </Button>
+              <Button size="sm" variant="ghost" disabled={!canWrite} onClick={() => navigate(`/app/launch?post=${p.id}`)}>
+                <Target className="w-3.5 h-3.5" /> Create ad
+              </Button>
+              {p.channel === 'instagram' && p.externalId && (
+                <Button size="sm" variant="ghost" onClick={onReport}><FileBarChart className="w-3.5 h-3.5" /> Report</Button>
+              )}
             </>
           )}
         </div>
