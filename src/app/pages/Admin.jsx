@@ -136,6 +136,43 @@ function EngineSwitch() {
   );
 }
 
+// The minute scheduler (launch plan 4.2): is it running, and how did each job's last run go.
+function ago(iso) {
+  const seconds = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+  if (seconds < 90) return `${seconds} s ago`;
+  if (seconds < 90 * 60) return `${Math.round(seconds / 60)} min ago`;
+  return new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+}
+
+function Scheduler() {
+  const { data } = useQuery({ queryKey: ['admin-scheduler'], queryFn: () => effyApi.adminScheduler(), retry: false, refetchInterval: 30_000 });
+  if (!data) return null;
+  return (
+    <Card className="p-5 mb-6">
+      <section aria-label="Scheduler">
+        <div className="flex items-center justify-between gap-3 mb-1">
+          <h3 className="font-bold text-ink">Scheduler</h3>
+          <Badge tone={data.running ? 'success' : 'error'}>{data.running ? 'Running' : 'Not running'}</Badge>
+        </div>
+        <p className="text-xs text-ink-faint mb-3">
+          {data.lastRunAt ? `Last run ${ago(data.lastRunAt)}. ` : 'It hasn’t run yet. '}
+          Runs every minute: publishes scheduled posts when they’re due and finishes uploads Instagram is still processing.
+        </p>
+        <ul className="divide-y divide-line/60">
+          {data.jobs.map((j) => (
+            <li key={j.name} className="py-2.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm">
+              <span className="font-semibold text-ink">{j.label}</span>
+              <span className={cn('text-xs', j.ok === false ? 'text-error' : 'text-ink-faint')}>
+                {j.ok === false ? `Last run failed: ${j.error}` : `${j.runs.toLocaleString('en-IN')} runs · ${j.failures} failed`}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </Card>
+  );
+}
+
 export default function Admin() {
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['admin-usage'],
@@ -167,6 +204,7 @@ export default function Admin() {
       />
 
       <OrgPlans />
+      <Scheduler />
       <Interest />
       <EngineSwitch />
 

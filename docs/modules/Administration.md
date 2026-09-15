@@ -50,3 +50,5 @@ Connected / partial (some scopes) / expired (reconnect) / available (connect) / 
 ## 10. Open questions / TODO
 - Billing (Razorpay/Stripe) + AI credit metering.
 - Settings: white-label, 2FA, audit log, density modes.
+
+**Scheduler (16 Sep 2026, launch plan 4.2):** Admin → Scheduler shows whether the minute scheduler is running (a run finished in the last five minutes), when it last ran, and for each job — publishing due posts, finishing processing uploads — its run and failure counts or the last error. On the server: `scripts/effy_phase.sh scheduler` installs or refreshes the systemd timer and prints the same status; `journalctl -u effy-scheduler` has one line per run that did something.

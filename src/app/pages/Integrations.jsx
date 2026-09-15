@@ -268,7 +268,7 @@ export default function Integrations() {
               <h3 className="font-extrabold text-ink flex items-center gap-2"><Check className="w-4 h-4 text-success" /> Post to Instagram</h3>
               <button onClick={() => setTestPost(null)} className="text-ink-faint hover:text-ink"><X className="w-5 h-5" /></button>
             </div>
-            <p className="text-xs text-ink-faint mb-3">Instagram publishes from a public image URL (JPEG, https).</p>
+            <p className="text-xs text-ink-faint mb-3">Instagram fetches the image from a public https link (JPEG, PNG or WebP). The post appears on Published.</p>
             <input value={testPost.imageUrl} onChange={(e) => setTestPost({ ...testPost, imageUrl: e.target.value, result: null })} aria-label="Image URL"
               placeholder="https://…/image.jpg" className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm mb-2" />
             <textarea rows={3} value={testPost.caption} onChange={(e) => setTestPost({ ...testPost, caption: e.target.value, result: null })} aria-label="Caption"

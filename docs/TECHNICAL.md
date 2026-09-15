@@ -161,6 +161,20 @@ provider swap, not an app change. First live use: `get_ads_provider(ws)` in
   container's PUBLISHED state instead of publishing again. Graph API v25.0.
   Dev-mode token connect for one owned IG Business account. LinkedIn OAuth + Meta
   app creds are live.
+- **Minute scheduler** (`scheduler.py`, `scripts/effy_scheduler.py`, launch plan 4.2) —
+  a systemd timer (`deploy/systemd/effy-scheduler.{timer,service}`, installed and
+  refreshed by `effy_phase.sh deploy`, paused while code and migrations change)
+  starts one run a minute. A run takes a Redis lock (`effy:scheduler`, 15-minute
+  expiry, released only by its holder), or a Postgres advisory lock while Redis
+  is down, then runs each `@job` in turn with a 40-second budget for starting
+  new work; one job raising never stops the others, and each run is recorded in
+  `effy_scheduler_jobs` (Admin → Scheduler). Jobs today: `publish-due-posts`
+  (scheduled posts due in their organisation's timezone; more than 12 hours late
+  or unpublishable → failed with the reason) and `follow-publishing-posts`
+  (processing uploads, left a minute to whoever started them). `send` holds the
+  post's row lock while it finishes, so a check arriving meanwhile can't publish
+  the same upload twice (verified on Postgres). Rules (5.4) and follow-up delays
+  (5.5) register as jobs too.
 - Full contract: [Integrations-Framework.md](modules/Integrations-Framework.md).
 
 ---
