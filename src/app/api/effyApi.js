@@ -244,10 +244,11 @@ export const effyApi = {
   },
   productShotBuild: (id) => http(`/product-shots/${id}/build`, { method: 'POST' }).then((d) => d.shot),
 
+  // Publishing answers { status: ok|pending, post }; a failed publish is a 502 whose error carries the post.
   publishReelStart: (payload) =>
     http('/publish/instagram-reel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
-  publishReelFinish: (payload) =>
-    http('/publish/instagram-reel/finish', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
+  publishPost: (id) => http(`/posts/${id}/publish`, { method: 'POST' }),
+  checkPublish: (id) => http(`/posts/${id}/publish/check`, { method: 'POST' }),
   storyPlan: (payload) =>
     http('/studio/story/plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
   storyScene: (payload) =>
@@ -441,8 +442,8 @@ export const effyApi = {
     http('/gbp/profile/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId }) }),
   connectInstagramToken: (workspaceId, token) =>
     http('/integrations/instagram/connect-token', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId, token }) }),
-  publishInstagram: (workspaceId, imageUrl, caption) =>
-    http('/publish/instagram', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId, imageUrl, caption }) }),
+  publishInstagram: (workspaceId, imageUrl, caption, extra = {}) =>
+    http('/publish/instagram', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId, imageUrl, caption, ...extra }) }),
 
   // Convert — forms
   listForms: (workspaceId) => http(`/forms?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.forms),

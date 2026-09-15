@@ -16,6 +16,7 @@ export const POST_STATUS = {
   client_review: { label: 'Client review', tone: 'warning' },
   approved: { label: 'Approved', tone: 'success' },
   scheduled: { label: 'Scheduled', tone: 'info' },
+  publishing: { label: 'Publishing', tone: 'info' },
   published: { label: 'Published', tone: 'success' },
   failed: { label: 'Failed', tone: 'error' },
 };

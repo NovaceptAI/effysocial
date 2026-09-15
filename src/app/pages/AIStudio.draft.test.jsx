@@ -65,7 +65,8 @@ describe('AI Studio — draft sent to approval', () => {
     await userEvent.click(sendButton());
 
     await waitFor(() => expect(api.callsTo('POST /studio/send-to-approval')).toHaveLength(1));
-    expect(api.callsTo('POST /studio/send-to-approval')[0].body).toMatchObject({ workspace: 'ws_1', caption: 'Monsoon check-ups: 25% off until Sunday.', hook: draft.hook });
+    // What gets posted: the edited caption with the draft's hashtags.
+    expect(api.callsTo('POST /studio/send-to-approval')[0].body).toMatchObject({ workspace: 'ws_1', caption: 'Monsoon check-ups: 25% off until Sunday.\n\n#smile', hook: draft.hook });
   });
 
   it('sends the caption typed for a video reused from Media Library', async () => {
@@ -76,6 +77,8 @@ describe('AI Studio — draft sent to approval', () => {
     await userEvent.click(sendButton());
 
     await waitFor(() => expect(api.callsTo('POST /studio/send-to-approval')).toHaveLength(1));
-    expect(api.callsTo('POST /studio/send-to-approval')[0].body.caption).toBe('Our clinic tour in 30 seconds.');
+    expect(api.callsTo('POST /studio/send-to-approval')[0].body).toMatchObject({
+      caption: 'Our clinic tour in 30 seconds.', mediaUrl: 'https://effysocial.effybiz.in/api/effy/media/vid_reuse0000000001.mp4',
+    });
   });
 });

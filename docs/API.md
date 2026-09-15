@@ -120,13 +120,19 @@ Agent image embeds use Gemini multi-image editing. Agent video outros reuse Effy
 | Method | Path | Auth | Body → Response |
 |---|---|---|---|
 | GET | `/api/effy/posts?workspace=ws_N` | 🔒🏢 | → `{posts:[...]}` |
-| POST | `/api/effy/posts` | 🔒🏢 | `{workspace, title, channel?, type?, status?, date?, time?, caption?, campaignId?}` → `{post}` |
+| POST | `/api/effy/posts` | 🔒🏢 | `{workspace, title, channel?, type?, status?, date?, time?, caption?, campaignId?, mediaUrl?}` → `{post}` · 400 for status publishing/published (only the publisher sets them) · `mediaUrl`: one of our signed media links (403 bad, 410 expired) or a public https link (400 otherwise) |
 | POST | `/api/effy/posts/:id/approve` | 🔒🏢 | advances draft→internal_review→client_review→approved · 400 past approved |
-| POST | `/api/effy/posts/:id/request-changes` | 🔒🏢 | `{comment}` → back to draft + comment appended |
+| POST | `/api/effy/posts/:id/request-changes` | 🔒🏢 | `{comment}` → back to draft + comment appended · 400 once publishing or published |
 | POST | `/api/effy/posts/:id/comment` | 🔒🏢 | `{text}` → comment appended |
 | POST | `/api/effy/posts/:id/schedule` | 🔒🏢 | `{date?, time?}` → scheduled (only from approved/failed; failed retry clears error) |
+| POST | `/api/effy/posts/:id/publish` | 🔒🏢 write | publish an approved, scheduled or failed post now (Retry) → 200 `{status:"ok", mediaId, permalink, post}` published · 200 `{status:"pending", creationId, post}` Instagram still processing · 502 `{message, post}` failed with Instagram's own message · 400 not publishable / no media / caption over Instagram's limits / channel without a publisher / no connection · 409 already publishing |
+| POST | `/api/effy/posts/:id/publish/check` | 🔒🏢 write | follow a post Instagram is processing → `{post}` as it now stands (published, publishing or failed) |
+| POST | `/api/effy/publish/instagram` | 🔒🏢 write | `{workspace, imageUrl, caption?, title?}` → creates the post and publishes it; answers as `/posts/:id/publish` plus `postId` · 400 `Connect an Instagram account first (Integrations).` / `A public image URL (https) is required by Instagram.` / caption limits |
+| POST | `/api/effy/publish/instagram-reel` | 🔒🏢 write | `{workspace, videoUrl, caption?, title?}` → creates the post and starts a Reel; usually `pending` → follow with `/posts/:id/publish/check` |
 
-**Post shape:** `{ id, workspaceId, campaignId?, title, channel, type, status, date, time, assignee, caption, metrics?, comments[], error }` · statuses: idea/draft/internal_review/client_review/approved/scheduled/published/failed.
+**Post shape:** `{ id, workspaceId, campaignId?, title, channel, type, status, date, time, assignee, caption, metrics?, comments[], error, mediaUrl, mediaKind, permalink, externalId, attempts, publishedAt }` · statuses: idea/draft/internal_review/client_review/approved/scheduled/publishing/published/failed. `mediaUrl` is re-signed on every response; `permalink` is Instagram's link to the live post; `error` is Instagram's message when it refused (a token error also marks the connection expired).
+
+**Instagram limits checked before sending:** captions up to 2,200 characters, 30 hashtags and 20 @ tags (`publisher.caption_problem`, mirrored in the web app's `publishing.js`).
 
 ## Engage  ([Engage-Inbox.md](modules/Engage-Inbox.md))
 | Method | Path | Auth | Body → Response |
@@ -262,7 +268,7 @@ The **integration-adapter pattern**: `get_ads_provider(workspace)` returns `Sand
 | GET | `/api/effy/strategy/competitors?workspace=ws_N` | 🔒🏢 | `{provider:"sample", competitors[{name,freq,platforms,engagement,sov,topPost,offers,you}]}` |
 | GET | `/api/effy/studio/context?workspace=ws_N` | 🔒🏢 | `{brand:{tone,approved,prohibited}, trends[], competitorAngles[]}` — powers the Studio context rail |
 | POST | `/api/effy/studio/generate` | 🔒🏢 write | now accepts optional `trend` / `angle` → woven into the grounded prompt, echoed in `cited[]` |
-| POST | `/api/effy/studio/send-to-approval` | 🔒🏢 write | `{workspace, caption, hook?, channel?, type?, campaignId?}` → creates `internal_review` post → `{postId}` |
+| POST | `/api/effy/studio/send-to-approval` | 🔒🏢 write | `{workspace, caption, hook?, channel?, type?, campaignId?, mediaUrl?}` → creates `internal_review` post (with the image or video to publish) → `{postId}` · `mediaUrl` checked as for `POST /posts` |
 
 **Interlink:** Trends/Competitors → Studio context rail → generation consumes the chosen trend/angle → Send-to-approval creates a review post. The **Content Sprint playbook** (`/app/playbooks`) chains these with context flowing via query params.
 

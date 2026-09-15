@@ -149,9 +149,18 @@ provider swap, not an app change. First live use: `get_ads_provider(ws)` in
   **Fernet-encrypted tokens at rest** (never serialized to the client).
   Providers are data in `PROVIDERS`; adding Meta/Google is config, not new flow.
   Redirect URI: `https://effysocial.effybiz.in/api/effy/integrations/<provider>/callback`.
-- **Instagram publishing** (`publisher.py`) — real Graph API two-step publish
-  (media container from a public image URL → publish); dev-mode token connect
-  for one owned IG Business account. LinkedIn OAuth + Meta app creds are live.
+- **Instagram publishing** (`publisher.py`, launch plan 4.1) — everything published
+  is an `EffyPost`: `send` creates Instagram's media container (image, or REELS
+  for video) from a public https link — our own media re-signed for a day —
+  `_finish` publishes it once the container is FINISHED (images wait a few
+  seconds; Reels are followed by `check`), then stores the media id and the real
+  permalink. Failures keep Instagram's own message on the post; Graph error 190
+  marks the connection expired. `claim` moves approved/scheduled/failed →
+  publishing in one UPDATE so a double click or the scheduler can't post twice,
+  `check` locks the row, and a lost media_publish answer is resolved by the
+  container's PUBLISHED state instead of publishing again. Graph API v25.0.
+  Dev-mode token connect for one owned IG Business account. LinkedIn OAuth + Meta
+  app creds are live.
 - Full contract: [Integrations-Framework.md](modules/Integrations-Framework.md).
 
 ---

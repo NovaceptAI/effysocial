@@ -48,3 +48,6 @@ Empty calendar (no content → create), gap warning, draft, in-review, changes-r
 - Drag-drop reschedule with conflict warning.
 - Bulk approval + compare-versions.
 - Instagram grid preview.
+
+## Publishing records its outcome (15 Sep 2026, G26)
+Publishing is real for Instagram and every attempt is a post. Studio's Share row publishes images (Instagram post formats) and videos (Reels); Integrations' *Test post* does the same; a post that is approved, scheduled or failed publishes with `POST /posts/:id/publish`. The post moves to **publishing** while Instagram processes the upload, then **published** with the live permalink, or **failed** with Instagram's own reason (not a guess). Published lists processing, failed and live posts: *Retry* publishes again and counts the attempt, *Check now* (and a five-minute auto-check) follows a processing upload, *View on Instagram* opens the post, and a failure caused by an expired connection links to Integrations. Captions over Instagram's limits (2,200 characters, 30 hashtags, 20 @ tags) are flagged before anything is sent. Studio's hashtags are added to the caption that is sent to approval or published, along with the image or video. Repurpose, Create ad and Report are still to come (4.3); scheduled posts publishing by themselves is 4.2.

@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Plug, AlertTriangle, Check, KeyRound, Loader2, X, FlaskConical, Building2 } from 'lucide-react';
+import { Plug, AlertTriangle, Check, KeyRound, Loader2, X, FlaskConical, Building2, ExternalLink } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
 import { useInvalidatingMutation } from '../api/hooks';
+import { followPublish, instagramCaptionProblem } from '../publishing';
 import { Card, PageHeader, Button, Badge } from '../../ui';
 import { cn } from '../../lib/cn';
 
@@ -26,6 +27,7 @@ const BANNER = {
 
 export default function Integrations() {
   const { workspace } = useWorkspace();
+  const queryClient = useQueryClient();
   const [params, setParams] = useSearchParams();
   const [setup, setSetup] = useState(null); // {provider, steps[]}
   const [busy, setBusy] = useState(null);
@@ -61,15 +63,24 @@ export default function Integrations() {
     }
   };
 
+  // A test post is a real post: it lands on Published with its outcome.
   const sendTestPost = async () => {
     setTestPost((p) => ({ ...p, busy: true, result: null }));
+    let result;
     try {
-      const r = await effyApi.publishInstagram(workspace.id, testPost.imageUrl.trim(), testPost.caption);
-      setTestPost((p) => ({ ...p, busy: false, result: { ok: true, ...r } }));
+      const r = await effyApi.publishInstagram(workspace.id, testPost.imageUrl.trim(), testPost.caption, { title: 'Instagram test post' });
+      const post = await followPublish(r.post, effyApi.checkPublish, { tries: 12 });
+      result = post?.status === 'published' ? { ok: true, permalink: post.permalink }
+        : post?.status === 'failed' ? { ok: false, message: post.error }
+          : { ok: true, pending: true };
     } catch (e) {
-      setTestPost((p) => ({ ...p, busy: false, result: { ok: false, message: e.message } }));
+      result = { ok: false, message: e.message };
     }
+    queryClient.invalidateQueries({ queryKey: ['posts', workspace.id] });
+    queryClient.invalidateQueries({ queryKey: ['integrations', workspace.id] });
+    setTestPost((p) => ({ ...p, busy: false, result }));
   };
+  const testCaptionProblem = testPost ? instagramCaptionProblem(testPost.caption) : '';
 
   // OAuth callback returns here with ?connected=<provider>&status=<...>
   const cbStatus = params.get('status');
@@ -125,7 +136,7 @@ export default function Integrations() {
                   const s = isSandbox ? { tone: 'warning', label: 'Sandbox', dot: 'bg-warning' } : (STATE[it.state] || STATE.disconnected);
                   const isConnected = it.state === 'connected';
                   return (
-                    <Card key={it.provider} className="p-4">
+                    <Card key={it.provider} className="p-4" role="group" aria-label={it.label}>
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-2.5">
                           <span className="grid place-items-center w-9 h-9 rounded-lg bg-surface2 text-ink-soft"><Plug className="w-[18px] h-[18px]" /></span>
@@ -205,7 +216,7 @@ export default function Integrations() {
 
       {setup && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4" onClick={() => setSetup(null)}>
-          <Card className="max-w-lg w-full p-6" onClick={(e) => e.stopPropagation()}>
+          <Card className="max-w-lg w-full p-6" role="dialog" aria-modal="true" aria-label="Setup required" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-extrabold text-ink flex items-center gap-2"><KeyRound className="w-4 h-4 text-warning" /> Setup required</h3>
               <button onClick={() => setSetup(null)} className="text-ink-faint hover:text-ink"><X className="w-5 h-5" /></button>
@@ -226,7 +237,7 @@ export default function Integrations() {
 
       {igModal && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4" onClick={() => setIgModal(false)}>
-          <Card className="max-w-lg w-full p-6" onClick={(e) => e.stopPropagation()}>
+          <Card className="max-w-lg w-full p-6" role="dialog" aria-modal="true" aria-label="Connect Instagram with a token" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-extrabold text-ink flex items-center gap-2"><KeyRound className="w-4 h-4 text-coral-ink" /> Connect Instagram with a token</h3>
               <button onClick={() => setIgModal(false)} className="text-ink-faint hover:text-ink"><X className="w-5 h-5" /></button>
@@ -252,24 +263,36 @@ export default function Integrations() {
 
       {testPost && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4" onClick={() => setTestPost(null)}>
-          <Card className="max-w-lg w-full p-6" onClick={(e) => e.stopPropagation()}>
+          <Card className="max-w-lg w-full p-6" role="dialog" aria-modal="true" aria-label="Post to Instagram" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-extrabold text-ink flex items-center gap-2"><Check className="w-4 h-4 text-success" /> Post to Instagram</h3>
               <button onClick={() => setTestPost(null)} className="text-ink-faint hover:text-ink"><X className="w-5 h-5" /></button>
             </div>
             <p className="text-xs text-ink-faint mb-3">Instagram publishes from a public image URL (JPEG, https).</p>
-            <input value={testPost.imageUrl} onChange={(e) => setTestPost({ ...testPost, imageUrl: e.target.value })}
+            <input value={testPost.imageUrl} onChange={(e) => setTestPost({ ...testPost, imageUrl: e.target.value, result: null })} aria-label="Image URL"
               placeholder="https://…/image.jpg" className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm mb-2" />
-            <textarea rows={3} value={testPost.caption} onChange={(e) => setTestPost({ ...testPost, caption: e.target.value })}
+            <textarea rows={3} value={testPost.caption} onChange={(e) => setTestPost({ ...testPost, caption: e.target.value, result: null })} aria-label="Caption"
               placeholder="Caption…" className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm" />
+            {testCaptionProblem && <p role="alert" className="mt-2 text-xs text-error">{testCaptionProblem}</p>}
             {testPost.result && (
-              <div className={cn('mt-3 text-sm rounded-lg px-3.5 py-2.5', testPost.result.ok ? 'bg-success-soft text-success' : 'bg-error-soft text-error')}>
-                {testPost.result.ok ? `Posted! Media ID ${testPost.result.mediaId}` : testPost.result.message}
+              <div role={testPost.result.ok ? 'status' : 'alert'} className={cn('mt-3 text-sm rounded-lg px-3.5 py-2.5', testPost.result.ok ? 'bg-success-soft text-success' : 'bg-error-soft text-error')}>
+                {!testPost.result.ok ? testPost.result.message
+                  : testPost.result.pending ? 'Instagram is still processing the image. It will show on Published once it’s live.'
+                    : (
+                      <span className="flex flex-wrap items-center gap-x-2">
+                        Published to Instagram.
+                        {testPost.result.permalink && (
+                          <a href={testPost.result.permalink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-bold underline">
+                            View post <ExternalLink className="w-3 h-3" />
+                          </a>
+                        )}
+                      </span>
+                    )}
               </div>
             )}
             <div className="mt-4 flex justify-end gap-2">
               <Button variant="ghost" onClick={() => setTestPost(null)}>Close</Button>
-              <Button onClick={sendTestPost} disabled={testPost.busy || !testPost.imageUrl.trim()}>{testPost.busy ? 'Posting…' : 'Publish now'}</Button>
+              <Button onClick={sendTestPost} disabled={testPost.busy || !testPost.imageUrl.trim() || !!testCaptionProblem || testPost.result?.ok}>{testPost.busy ? 'Posting…' : 'Publish now'}</Button>
             </div>
           </Card>
         </div>

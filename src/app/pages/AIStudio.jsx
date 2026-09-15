@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import Storyboard from '../components/Storyboard';
 import ShareRow from '../components/ShareRow';
+import { withHashtags } from '../publishing';
 import AvatarStudio from '../components/AvatarStudio';
 import DealerAvatarStudio from '../components/DealerAvatarStudio';
 import CharactersStudio from '../components/CharactersStudio';
@@ -257,7 +258,7 @@ export default function AIStudio() {
     if (!result || sent || sendingRef.current) return;
     sendingRef.current = true; setSending(true); setSendErr('');
     try {
-      await effyApi.sendToApproval({ workspace: workspace.id, hook: result.hook, caption: result.caption, channel: format.platform, type: format.id.split('_')[1] || 'post', campaignId, topic, job: jobRef.current });
+      await effyApi.sendToApproval({ workspace: workspace.id, hook: result.hook, caption: withHashtags(result.caption, result.hashtags), mediaUrl: video || image || undefined, channel: format.platform, type: format.id.split('_')[1] || 'post', campaignId, topic, job: jobRef.current });
       setSent(true);
     } catch (e) {
       setSendErr(e.message || 'Could not send to approval — try again.');
@@ -297,7 +298,7 @@ export default function AIStudio() {
       for (const v of picked) {
         // eslint-disable-next-line no-await-in-loop
         await effyApi.sendToApproval({
-          workspace: workspace.id, hook: v.hook, caption: v.caption,
+          workspace: workspace.id, hook: v.hook, caption: withHashtags(v.caption, v.hashtags), mediaUrl: video || image || undefined,
           channel: format.platform, type: format.id.split('_')[1] || 'post', campaignId, topic, job: jobRef.current,
           title: `[${v.label}] ${(v.hook || v.caption || '').slice(0, 80)}`,
         });
@@ -675,7 +676,10 @@ export default function AIStudio() {
                     <p className="mt-1.5 text-[0.68rem] leading-relaxed text-ink-faint">{vidPrompt}</p>
                   </details>
                 )}
-                {video && <ShareRow videoUrl={video} caption={result?.caption || topic} />}
+                {video && <ShareRow videoUrl={video} caption={withHashtags(result.caption, result.hashtags) || topic} title={result.hook} />}
+                {!video && image && format.platform === 'instagram' && !format.video && (
+                  <ShareRow imageUrl={image} caption={withHashtags(result.caption, result.hashtags)} title={result.hook} />
+                )}
                 {outroOpen && video && (
                   <div className="mt-3 w-full rounded-xl bg-surface2/60 p-3 space-y-3">
                     <div>
