@@ -73,7 +73,7 @@ describe('PostDialog', () => {
     const { api } = open({ post }, { [`POST /posts/${post.id}/unschedule`]: fx.unscheduled, [`PATCH /posts/${post.id}`]: { status: 'ok', post } });
     const d = await dialog();
     expect(within(d).getByRole('heading', { name: 'Edit post' })).toBeInTheDocument();
-    expect(within(d).getByRole('button', { name: 'Reschedule' })).toBeEnabled();
+    await waitFor(() => expect(within(d).getByRole('button', { name: 'Reschedule' })).toBeEnabled());
     await user.click(within(d).getByRole('button', { name: 'Unschedule' }));
     expect(await within(d).findByRole('status')).toHaveTextContent('Taken off the schedule. It stays approved.');
     expect(api.callsTo(`POST /posts/${post.id}/unschedule`)).toHaveLength(1);

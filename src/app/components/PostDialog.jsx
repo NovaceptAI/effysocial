@@ -96,7 +96,7 @@ export default function PostDialog({ open, onClose, post = null, initial = null,
   const queryClient = useQueryClient();
   const titleRef = useRef(null);
   const [current, setCurrent] = useState(post);
-  const [form, setForm] = useState(blank(initial));
+  const [form, setForm] = useState(() => (post ? fromPost(post) : blank(initial)));
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
