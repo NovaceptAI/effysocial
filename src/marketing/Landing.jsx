@@ -124,9 +124,9 @@ export default function Landing() {
 
       {/* ── 1. Hero — full-bleed background video ────────────────────────── */}
       <section className="relative overflow-hidden flex items-center" style={{ minHeight: '88vh' }}>
-        {/* Background video (poster shows until landing/hero.mp4 is generated) */}
+        {/* Background video; its first frame (a 36 KB still) paints before the video loads (G45). */}
         <video className="absolute inset-0 w-full h-full object-cover" autoPlay loop muted playsInline preload="auto"
-          style={{ background: '#0B0C0E' }}>
+          poster="/posters/landing-films.jpg" style={{ background: '#0B0C0E' }}>
           <source src="/landing/films.mp4" type="video/mp4" />
         </video>
         {/* Legibility + brand glow overlays */}
