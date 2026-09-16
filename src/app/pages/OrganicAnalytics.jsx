@@ -1,232 +1,244 @@
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import {
-  ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
+  ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid,
 } from 'recharts';
-import { Trophy, Clock, LayoutGrid, Sparkles, Loader2, Heart, MessageCircle } from 'lucide-react';
+import { Trophy, Clock, LayoutGrid, MessageSquareQuote, Loader2, Download, ExternalLink } from 'lucide-react';
 import { useWorkspace, num } from '../context/WorkspaceContext';
 import { useOrganicAnalytics } from '../api/hooks';
-import { effyApi } from '../api/effyApi';
+import { formatInZone, orgZone } from '../timezone';
 import { Card, PageHeader, MetricCard, Button, Badge } from '../../ui';
 import { ChannelIcon } from '../components/parts';
-import { cn } from '../../lib/cn';
+import { organicCsv, downloadCsv } from '../organicExport';
 
-function IgStat({ label, value, hint }) {
+// Organic analytics from real sources only (launch plan 5.9, G41): the connected
+// Instagram account's own insights and posts published through EffySocial. Anything
+// Instagram doesn't provide says why — nothing here is a sample.
+const shortDate = (ymd) => new Date(`${ymd}T00:00:00Z`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+const orDash = (v, fmt = num) => (v == null ? '—' : fmt(v));
+
+function Unavailable({ title, reason }) {
   return (
-    <div className="rounded-xl bg-surface2 px-3.5 py-2.5">
-      <div className="text-[0.62rem] font-bold uppercase tracking-wide text-ink-faint">{label}</div>
-      <div className="text-xl font-bold text-ink mt-0.5 leading-none">{value}</div>
-      {hint && <div className="text-[0.62rem] text-ink-faint mt-1">{hint}</div>}
-    </div>
-  );
-}
-
-// Live Instagram snapshot — real data from the workspace's connected IG account.
-// Renders nothing when Instagram isn't connected (page falls back to its series).
-function InstagramLiveCard({ workspace }) {
-  const { data } = useQuery({
-    queryKey: ['ig-insights', workspace?.id],
-    queryFn: () => effyApi.instagramInsights(workspace.id),
-    enabled: !!workspace,
-    staleTime: 5 * 60 * 1000,
-  });
-  if (!data || !data.connected || data.error) return null;
-  const p = data;
-  return (
-    <Card className="p-5 mb-5">
-      <div className="flex items-center gap-3 mb-4">
-        {p.avatar
-          ? <img src={p.avatar} alt="" className="w-11 h-11 rounded-full object-cover" />
-          : <span className="grid place-items-center w-11 h-11 rounded-full bg-surface2"><ChannelIcon channel="instagram" /></span>}
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-bold text-ink">@{p.username}</span>
-            <Badge tone="success">● Live · Instagram</Badge>
-          </div>
-          {p.bio && <div className="text-xs text-ink-faint truncate max-w-md">{p.bio}</div>}
-        </div>
-        <a href={`https://instagram.com/${p.username}`} target="_blank" rel="noreferrer" className="ml-auto shrink-0 text-xs font-bold text-coral-ink">View profile →</a>
-      </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 mb-4">
-        <IgStat label="Followers" value={num(p.followers ?? 0)} />
-        <IgStat label="Reach" value={num(p.reach28 ?? 0)} hint="last 28 days" />
-        <IgStat label="Profile views" value={num(p.profileViews ?? 0)} />
-        <IgStat label="Engagement" value={p.engagementRate != null ? `${p.engagementRate}%` : '—'} hint="per post" />
-        <IgStat label="Posts" value={num(p.posts ?? 0)} />
-      </div>
-
-      {p.recentPosts?.length > 0 && (
-        <>
-          <div className="text-xs font-bold text-ink-soft mb-2">Recent posts</div>
-          <div className="flex gap-2.5 overflow-x-auto pb-1">
-            {p.recentPosts.map((post) => (
-              <a key={post.id} href={post.permalink} target="_blank" rel="noreferrer"
-                className="relative shrink-0 w-24 rounded-lg overflow-hidden bg-surface2" title={post.caption}>
-                <div className="aspect-square bg-surface2 grid place-items-center">
-                  {post.thumb ? <img src={post.thumb} alt="" loading="lazy" className="w-full h-full object-cover" /> : <span className="text-ink-faint text-xs">{post.type}</span>}
-                </div>
-                <div className="absolute inset-x-0 bottom-0 flex items-center gap-2 px-1.5 py-1 text-[0.62rem] font-bold text-white" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.72), transparent)' }}>
-                  <span className="flex items-center gap-0.5"><Heart className="w-3 h-3" /> {post.likes}</span>
-                  <span className="flex items-center gap-0.5"><MessageCircle className="w-3 h-3" /> {post.comments}</span>
-                </div>
-              </a>
-            ))}
-          </div>
-        </>
-      )}
+    <Card className="p-5" role="region" aria-label={title}>
+      <h3 className="font-bold text-ink mb-2">{title}</h3>
+      <p className="text-sm text-ink-soft">{reason}</p>
     </Card>
   );
 }
 
-function heatColor(v) {
-  const a = Math.max(0.08, Math.min(1, v / 100));
-  return `rgba(232, 74, 51, ${a})`;
+function AccountCard({ account, sources }) {
+  const ig = sources.instagram;
+  if (!ig.connected || ig.error) {
+    return (
+      <Card className="p-4 mb-5 flex flex-wrap items-center gap-3" role="region" aria-label="Instagram account">
+        <ChannelIcon channel="instagram" />
+        <p className="text-sm text-ink-soft flex-1 min-w-[12rem]">
+          {ig.error ? `Instagram didn't return this account's numbers: ${ig.error}` : (ig.reason || 'Instagram isn’t connected.')}
+          {' '}Account numbers, daily reach and audience appear here once it is.
+        </p>
+        <Link to="/app/integrations"><Button size="sm" variant="secondary">Open Integrations</Button></Link>
+      </Card>
+    );
+  }
+  return (
+    <Card className="p-4 mb-5 flex flex-wrap items-center gap-3" role="region" aria-label="Instagram account">
+      {account.avatar
+        ? <img src={account.avatar} alt="" className="w-10 h-10 rounded-full object-cover" />
+        : <span className="grid place-items-center w-10 h-10 rounded-full bg-surface2"><ChannelIcon channel="instagram" /></span>}
+      <div className="min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="font-bold text-ink">@{account.username}</span>
+          <Badge tone="success">● Live · Instagram</Badge>
+        </div>
+        <div className="text-xs text-ink-faint">{num(account.followers ?? 0)} followers · {num(account.following ?? 0)} following · {num(account.posts ?? 0)} posts</div>
+      </div>
+      <a href={`https://instagram.com/${account.username}`} target="_blank" rel="noreferrer" className="ml-auto shrink-0 text-xs font-bold text-coral-ink">View profile →</a>
+    </Card>
+  );
+}
+
+function heat(v, max) {
+  if (v == null) return 'transparent';
+  return `rgba(232, 74, 51, ${Math.max(0.12, Math.min(1, v / Math.max(max, 1)))})`;
 }
 
 export default function OrganicAnalytics() {
-  const { workspace } = useWorkspace();
-  const { data: a, isLoading } = useOrganicAnalytics(workspace);
+  const { workspace, org } = useWorkspace();
+  const zone = orgZone(org);
+  const { data: a, isLoading, isError, error } = useOrganicAnalytics(workspace);
 
-  if (isLoading || !a) {
-    return (<><PageHeader title="Organic Analytics" /><Card className="p-10 flex items-center justify-center gap-2 text-ink-soft"><Loader2 className="w-4 h-4 animate-spin" /> Loading analytics…</Card></>);
-  }
+  const header = (actions) => (
+    <PageHeader title="Organic Analytics" subtitle="Reach, engagement and what's working — from your connected account and the posts you publish." actions={actions} />
+  );
+  if (isLoading) return <div>{header()}<Card className="p-10 flex items-center justify-center gap-2 text-ink-soft"><Loader2 className="w-4 h-4 animate-spin" /> Loading analytics…</Card></div>;
+  if (isError) return <div>{header()}<p role="alert" className="text-sm text-error">{error.message}</p></div>;
 
-  // No EffySocial-published posts yet → show the live channel card (if any) + an
-  // honest note; never sample charts.
-  if (!a.topPosts?.length) {
+  const { kpis, working, bestTimes, sources } = a;
+  const live = !!a.account;
+  const hasAnything = live || a.topPosts.length > 0;
+  const exportCsv = () => downloadCsv(`${workspace.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-organic-analytics.csv`, organicCsv(a, zone));
+
+  if (!hasAnything) {
     return (
       <div>
-        <PageHeader title="Organic Analytics" subtitle="Reach, engagement and growth — and what's actually working." />
-        <InstagramLiveCard workspace={workspace} />
+        {header()}
+        <AccountCard account={a.account} sources={sources} />
         <div className="text-center py-14 px-6 bg-surface rounded-2xl shadow-e1 flex flex-col items-center gap-2.5">
           <div className="grid place-items-center w-14 h-14 rounded-2xl bg-coral-tint text-2xl mb-1">📊</div>
-          <h4 className="font-display text-lg font-semibold tracking-tight text-ink">More analytics as you publish</h4>
-          <p className="text-sm text-ink-soft max-w-sm leading-relaxed">Top posts, best-time heatmaps and cross-channel trends build from posts you publish in EffySocial. Create your first post — or connect more channels to sync history.</p>
+          <h4 className="font-display text-lg font-semibold tracking-tight text-ink">Nothing to measure yet</h4>
+          <p className="text-sm text-ink-soft max-w-sm leading-relaxed">
+            {sources.posts.published
+              ? `You've published ${sources.posts.published} post${sources.posts.published === 1 ? '' : 's'}, but none has numbers yet — open Published and press Report on a post.`
+              : 'Publish a post through EffySocial, or connect Instagram, and its real numbers appear here.'}
+          </p>
           <div className="mt-3 flex gap-2">
-            <a href="/app/studio"><Button>Create a post</Button></a>
-            <a href="/app/integrations"><Button variant="secondary">Connect channels</Button></a>
+            <Link to={sources.posts.published ? '/app/published' : '/app/studio'}><Button>{sources.posts.published ? 'Open Published' : 'Create a post'}</Button></Link>
           </div>
         </div>
       </div>
     );
   }
 
-  const insights = [
-    { icon: Trophy, label: 'Best post', value: a.insights.bestPost },
-    { icon: LayoutGrid, label: 'Best format', value: a.insights.bestFormat },
-    { icon: Clock, label: 'Best time', value: a.insights.bestTime },
-    { icon: Sparkles, label: 'Best pillar', value: a.insights.bestPillar },
+  const cards = [
+    { icon: Trophy, label: 'Best post', value: working.bestPost ? `${working.bestPost.title} · ${num(working.bestPost.reach)} reach` : null, why: 'Needs a published post with numbers.' },
+    { icon: LayoutGrid, label: 'Best format', value: working.bestFormat ? `${working.bestFormat.label} · ${working.bestFormat.engagement}%` : null, why: 'Needs a published post with numbers.' },
+    { icon: MessageSquareQuote, label: 'Best opening', value: working.bestHook ? `${working.bestHook.label} · ${working.bestHook.engagement}%` : null, why: 'Needs a published post with numbers.' },
+    { icon: Clock, label: 'Best time', value: working.bestTime ? `${working.bestTime.day} ${working.bestTime.part.toLowerCase()} · ${working.bestTime.engagement}%` : null, why: bestTimes.reason },
   ];
+  const maxCell = Math.max(0, ...bestTimes.rows.flatMap((r) => r.cells.map((c) => c.engagement ?? 0)));
 
   return (
     <div>
-      <PageHeader
-        title="Organic Analytics"
-        subtitle="Reach, engagement and growth — and what's actually working."
-        actions={<>{a.provider === 'derived' && <Badge tone="warning">Sample series — connect channels for live metrics</Badge>}<Button variant="secondary">Export</Button></>}
-      />
-
-      <InstagramLiveCard workspace={workspace} />
+      {header(<Button variant="secondary" onClick={exportCsv}><Download className="w-4 h-4" /> Export CSV</Button>)}
+      <AccountCard account={a.account} sources={sources} />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
-        <MetricCard label="Followers" value={num(a.kpis.followers)} hint="from connected channels" />
-        <MetricCard label="Reach" value={num(a.kpis.reach)} hint="last 30 days" />
-        <MetricCard label="Engagement rate" value={`${a.kpis.engagementRate}%`} hint="from post metrics" />
-        <MetricCard label="Profile visits" value={num(a.kpis.profileVisits)} hint={`${num(a.kpis.linkClicks)} link clicks`} />
+        <MetricCard label="Followers" value={orDash(kpis.followers)} hint={live ? 'Instagram, now' : 'connect Instagram'} />
+        <MetricCard label="Reach" value={orDash(kpis.reach28)} hint={live ? `${orDash(kpis.views28)} views · last 28 days` : 'connect Instagram'} />
+        <MetricCard label="Profile views" value={orDash(kpis.profileViews28)} hint={live ? `${orDash(kpis.linkTaps28)} link taps · 28 days` : 'connect Instagram'} />
+        <MetricCard label="Post engagement" value={orDash(kpis.postEngagement, (v) => `${v}%`)}
+          hint={sources.posts.measured ? `average of ${sources.posts.measured} published post${sources.posts.measured === 1 ? '' : 's'}` : 'no measured posts yet'} />
       </div>
 
-      {/* what's working */}
-      <Card className="p-4 mb-5">
+      <Card className="p-4 mb-5" role="region" aria-label="What's working">
         <h3 className="font-bold text-ink mb-3 text-sm">What's working</h3>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {insights.map((it) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {cards.map((it) => (
             <div key={it.label} className="flex items-center gap-3 p-3 rounded-lg bg-surface2/60">
-              <span className="grid place-items-center w-9 h-9 rounded-lg bg-coral-soft text-coral-ink"><it.icon className="w-[18px] h-[18px]" /></span>
-              <span className="min-w-0"><span className="block text-[0.7rem] text-ink-faint">{it.label}</span><span className="block text-sm font-bold text-ink truncate">{it.value}</span></span>
+              <span className="grid place-items-center w-9 h-9 rounded-lg bg-coral-soft text-coral-ink shrink-0"><it.icon className="w-[18px] h-[18px]" /></span>
+              <span className="min-w-0">
+                <span className="block text-[0.7rem] text-ink-faint">{it.label}</span>
+                {it.value
+                  ? <span className="block text-sm font-bold text-ink truncate">{it.value}</span>
+                  : <span className="block text-xs text-ink-soft">{it.why}</span>}
+              </span>
             </div>
           ))}
         </div>
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5">
-        <Card className="p-5">
-          <h3 className="font-bold text-ink mb-4">Follower growth</h3>
-          <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={a.followerSeries} margin={{ left: -10, right: 8 }}>
-              <CartesianGrid stroke="#ece2d6" vertical={false} />
-              <XAxis dataKey="week" tick={{ fontSize: 12, fill: '#a89d93' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 12, fill: '#a89d93' }} axisLine={false} tickLine={false} width={48} />
-              <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #ece2d6', fontSize: 13 }} formatter={(v) => num(v)} />
-              <Line type="monotone" dataKey="followers" stroke="#e84a33" strokeWidth={2.5} dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
-        </Card>
-        <Card className="p-5">
-          <h3 className="font-bold text-ink mb-4">Reach &amp; engagement</h3>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={a.reachSeries} margin={{ left: -10, right: 8 }}>
-              <CartesianGrid stroke="#ece2d6" vertical={false} />
-              <XAxis dataKey="week" tick={{ fontSize: 12, fill: '#a89d93' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 12, fill: '#a89d93' }} axisLine={false} tickLine={false} width={48} />
-              <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid #ece2d6', fontSize: 13 }} formatter={(v) => num(v)} />
-              <Bar dataKey="reach" fill="#ff6b5e" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </Card>
+        {a.reachSeries.length ? (
+          <Card className="p-5" role="region" aria-label="Daily reach">
+            <h3 className="font-bold text-ink mb-1">Daily reach</h3>
+            <p className="text-xs text-ink-faint mb-3">Accounts reached each day, last 28 days (Instagram days run on Pacific time).</p>
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={a.reachSeries} margin={{ left: -10, right: 8 }}>
+                <CartesianGrid stroke="#ece2d6" vertical={false} />
+                <XAxis dataKey="date" tickFormatter={shortDate} tick={{ fontSize: 11, fill: '#a89d93' }} axisLine={false} tickLine={false} minTickGap={24} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: '#a89d93' }} axisLine={false} tickLine={false} width={40} />
+                <Tooltip labelFormatter={shortDate} contentStyle={{ borderRadius: 12, border: '1px solid #ece2d6', fontSize: 13 }} formatter={(v) => [num(v), 'reach']} />
+                <Line type="monotone" dataKey="reach" stroke="#e84a33" strokeWidth={2.5} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </Card>
+        ) : <Unavailable title="Daily reach" reason={live ? 'Instagram returned no daily reach for this account.' : 'Connect Instagram to see daily reach.'} />}
+
+        {a.audience?.available ? (
+          <Card className="p-5" role="region" aria-label="Audience">
+            <h3 className="font-bold text-ink mb-3">Audience</h3>
+            {[['Age', a.audience.age], ['Gender', a.audience.gender], ['Top cities', a.audience.cities]].filter(([, rows]) => rows.length).map(([title, rows]) => (
+              <div key={title} className="mb-3 last:mb-0">
+                <div className="text-xs font-semibold text-ink-faint mb-1.5">{title}</div>
+                <div className="space-y-1.5">
+                  {rows.map((d) => (
+                    <div key={d.label} className="flex items-center gap-2 text-sm">
+                      <span className="w-24 truncate text-ink-soft">{d.label}</span>
+                      <div className="flex-1 h-2.5 rounded-full bg-surface2 overflow-hidden"><div className="h-full bg-coral rounded-full" style={{ width: `${d.value}%` }} /></div>
+                      <span className="w-9 text-right tabular-nums text-ink-faint">{d.value}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </Card>
+        ) : <Unavailable title="Audience" reason={a.audience?.reason || 'Connect Instagram to see who follows the account.'} />}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* top posts */}
-        <Card className="lg:col-span-2 p-5">
-          <h3 className="font-bold text-ink mb-3">Top posts</h3>
-          <table className="w-full text-sm">
-            <thead><tr className="text-left text-ink-faint border-b border-line">{['', 'Post', 'Reach', 'Engage', 'Likes'].map((h) => <th key={h} className="font-semibold py-2 pr-3">{h}</th>)}</tr></thead>
-            <tbody>
-              {a.topPosts.map((p) => (
-                <tr key={p.id} className="border-b border-line/70 last:border-0">
-                  <td className="py-2.5 pr-3 w-7"><ChannelIcon channel={p.channel} /></td>
-                  <td className="py-2.5 pr-3"><span className="font-semibold text-ink">{p.title}</span><span className="block text-xs text-ink-faint capitalize">{p.type}</span></td>
-                  <td className="py-2.5 pr-3 tabular-nums">{num(p.metrics.reach)}</td>
-                  <td className="py-2.5 pr-3 tabular-nums">{p.metrics.engagement}%</td>
-                  <td className="py-2.5 pr-3 tabular-nums">{num(p.metrics.likes)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <Card className="lg:col-span-2 p-5" role="region" aria-label="Top posts">
+          <h3 className="font-bold text-ink mb-1">Top posts</h3>
+          <p className="text-xs text-ink-faint mb-3">Posts published through EffySocial, by reach. {sources.posts.published > sources.posts.measured && `${sources.posts.published - sources.posts.measured} more have no numbers yet.`}</p>
+          {a.topPosts.length ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead><tr className="text-left text-ink-faint border-b border-line">{['', 'Post', 'Published', 'Reach', 'Engagement', 'Likes'].map((h) => <th key={h} className="font-semibold py-2 pr-3 whitespace-nowrap">{h}</th>)}</tr></thead>
+                <tbody>
+                  {a.topPosts.map((p) => (
+                    <tr key={p.id} className="border-b border-line/70 last:border-0">
+                      <td className="py-2.5 pr-3 w-7"><ChannelIcon channel={p.channel} /></td>
+                      <td className="py-2.5 pr-3">
+                        <span className="font-semibold text-ink">{p.title}</span>
+                        <span className="flex items-center gap-2 text-xs text-ink-faint capitalize">{p.type}
+                          {p.permalink && <a href={p.permalink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 normal-case hover:text-ink"><ExternalLink className="w-3 h-3" /> View</a>}
+                        </span>
+                      </td>
+                      <td className="py-2.5 pr-3 whitespace-nowrap text-ink-soft">{p.publishedAt ? formatInZone(p.publishedAt, zone, { day: 'numeric', month: 'short' }) : '—'}</td>
+                      <td className="py-2.5 pr-3 tabular-nums">{num(p.metrics.reach ?? 0)}</td>
+                      <td className="py-2.5 pr-3 tabular-nums">{p.metrics.engagement ?? 0}%</td>
+                      <td className="py-2.5 pr-3 tabular-nums">{num(p.metrics.likes ?? 0)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : <p className="text-sm text-ink-soft">None of your published posts has numbers yet — press Report on a post in Published.</p>}
         </Card>
 
-        {/* demographics */}
-        <Card className="p-5">
-          <h3 className="font-bold text-ink mb-3">Audience age</h3>
-          <div className="space-y-2">
-            {a.demographics.map((d) => (
-              <div key={d.label} className="flex items-center gap-2 text-sm">
-                <span className="w-12 text-ink-soft">{d.label}</span>
-                <div className="flex-1 h-3 rounded-full bg-surface2 overflow-hidden"><div className="h-full bg-coral rounded-full" style={{ width: `${d.value * 2}%` }} /></div>
-                <span className="w-8 text-right tabular-nums text-ink-faint">{d.value}%</span>
-              </div>
-            ))}
-          </div>
-        </Card>
+        {a.followerGrowth?.available ? (
+          <Card className="p-5" role="region" aria-label="New followers">
+            <h3 className="font-bold text-ink mb-3">New followers</h3>
+            <p className="text-3xl font-extrabold tabular-nums">{num(a.followerGrowth.series.reduce((s, d) => s + d.gained, 0))}</p>
+            <p className="text-xs text-ink-faint">gained in the last 28 days</p>
+          </Card>
+        ) : <Unavailable title="New followers" reason={a.followerGrowth?.reason || 'Connect Instagram to see follower growth.'} />}
       </div>
 
-      {/* best times heatmap */}
-      <Card className="p-5 mt-4">
-        <h3 className="font-bold text-ink mb-4">Best posting times</h3>
-        <div className="grid grid-cols-[48px_repeat(4,1fr)] gap-1.5 max-w-2xl">
-          <div />
-          {a.parts.map((p) => <div key={p} className="text-center text-xs font-semibold text-ink-faint">{p}</div>)}
-          {a.bestTimes.map((row) => (
-            <React.Fragment key={row.day}>
-              <div className="text-xs font-semibold text-ink-faint flex items-center">{row.day}</div>
-              {row.cells.map((v, i) => (
-                <div key={i} className="aspect-[2/1] rounded-md grid place-items-center text-[0.65rem] font-bold"
-                  style={{ background: heatColor(v), color: v > 60 ? '#fff' : '#a89d93' }}>{v}</div>
-              ))}
-            </React.Fragment>
-          ))}
-        </div>
+      <Card className="p-5 mt-4" role="region" aria-label="Best posting times">
+        <h3 className="font-bold text-ink mb-1">Best posting times</h3>
+        {bestTimes.available ? (
+          <>
+            <p className="text-xs text-ink-faint mb-3">Average engagement of your published posts by when they went out ({zone.replace('_', ' ')}). Empty cells have no posts yet.</p>
+            <div className="overflow-x-auto">
+              <div className="grid grid-cols-[48px_repeat(4,minmax(64px,1fr))] gap-1.5 max-w-2xl">
+                <div />
+                {bestTimes.parts.map((p) => <div key={p} className="text-center text-xs font-semibold text-ink-faint">{p}</div>)}
+                {bestTimes.rows.map((row) => (
+                  <React.Fragment key={row.day}>
+                    <div className="text-xs font-semibold text-ink-faint flex items-center">{row.day}</div>
+                    {row.cells.map((c) => (
+                      <div key={c.part} title={c.posts ? `${c.posts} post${c.posts === 1 ? '' : 's'}` : 'No posts'}
+                        className="aspect-[2/1] rounded-md grid place-items-center text-[0.65rem] font-bold border border-line/60"
+                        style={{ background: heat(c.engagement, maxCell), color: c.engagement != null && c.engagement > maxCell * 0.6 ? '#fff' : '#a89d93' }}>
+                        {c.engagement != null ? `${c.engagement}%` : ''}
+                      </div>
+                    ))}
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+          </>
+        ) : <p className="text-sm text-ink-soft">{bestTimes.reason}</p>}
       </Card>
     </div>
   );
