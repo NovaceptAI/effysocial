@@ -175,8 +175,10 @@ export default function AIStudio() {
   const seeded = !repurposing && (params.get('trend') || params.get('angle') || params.get('topic') || reusedImage || reusedVideo || campaignId);
   // Opened from Home's recent sessions: go straight into that Product Shot project.
   const productShotId = Number(params.get('productShot')) || null;
+  // Opened from a template: its own format, with its brief already in the brief box.
+  const asked = FORMATS.find((f) => f.id === params.get('format'));
   const [format, setFormat] = useState(productShotId ? FORMATS.find((f) => f.product)
-    : seeded ? (reusedVideo ? FORMATS.find((f) => f.video) || FORMATS[0] : FORMATS[0]) : null);
+    : asked || (seeded ? (reusedVideo ? FORMATS.find((f) => f.video) || FORMATS[0] : FORMATS[0]) : null));
 
   const [panel, setPanel] = useState('brief');   // open tool panel (or null)
   const [topic, setTopic] = useState(params.get('topic') || '');
