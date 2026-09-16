@@ -159,8 +159,13 @@ provider swap, not an app change. First live use: `get_ads_provider(ws)` in
   publishing in one UPDATE so a double click or the scheduler can't post twice,
   `check` locks the row, and a lost media_publish answer is resolved by the
   container's PUBLISHED state instead of publishing again. Graph API v25.0.
-  Dev-mode token connect for one owned IG Business account. LinkedIn OAuth + Meta
-  app creds are live.
+  Meta sign-in for Instagram and Facebook Pages (4.4): the Page token publishing
+  needs, the account it belongs to, and when Meta's access to it ends
+  (`data_access_expires_at`, ninety days from authorisation) kept beside the
+  encrypted token so the app can warn and then show the connection expired; the
+  scheduler re-checks live connections with Meta twice a day. The dev-mode token
+  paste still works and records the same expiry. LinkedIn OAuth + Meta app creds
+  are live; other people's accounts need Meta App Review (6.7).
 - **Minute scheduler** (`scheduler.py`, `scripts/effy_scheduler.py`, launch plan 4.2) —
   a systemd timer (`deploy/systemd/effy-scheduler.{timer,service}`, installed and
   refreshed by `effy_phase.sh deploy`, paused while code and migrations change)

@@ -6,6 +6,7 @@ import { useWorkspace } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
 import { useInvalidatingMutation } from '../api/hooks';
 import { followPublish, instagramCaptionProblem } from '../publishing';
+import { formatInZone, orgZone } from '../timezone';
 import { Card, PageHeader, Button, Badge } from '../../ui';
 import { cn } from '../../lib/cn';
 
@@ -26,7 +27,7 @@ const BANNER = {
 };
 
 export default function Integrations() {
-  const { workspace } = useWorkspace();
+  const { workspace, org } = useWorkspace();
   const queryClient = useQueryClient();
   const [params, setParams] = useSearchParams();
   const [setup, setSetup] = useState(null); // {provider, steps[]}
@@ -108,7 +109,17 @@ export default function Integrations() {
 
   const categories = [...new Set(items.map((i) => i.category))];
   const connectedCount = items.filter((i) => i.state === 'connected').length;
-  const needAttention = items.filter((i) => ['expired', 'pending_credentials'].includes(i.state)).length;
+  const needAttention = items.filter((i) => ['expired', 'pending_credentials'].includes(i.state) || i.reconnectSoon).length;
+  // Meta's access to an account ends ninety days after it was given (launch plan 4.4).
+  const accessLine = (it) => {
+    if (!it.accessEndsAt) return null;
+    const on = formatInZone(it.accessEndsAt, orgZone(org), { day: 'numeric', month: 'short', year: 'numeric' });
+    if (it.state === 'expired') return `Access ended ${on} — reconnect to publish again.`;
+    if (it.state !== 'connected') return null;
+    return it.reconnectSoon
+      ? `Access ends ${on} (${it.daysLeft} day${it.daysLeft === 1 ? '' : 's'} left) — reconnect to keep publishing.`
+      : `Access ends ${on}.`;
+  };
 
   return (
     <div>
@@ -119,7 +130,9 @@ export default function Integrations() {
           BANNER[cbStatus].tone === 'success' ? 'bg-success-soft border-success/20' :
           BANNER[cbStatus].tone === 'error' ? 'bg-error-soft border-error/20' : 'bg-warning-soft border-warning/20')}>
           {BANNER[cbStatus].tone === 'success' ? <Check className="w-4 h-4 text-success" /> : <AlertTriangle className="w-4 h-4 text-warning" />}
-          <span className="text-sm text-ink-soft"><strong className="capitalize">{cbProvider?.replace('_', ' ')}</strong> — {BANNER[cbStatus].text}</span>
+          <span className="text-sm text-ink-soft">
+            <strong className="capitalize">{cbProvider?.replace('_', ' ')}</strong> — {params.get('reason') || BANNER[cbStatus].text}
+          </span>
         </Card>
       )}
 
@@ -143,6 +156,11 @@ export default function Integrations() {
                           <div>
                             <div className="font-bold text-ink text-sm">{it.label}</div>
                             <div className="text-xs text-ink-faint">{it.account || (isConnected ? 'Connected' : '—')}</div>
+                            {accessLine(it) && (
+                              <div className={cn('text-[0.7rem] mt-0.5', it.reconnectSoon || it.state === 'expired' ? 'text-error' : 'text-ink-faint')}>
+                                {accessLine(it)}
+                              </div>
+                            )}
                           </div>
                         </div>
                         <span className={cn('w-2 h-2 rounded-full mt-1.5', s.dot)} />
@@ -157,6 +175,11 @@ export default function Integrations() {
                             )}
                             {it.provider === 'google_business' && (
                               <Link to="/app/google-business"><Button size="sm" variant="secondary"><Building2 className="w-3.5 h-3.5" /> Profile</Button></Link>
+                            )}
+                            {it.reconnectSoon && (
+                              <Button size="sm" onClick={() => connect(it.provider)} disabled={busy === it.provider}>
+                                {busy === it.provider ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Reconnect'}
+                              </Button>
                             )}
                             <Button size="sm" variant="ghost" onClick={() => disconnect.mutate(it.provider)} disabled={disconnect.isPending}>
                               <X className="w-3.5 h-3.5" /> Disconnect
@@ -192,7 +215,7 @@ export default function Integrations() {
                           <div className="flex gap-1.5">
                             <Button size="sm" variant="secondary" onClick={() => { setIgErr(''); setIgModal(true); }}>Use token</Button>
                             <Button size="sm" onClick={() => connect(it.provider)} disabled={busy === it.provider}>
-                              {busy === it.provider ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Connect'}
+                              {busy === it.provider ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : it.state === 'expired' ? 'Reconnect' : 'Connect'}
                             </Button>
                           </div>
                         ) : it.state === 'pending_credentials' ? (
@@ -201,7 +224,7 @@ export default function Integrations() {
                           </Button>
                         ) : (
                           <Button size="sm" onClick={() => connect(it.provider)} disabled={busy === it.provider}>
-                            {busy === it.provider ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Connect'}
+                            {busy === it.provider ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : it.state === 'expired' ? 'Reconnect' : 'Connect'}
                           </Button>
                         )}
                       </div>

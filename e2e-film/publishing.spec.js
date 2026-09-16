@@ -9,11 +9,13 @@ test('a refused post shows Instagram’s reason, and Retry publishes it', async 
   const email = `publish-${Date.now()}@example.in`;
   const instagram = page.getByRole('group', { name: 'Instagram' });
   const testPost = page.getByRole('dialog', { name: 'Post to Instagram' });
+  let ws;
 
   await test.step('connect Instagram with a token', async () => {
     await page.goto('/login');
     const r = await page.request.post('/api/effy/auth/register', { data: { email, password: 'publish-e2e-123', name: 'Asha Rao' } });
     expect(r.ok()).toBeTruthy();
+    ws = (await r.json()).workspaces[0].id;
     await page.goto('/app/integrations');
     await instagram.getByRole('button', { name: 'Use token' }).click();
     const dialog = page.getByRole('dialog', { name: 'Connect Instagram with a token' });
@@ -42,6 +44,30 @@ test('a refused post shows Instagram’s reason, and Retry publishes it', async 
     await testPost.getByRole('button', { name: 'Publish now' }).click();
     await expect(testPost.getByRole('alert')).toHaveText('The aspect ratio is not supported.');
     await testPost.getByRole('button', { name: 'Close' }).click();
+  });
+
+  await test.step('a connection whose access has ended shows as expired and says so at publish time (PUBL-012)', async () => {
+    // The same account, connected with a token whose access has already ended.
+    const again = await page.request.post('/api/effy/integrations/instagram/connect-token', { data: { workspace: ws, token: 'expired-token' } });
+    expect(again.ok()).toBeTruthy();
+    await page.goto('/app/integrations');
+    await expect(instagram.getByText('Permission expired')).toBeVisible();
+    await expect(instagram.getByText(/Access ended .* reconnect to publish again\./)).toBeVisible();
+    await expect(instagram.getByRole('button', { name: 'Reconnect' })).toBeVisible();
+
+    const post = await (await page.request.post('/api/effy/posts', { data: { workspace: ws, title: 'Waiting on Instagram', status: 'approved', caption: 'Ready', mediaUrl: 'https://cdn.example.in/monsoon-offer.jpg' } })).json();
+    await page.goto('/app/calendar');
+    await page.getByRole('button', { name: 'List', exact: true }).click();
+    await page.getByRole('button', { name: /Waiting on Instagram/ }).click();
+    const details = page.getByRole('dialog', { name: 'Edit post' });
+    await details.getByRole('button', { name: 'Publish now' }).click();
+    await expect(details.getByRole('alert')).toHaveText('Your Instagram connection has expired. Reconnect Instagram in Integrations.');
+    expect(post.post.status).toBe('approved');
+
+    // Reconnect with a token that still has access, so the rest of the run publishes.
+    expect((await page.request.post('/api/effy/integrations/instagram/connect-token', { data: { workspace: ws, token: 'e2e-user-token' } })).ok()).toBeTruthy();
+    await page.goto('/app/integrations');
+    await expect(instagram.getByText('Connected', { exact: true })).toBeVisible();
   });
 
   await test.step('Published shows the refusal, and Retry publishes it (PUBL-005, PUBL-007)', async () => {
