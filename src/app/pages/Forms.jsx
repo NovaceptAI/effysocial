@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Link2, Check, Trash2, FileInput, ExternalLink } from 'lucide-react';
+import { Plus, Link2, Check, Trash2, FileInput, ExternalLink, Inbox } from 'lucide-react';
+import FormSubmissions from '../components/FormSubmissions';
 import { useWorkspace, num } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
 import { useInvalidatingMutation } from '../api/hooks';
@@ -47,6 +48,7 @@ export default function Forms() {
 
   const [editing, setEditing] = useState(null); // form object being edited
   const [copied, setCopied] = useState(null);
+  const [open, setOpen] = useState(null);   // the form whose submissions are showing
 
   const startCreate = async () => {
     const form = await create.mutateAsync({ workspace: workspace.id, name: 'New lead form' });
@@ -115,7 +117,8 @@ export default function Forms() {
             <thead><tr className="text-left text-ink-faint border-b border-line">{['Form', 'Type', 'Status', 'Submissions', 'Share', ''].map((h) => <th key={h} className="font-semibold px-4 py-3">{h}</th>)}</tr></thead>
             <tbody>
               {forms.map((f) => (
-                <tr key={f.id} className="border-b border-line/70 last:border-0 hover:bg-surface2/60">
+                <React.Fragment key={f.id}>
+                <tr className="border-b border-line/70 last:border-0 hover:bg-surface2/60">
                   <td className="px-4 py-3">
                     <span className="flex items-center gap-2 font-semibold text-ink"><FileInput className="w-4 h-4 text-ink-faint" /> {f.name}</span>
                     <span className="block text-xs text-ink-faint ml-6">{f.fields.length} fields · {f.created}</span>
@@ -128,7 +131,12 @@ export default function Forms() {
                       {f.status === 'published' ? '● Published' : 'Publish'}
                     </button>
                   </td>
-                  <td className="px-4 py-3 tabular-nums">{num(f.submissions || 0)}</td>
+                  <td className="px-4 py-3">
+                    <Button size="sm" variant="ghost" aria-expanded={open === f.id} onClick={() => setOpen(open === f.id ? null : f.id)}>
+                      <Inbox className="w-3.5 h-3.5" /> <span className="tabular-nums">{num(f.submissions || 0)}</span>
+                      <span className="sr-only"> submissions to {f.name}</span>
+                    </Button>
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5">
                       <Button size="sm" variant="ghost" onClick={() => copyLink(f)} disabled={f.status !== 'published'}>
@@ -141,6 +149,12 @@ export default function Forms() {
                   </td>
                   <td className="px-4 py-3 text-right"><Button size="sm" variant="ghost" onClick={() => setEditing(f)}>Edit</Button></td>
                 </tr>
+                {open === f.id && (
+                  <tr className="border-b border-line/70 bg-surface2/40">
+                    <td colSpan={6}><FormSubmissions form={f} /></td>
+                  </tr>
+                )}
+                </React.Fragment>
               ))}
             </tbody>
           </table>

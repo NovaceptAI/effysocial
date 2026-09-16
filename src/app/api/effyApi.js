@@ -466,7 +466,7 @@ export const effyApi = {
     http('/forms', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.form),
   updateForm: (id, payload) =>
     http(`/forms/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.form),
-  formSubmissions: (id) => http(`/forms/${id}/submissions`).then((d) => d.submissions),
+  formSubmissions: (id) => http(`/forms/${id}/submissions`),   // { total, shown, submissions }
   // public (no auth)
   publicForm: (slug) => http(`/public/forms/${slug}`).then((d) => d.form),
   publicSubmit: (slug, payload) =>
