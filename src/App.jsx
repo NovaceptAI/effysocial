@@ -15,6 +15,7 @@ const Forgot = lazy(() => import('./marketing/Forgot'));
 const Reset = lazy(() => import('./marketing/Reset'));
 const PublicForm = lazy(() => import('./marketing/PublicForm'));
 const PublicReviews = lazy(() => import('./marketing/PublicReviews'));
+const PublicReport = lazy(() => import('./marketing/PublicReport'));
 const Pricing = lazy(() => import('./marketing/Pricing'));
 const Privacy = lazy(() => import('./marketing/Privacy'));
 const Terms = lazy(() => import('./marketing/Terms'));
@@ -68,6 +69,7 @@ export default function App() {
             <Route path="/reset" element={<Reset />} />
             <Route path="/f/:slug" element={<PublicForm />} />
             <Route path="/r/:slug" element={<PublicReviews />} />
+            <Route path="/report/:token" element={<PublicReport />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />

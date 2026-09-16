@@ -342,6 +342,13 @@ export const effyApi = {
   listReviews: (workspaceId) => http(`/reviews?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.reviews),
   respondReview: (id) => http(`/reviews/${id}/respond`, { method: 'POST' }),
   // Inbox actions and review requests (launch plan 5.8)
+  // Campaign reports and share links (launch plan 5.10)
+  campaignReport: (id) => http(`/campaigns/${id}/report`).then((d) => d.report),
+  shareCampaignReport: (id, days) =>
+    http(`/campaigns/${id}/report/share`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ days }) }),
+  reportShares: (id) => http(`/campaigns/${id}/report/shares`).then((d) => d.shares),
+  revokeReportShare: (shareId) => http(`/reports/shares/${shareId}`, { method: 'DELETE' }).then((d) => d.share),
+  publicReport: (token) => http(`/public/reports/${encodeURIComponent(token)}`),
   tagConversation: (id, tags) =>
     http(`/conversations/${id}/tags`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tags }) }).then((d) => d.conversation),
   escalateConversation: (id, to, note) =>
