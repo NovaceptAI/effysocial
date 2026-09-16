@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Loader2, Plug, FlaskConical, Zap, Trash2, Plus, PlayCircle, PauseCircle, Bell } from 'lucide-react';
+import { Loader2, Plug, FlaskConical, Zap, Trash2, Plus, PlayCircle, PauseCircle, Bell, AlertTriangle, X } from 'lucide-react';
 import { useWorkspace, inr } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
 import { useInvalidatingMutation } from '../api/hooks';
@@ -16,6 +16,18 @@ const METRICS = {
 };
 const OPS = { gt: 'goes above', lt: 'drops below' };
 const ACTIONS = { pause: { label: 'Suggest pause', icon: PauseCircle }, notify: { label: 'Notify me', icon: Bell } };
+
+// "3 minutes ago" — alerts are only useful next to when they were found.
+function ago(iso) {
+  if (!iso) return 'just now';
+  const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins} minute${mins === 1 ? '' : 's'} ago`;
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+  const days = Math.round(hours / 24);
+  return `${days} day${days === 1 ? '' : 's'} ago`;
+}
 
 function RuleSentence({ r }) {
   const m = METRICS[r.metric];
@@ -52,11 +64,19 @@ export default function Rules() {
   const remove = useInvalidatingMutation(
     (id) => effyApi.adsDeleteRule(id, workspace.id), invalidate,
   );
+  const dismiss = useInvalidatingMutation(
+    (id) => effyApi.adsDismissAlert(id, workspace.id), invalidate,
+  );
+  const pause = useInvalidatingMutation(
+    (campaignId) => effyApi.adsSetStatus(campaignId, workspace.id, 'paused'), invalidate,
+  );
 
   const submit = () => {
     setFormErr('');
-    const threshold = Number(form.threshold);
+    // A blank box must not become 0 — that is a rule matching every campaign.
+    const threshold = form.threshold.trim() === '' ? NaN : Number(form.threshold);
     if (!form.name.trim()) { setFormErr('Give the rule a name.'); return; }
+    if (form.threshold.trim() === '') { setFormErr('Give the rule a threshold.'); return; }
     if (!Number.isFinite(threshold)) { setFormErr('Threshold must be a number.'); return; }
     create.mutate({ ...form, name: form.name.trim(), threshold }, {
       onSuccess: () => { setForm({ name: '', metric: 'cpl', op: 'gt', threshold: '', action: 'notify' }); setDryRun(null); },
@@ -91,6 +111,10 @@ export default function Rules() {
   }
 
   const rules = data.rules || [];
+  const alerts = (data.alerts || []).filter((a) => !a.dismissed);
+  const checked = data.checkedAt
+    ? `Checked ${ago(data.checkedAt)}`
+    : 'Not checked yet — the first check runs within half an hour.';
 
   return (
     <div>
@@ -103,6 +127,43 @@ export default function Rules() {
           </Badge>
         )}
       />
+
+      {alerts.length > 0 && (
+        <Card className="p-4 mb-4" role="region" aria-label="Rule alerts">
+          <div className="flex items-baseline justify-between gap-3 mb-3">
+            <h3 className="font-bold text-ink">What the last check found</h3>
+            <span className="text-xs text-ink-faint">{checked}</span>
+          </div>
+          <ul className="space-y-2">
+            {alerts.map((a) => (
+              <li key={a.id} className="flex items-start gap-3 rounded-xl bg-warning-soft/50 px-3 py-2.5">
+                <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm text-ink">
+                    <strong className="font-semibold">{a.campaign}</strong> — {METRICS[a.metric]?.label || a.metric}{' '}
+                    {METRICS[a.metric] ? METRICS[a.metric].fmt(a.value) : a.value} ({OPS[a.op]}{' '}
+                    {METRICS[a.metric] ? METRICS[a.metric].fmt(a.threshold) : a.threshold})
+                  </p>
+                  <p className="text-xs text-ink-faint">Rule “{a.rule}” · first seen {ago(a.firstSeen)}</p>
+                </div>
+                {a.action === 'pause' && (
+                  <Button size="sm" variant="secondary" disabled={pause.isPending}
+                    onClick={() => pause.mutate(a.campaignId)}>
+                    <PauseCircle className="w-3.5 h-3.5" /> Pause campaign
+                  </Button>
+                )}
+                <Button size="sm" variant="ghost" aria-label={`Dismiss “${a.rule}” on ${a.campaign}`}
+                  disabled={dismiss.isPending} onClick={() => dismiss.mutate(a.id)}>
+                  <X className="w-3.5 h-3.5" />
+                </Button>
+              </li>
+            ))}
+          </ul>
+          {(dismiss.isError || pause.isError) && (
+            <p role="alert" className="mt-2 text-xs text-error">{(dismiss.error || pause.error).message}</p>
+          )}
+        </Card>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="space-y-3">
@@ -190,7 +251,11 @@ export default function Rules() {
 
           <Card className="p-4">
             <h3 className="font-bold text-ink mb-1">Check rules now</h3>
-            <p className="text-xs text-ink-faint mb-3">Evaluates every active rule against current campaign metrics — suggestions only, nothing is paused automatically.</p>
+            <p className="text-xs text-ink-faint mb-3">
+              EffySocial checks these every half hour and tells you what it finds. This runs the same check right now —
+              suggestions only, nothing is paused automatically.
+            </p>
+            <p className="text-xs text-ink-faint mb-3">{checked}</p>
             <Button variant="secondary" className="w-full" onClick={runDry} disabled={running || rules.length === 0}>
               {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <PlayCircle className="w-4 h-4" />} Run check
             </Button>

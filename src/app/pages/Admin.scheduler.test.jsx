@@ -1,6 +1,7 @@
 import React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import Admin from './Admin';
 import { mockApi, bootstrapFixture } from '../../test/mockApi';
 import { renderApp } from '../../test/render';
@@ -9,8 +10,9 @@ import fx from '../../test/fixtures/scheduler';
 // Platform admins can see that the minute scheduler is running and how each job's
 // last run went (launch plan 4.2). Payloads come from the engine's test flow.
 const usage = { status: 'ok', month: '2026-09-01', totals: { veo_video: 0, image: 0, tts_chars: 0, est_usd: 0 }, workspaces: [], platform: { users: 1, orgs: 1, workspaces: 1 }, limits: { veo_video: 20, image: 300 }, recent: [] };
-const open = (scheduler) => {
-  mockApi({ 'GET /bootstrap': bootstrapFixture, 'GET /admin/usage': usage, 'GET /admin/scheduler': scheduler });
+let api;
+const open = (scheduler, handlers = {}) => {
+  api = mockApi({ 'GET /bootstrap': bootstrapFixture, 'GET /admin/usage': usage, 'GET /admin/scheduler': scheduler, ...handlers });
   renderApp(<Admin />, { route: '/app/admin' });
   return screen.findByRole('region', { name: 'Scheduler' });
 };
@@ -39,5 +41,25 @@ describe('Admin — scheduler', () => {
     const section = within(await open(fx.neverRun));
     expect(section.getByText('Not running')).toBeInTheDocument();
     expect(section.getByText(/^It hasn’t run yet\./)).toBeInTheDocument();
+  });
+
+  // Run now (launch plan 5.4): after fixing whatever made a job fail, or to see one work.
+  it('runs the jobs now and says what happened', async () => {
+    const section = within(await open(fx.running, {
+      'POST /admin/scheduler/run': { status: 'ok', ran: true, lock: 'redis', jobs: { 'check-ad-rules': { alerts: 2 } } },
+    }));
+    await userEvent.click(section.getByRole('button', { name: /Run now/ }));
+    expect(await screen.findByRole('status')).toHaveTextContent('Ran 1 job(s).');
+    expect(api.callsTo('POST /admin/scheduler/run')).toHaveLength(1);
+  });
+
+  it('says when a run is already in flight, or could not start', async () => {
+    const section = within(await open(fx.running, { 'POST /admin/scheduler/run': { status: 'ok', ran: false, lock: 'redis', jobs: {} } }));
+    await userEvent.click(section.getByRole('button', { name: /Run now/ }));
+    expect(await screen.findByRole('status')).toHaveTextContent('A run was already in progress.');
+
+    const failing = within(await open(fx.running, { 'POST /admin/scheduler/run': [503, { message: 'Redis is unreachable.' }] }));
+    await userEvent.click(failing.getAllByRole('button', { name: /Run now/ })[0]);
+    expect(await screen.findByRole('alert')).toHaveTextContent('Redis is unreachable.');
   });
 });

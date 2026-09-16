@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ShieldCheck, Film, ImageIcon, Mic, Users, RefreshCw, Zap } from 'lucide-react';
 import { effyApi } from '../api/effyApi';
-import { Card, PageHeader, Badge, MetricCard, Pacing, EmptyState } from '../../ui';
+import { Card, PageHeader, Badge, MetricCard, Pacing, EmptyState, Button } from '../../ui';
 import { cn } from '../../lib/cn';
 
 const usd = (v) => `$${Number(v || 0).toFixed(2)}`;
@@ -145,15 +145,37 @@ function ago(iso) {
 }
 
 function Scheduler() {
+  const qc = useQueryClient();
   const { data } = useQuery({ queryKey: ['admin-scheduler'], queryFn: () => effyApi.adminScheduler(), retry: false, refetchInterval: 30_000 });
+  const [run, setRun] = useState({ busy: false, note: '', error: '' });
   if (!data) return null;
+
+  // Run the jobs now — after fixing whatever made one fail, without waiting a minute.
+  const runNow = async () => {
+    setRun({ busy: true, note: '', error: '' });
+    try {
+      const r = await effyApi.adminSchedulerRun();
+      setRun({ busy: false, error: '', note: r.ran ? `Ran ${Object.keys(r.jobs).length} job(s).` : 'A run was already in progress.' });
+      qc.invalidateQueries({ queryKey: ['admin-scheduler'] });
+    } catch (e) {
+      setRun({ busy: false, note: '', error: e.message || 'Could not run the scheduler.' });
+    }
+  };
+
   return (
     <Card className="p-5 mb-6">
       <section aria-label="Scheduler">
         <div className="flex items-center justify-between gap-3 mb-1">
           <h3 className="font-bold text-ink">Scheduler</h3>
-          <Badge tone={data.running ? 'success' : 'error'}>{data.running ? 'Running' : 'Not running'}</Badge>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="secondary" onClick={runNow} disabled={run.busy}>
+              <RefreshCw className={run.busy ? 'w-3.5 h-3.5 animate-spin' : 'w-3.5 h-3.5'} /> {run.busy ? 'Running…' : 'Run now'}
+            </Button>
+            <Badge tone={data.running ? 'success' : 'error'}>{data.running ? 'Running' : 'Not running'}</Badge>
+          </div>
         </div>
+        {run.note && <p role="status" className="text-xs text-success mb-1">{run.note}</p>}
+        {run.error && <p role="alert" className="text-xs text-error mb-1">{run.error}</p>}
         <p className="text-xs text-ink-faint mb-3">
           {data.lastRunAt ? `Last run ${ago(data.lastRunAt)}. ` : 'It hasn’t run yet. '}
           Runs every minute: publishes scheduled posts when they’re due and finishes uploads Instagram is still processing.

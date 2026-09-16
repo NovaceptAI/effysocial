@@ -368,6 +368,8 @@ export const effyApi = {
     http(`/ads/rules/${ruleId}?workspace=${encodeURIComponent(workspaceId)}`, { method: 'DELETE' }),
   adsRulesDryRun: (workspaceId) =>
     http('/ads/rules/dry-run', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId }) }),
+  adsDismissAlert: (alertId, workspaceId) =>
+    http(`/ads/rules/alerts/${alertId}/dismiss`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId }) }),
 
   // Effy AI assistant
   assistantChat: (workspaceId, message, history = []) =>
@@ -396,6 +398,8 @@ export const effyApi = {
     http('/interest', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ feature }) }),
   adminInterest: () => http('/admin/interest').then((d) => d.features),
   adminScheduler: () => http('/admin/scheduler'),
+  adminSchedulerRun: (job) =>
+    http('/admin/scheduler/run', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(job ? { job } : {}) }),
   // Account: profile, preferences, two-factor sign-in (G44)
   updateMe: (payload) =>
     http('/auth/me', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.user),

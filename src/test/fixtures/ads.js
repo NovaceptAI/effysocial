@@ -528,3 +528,132 @@ export const adsAnalyticsMock = {
   "spend": 21607
  }
 };
+
+// The rules payload after a scheduled check found breaches (launch plan 5.4;
+// tests/test_effy_ad_rules.py) on 16 Sep 2026. Regenerate rather than hand-edit.
+export const adsRulesAlerting = {
+ "alerts": [
+  {
+   "action": "notify",
+   "campaign": "Click-to-WhatsApp Offers",
+   "campaignId": "adc_1_1",
+   "dismissed": false,
+   "firstSeen": "2026-09-16T10:30:58.868328+00:00",
+   "id": "rule_1_1789554658850:adc_1_1",
+   "lastSeen": "2026-09-16T10:30:58.868328+00:00",
+   "metric": "cpl",
+   "op": "gt",
+   "rule": "CPL guard",
+   "ruleId": "rule_1_1789554658850",
+   "suggestedAction": "notify",
+   "threshold": 200.0,
+   "value": 240
+  },
+  {
+   "action": "notify",
+   "campaign": "Lead Gen \u2014 Always On",
+   "campaignId": "adc_1_0",
+   "dismissed": false,
+   "firstSeen": "2026-09-16T10:30:58.868328+00:00",
+   "id": "rule_1_1789554658850:adc_1_0",
+   "lastSeen": "2026-09-16T10:30:58.868328+00:00",
+   "metric": "cpl",
+   "op": "gt",
+   "rule": "CPL guard",
+   "ruleId": "rule_1_1789554658850",
+   "suggestedAction": "notify",
+   "threshold": 200.0,
+   "value": 376
+  },
+  {
+   "action": "notify",
+   "campaign": "Search \u2014 Brand + Category",
+   "campaignId": "adc_1_2",
+   "dismissed": false,
+   "firstSeen": "2026-09-16T10:30:58.868328+00:00",
+   "id": "rule_1_1789554658850:adc_1_2",
+   "lastSeen": "2026-09-16T10:30:58.868328+00:00",
+   "metric": "cpl",
+   "op": "gt",
+   "rule": "CPL guard",
+   "ruleId": "rule_1_1789554658850",
+   "suggestedAction": "notify",
+   "threshold": 200.0,
+   "value": 337
+  },
+  {
+   "action": "pause",
+   "campaign": "Click-to-WhatsApp Offers",
+   "campaignId": "adc_1_1",
+   "dismissed": false,
+   "firstSeen": "2026-09-16T10:30:58.868328+00:00",
+   "id": "rule_1_1789554658860:adc_1_1",
+   "lastSeen": "2026-09-16T10:30:58.868328+00:00",
+   "metric": "roas",
+   "op": "lt",
+   "rule": "Stop the bleeding",
+   "ruleId": "rule_1_1789554658860",
+   "suggestedAction": "pause",
+   "threshold": 9.0,
+   "value": 4.2
+  },
+  {
+   "action": "pause",
+   "campaign": "Lead Gen \u2014 Always On",
+   "campaignId": "adc_1_0",
+   "dismissed": false,
+   "firstSeen": "2026-09-16T10:30:58.868328+00:00",
+   "id": "rule_1_1789554658860:adc_1_0",
+   "lastSeen": "2026-09-16T10:30:58.868328+00:00",
+   "metric": "roas",
+   "op": "lt",
+   "rule": "Stop the bleeding",
+   "ruleId": "rule_1_1789554658860",
+   "suggestedAction": "pause",
+   "threshold": 9.0,
+   "value": 1.9
+  },
+  {
+   "action": "pause",
+   "campaign": "Search \u2014 Brand + Category",
+   "campaignId": "adc_1_2",
+   "dismissed": false,
+   "firstSeen": "2026-09-16T10:30:58.868328+00:00",
+   "id": "rule_1_1789554658860:adc_1_2",
+   "lastSeen": "2026-09-16T10:30:58.868328+00:00",
+   "metric": "roas",
+   "op": "lt",
+   "rule": "Stop the bleeding",
+   "ruleId": "rule_1_1789554658860",
+   "suggestedAction": "pause",
+   "threshold": 9.0,
+   "value": 4.1
+  }
+ ],
+ "checkedAt": "2026-09-16T10:30:58.868328+00:00",
+ "mode": "sandbox",
+ "provider": "meta_ads",
+ "rules": [
+  {
+   "action": "notify",
+   "enabled": true,
+   "id": "rule_1_1789554658850",
+   "metric": "cpl",
+   "name": "CPL guard",
+   "op": "gt",
+   "scope": "all",
+   "threshold": 200.0
+  },
+  {
+   "action": "pause",
+   "enabled": true,
+   "id": "rule_1_1789554658860",
+   "metric": "roas",
+   "name": "Stop the bleeding",
+   "op": "lt",
+   "scope": "all",
+   "threshold": 9.0
+  }
+ ],
+ "status": "ok"
+};
