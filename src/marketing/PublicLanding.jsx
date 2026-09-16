@@ -40,6 +40,9 @@ function EmbeddedForm({ formSlug, accent }) {
         source: params.get('utm_source') || '',
         medium: params.get('utm_medium') || '',
         campaign: params.get('utm_campaign') || '',
+        // Click ids Meta and Google add to ad links — conversion events match far better with them.
+        fbclid: params.get('fbclid') || '',
+        gclid: params.get('gclid') || '',
       };
       const d = await effyApi.publicSubmit(formSlug, { data: values, utm, website: honeypot });
       setThankyou(d.thankyou);

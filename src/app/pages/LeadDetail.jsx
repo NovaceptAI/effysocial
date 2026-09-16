@@ -1,6 +1,6 @@
 // Lead detail — deep-dive on one lead: attribution (campaign/form/conversation
-// + UTMs), duplicates, follow-up runs, notes, and §14.7 outcome marking that
-// feeds offline-conversion signals back to ad platforms (mock until Phase 3).
+// + UTMs), duplicates, follow-up runs, notes, and §14.7 outcome marking, which keeps a
+// conversion event built for Meta and Google — ready, not sent until they're connected (5.6).
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -10,6 +10,22 @@ import { effyApi } from '../api/effyApi';
 import { Card, PageHeader, Button, Badge, EmptyState } from '../../ui';
 import { ChannelIcon } from '../components/parts';
 import { cn } from '../../lib/cn';
+
+const PLATFORM = { meta: 'Meta', google: 'Google' };
+const CLICK_ID = { fbclid: 'Meta click id', gclid: 'Google click id' };
+// What happened to a conversion event, plainly: it is kept, and not sent until connected.
+export function eventLine(s) {
+  if (s.status === 'not_sent') return s.note;
+  // Always Meta, then Google — the order the engine's note uses, whatever order the JSON has.
+  const named = (status) => Object.keys(PLATFORM).filter((k) => s.platforms?.[k]?.status === status).map((k) => PLATFORM[k]);
+  const waiting = named('not_connected');
+  const sent = named('sent');
+  const matched = s.matchedBy?.length ? `matched by ${s.matchedBy.join(', ')}` : 'nothing to match it to a person';
+  const parts = [];
+  if (sent.length) parts.push(`Sent to ${sent.join(' and ')}`);
+  if (waiting.length) parts.push(`Ready for ${waiting.join(' and ')} — not sent, not connected yet`);
+  return `${parts.join('. ')} (${matched}).`;
+}
 
 const STAGES = ['new', 'contacted', 'qualified', 'appointment', 'proposal', 'won', 'lost'];
 const STAGE_LABEL = { new: 'New', contacted: 'Contacted', qualified: 'Qualified', appointment: 'Appointment', proposal: 'Proposal', won: 'Won', lost: 'Lost' };
@@ -152,7 +168,7 @@ export default function LeadDetail() {
             <div className="flex items-center gap-1.5 flex-wrap mb-2">
               <Badge tone={SOURCE_TONE[lead.source] || 'default'}>{lead.source}</Badge>
               {lead.channel && <ChannelIcon channel={lead.channel} className="w-4 h-4" />}
-              {Object.entries(a.utm || {}).map(([k, v]) => <Badge key={k} tone="info">utm_{k}: {v}</Badge>)}
+              {Object.entries(a.utm || {}).map(([k, v]) => <Badge key={k} tone="info">{CLICK_ID[k] || `utm_${k}`}: {v}</Badge>)}
             </div>
             <div className="space-y-2 text-sm text-ink-soft">
               {a.campaign && <div><Link to={`/app/campaigns/${a.campaign.id}`} className="font-semibold text-coral-ink">{a.campaign.name}</Link> <span className="text-xs text-ink-faint">campaign · {a.campaign.status}</span></div>}
@@ -189,7 +205,7 @@ export default function LeadDetail() {
           )}
 
           <Section icon={CheckCircle2} title="Sales outcome">
-            <p className="text-xs text-ink-faint mb-3">Mark what actually happened. Positive outcomes are sent back to ad platforms as offline-conversion signals so they optimise for buyers, not just clicks (mock until Phase 3).</p>
+            <p className="text-xs text-ink-faint mb-3">Mark what actually happened. Each outcome keeps a conversion event built for Meta and Google, so they can optimise for buyers, not just clicks. Nothing is sent until they’re connected.</p>
             <div className="space-y-1.5">
               {POSITIVE.map((o) => (
                 <button key={o} onClick={() => patch.mutate({ outcome: o })} disabled={patch.isPending}
@@ -207,11 +223,15 @@ export default function LeadDetail() {
               ))}
             </div>
             {lead.offlineSignals?.length > 0 && (
-              <div className="mt-3 pt-3 border-t border-line space-y-1">
+              <div className="mt-3 pt-3 border-t border-line space-y-2" role="list" aria-label="Conversion events">
                 {lead.offlineSignals.map((s, i) => (
-                  <div key={i} className="flex items-center gap-1.5 text-xs text-ink-faint">
-                    <Badge tone={s.signal === 'positive' ? 'success' : 'error'}>{s.signal}</Badge>
-                    {OUTCOME_LABEL[s.outcome] || s.outcome} · {s.provider} · {new Date(s.when).toLocaleString()}
+                  <div key={s.eventId || i} role="listitem" className="text-xs text-ink-faint">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <Badge tone={s.signal === 'positive' ? 'success' : 'error'}>{s.signal}</Badge>
+                      <span className="font-semibold text-ink-soft">{OUTCOME_LABEL[s.outcome] || s.outcome}</span>
+                      <span>· {new Date(s.when).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                    <p className="mt-0.5">{eventLine(s)}</p>
                   </div>
                 ))}
               </div>

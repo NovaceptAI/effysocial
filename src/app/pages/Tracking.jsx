@@ -122,7 +122,7 @@ export default function Tracking() {
     return <p className="flex items-center gap-2 text-ink-soft text-sm py-10"><Loader2 className="w-4 h-4 animate-spin" /> Loading tracking diagnostics…</p>;
   }
 
-  const { sources, domain, utm, recommendations, guide } = data;
+  const { sources, domain, utm, recommendations, guide, conversions } = data;
 
   return (
     <div>
@@ -171,6 +171,21 @@ export default function Tracking() {
             </>
           )}
         </Card>
+
+        {conversions && (
+          <Card className="p-5 h-max" role="region" aria-label="Conversion events">
+            <h3 className="font-extrabold tracking-tight mb-3 flex items-center gap-2"><Zap className="w-4 h-4 text-coral" /> Conversion events</h3>
+            <p className="text-3xl font-extrabold tabular-nums">{conversions.ready}</p>
+            <p className="text-sm text-ink-soft mt-1">
+              {conversions.ready
+                ? `ready for Meta and Google — ${conversions.sent} sent, as neither is connected yet.`
+                : 'None yet. Mark a lead’s outcome in the pipeline to build one.'}
+            </p>
+            {conversions.ready > 0 && (
+              <p className="text-xs text-ink-faint mt-2">{conversions.withClickId} carry an ad click id, which helps the platforms match them.</p>
+            )}
+          </Card>
+        )}
 
         <Card className="p-5 h-max">
           <h3 className="font-extrabold tracking-tight mb-3 flex items-center gap-2"><Globe2 className="w-4 h-4 text-coral" /> Domain verification</h3>
