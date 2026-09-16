@@ -58,9 +58,11 @@ test('published posts drive Creative Performance, and a template opens Studio', 
     await expect(card).toContainText('Instagram Reel');
     await card.getByRole('button', { name: 'Use this template' }).click();
     await expect(page).toHaveURL(/\/app\/studio\?format=ig_reel/);
-    await expect(page.getByText('Instagram Reel')).toBeVisible();
+    // The brief box is Studio's own, so waiting for it means the gallery is gone.
+    await expect(page.getByPlaceholder('e.g. monsoon dental check-up offer'))
+      .toHaveValue(/before-and-after reel of one real job/);
     await expect(page.getByRole('heading', { name: 'Create a post' })).toHaveCount(0);
-    await expect(page.getByDisplayValue(/before-and-after reel of one real job/)).toBeVisible();
+    await expect(page.getByText('Instagram Reel', { exact: true })).toBeVisible();
   });
 
   await test.step('the Marketing Plan writes a plan for this workspace (CAMP-013)', async () => {
