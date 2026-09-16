@@ -352,6 +352,7 @@ export const effyApi = {
   adsCreatives: (workspaceId) => http(`/ads/creatives?workspace=${encodeURIComponent(workspaceId)}`),
   adsAudiences: (workspaceId) => http(`/ads/audiences?workspace=${encodeURIComponent(workspaceId)}`),
   adsBudgets: (workspaceId) => http(`/ads/budgets?workspace=${encodeURIComponent(workspaceId)}`),
+  adsAnalytics: (workspaceId) => http(`/ads/analytics?workspace=${encodeURIComponent(workspaceId)}`),
   adsSetStatus: (campaignId, workspaceId, status) =>
     http(`/ads/campaigns/${campaignId}/status`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId, status }) }),
   adsSetBudget: (campaignId, workspaceId, budget) =>
