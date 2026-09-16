@@ -1,9 +1,8 @@
-import { test, expect } from '../e2e/support/test';
+import { test, expect, signInPlatformAdmin } from '../e2e/support/test';
 
 // Plans against the real engine (launch plan 3.4, G22): a platform admin moves an
 // organisation to Creative from Admin, and Performance Marketing closes in the UI and
 // the API at once; moving it to Pro opens it again. BILL-002.
-const ADMIN = 'admin-e2e@example.in'; // EFFY_ADMIN_EMAILS in scripts/e2e_film_server.py
 
 test('an admin changes an organisation’s plan and the app follows', async ({ page, browser }) => {
   const stamp = Date.now();
@@ -31,12 +30,7 @@ test('an admin changes an organisation’s plan and the app follows', async ({ p
   };
 
   await test.step('the platform admin moves it to Creative', async () => {
-    await admin.goto('/login');
-    const r = await admin.request.post('/api/effy/auth/register', { data: { email: ADMIN, password: 'plans-admin-123', name: 'Platform Admin' } });
-    // The admin account may exist from an earlier test in this run.
-    if (!r.ok()) {
-      expect((await admin.request.post('/api/effy/auth/login', { data: { email: ADMIN, password: 'plans-admin-123' } })).ok()).toBeTruthy();
-    }
+    await signInPlatformAdmin(admin);   // it may already exist from an earlier spec
     await setPlan('Creative');
   });
 

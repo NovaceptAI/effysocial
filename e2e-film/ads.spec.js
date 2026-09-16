@@ -1,4 +1,4 @@
-import { test, expect } from '../e2e/support/test';
+import { test, expect, signInPlatformAdmin } from '../e2e/support/test';
 
 // Advertising Analytics against the real engine (launch plan 5.3, G34; ADS-011):
 // with the sandbox ad account on, the page shows the numbers and cuts them; with it
@@ -71,10 +71,7 @@ test('a rule breach is found on a schedule, alerts, and only suggests the pause'
     // The admin runs the jobs now rather than waiting for the minute timer.
     const admin = await browser.newContext();
     const adminPage = await admin.newPage();
-    await adminPage.goto('/login');
-    expect((await adminPage.request.post('/api/effy/auth/register', {
-      data: { email: 'admin-e2e@example.in', password: 'admin-e2e-123', name: 'Ops' },
-    })).ok()).toBeTruthy();
+    await signInPlatformAdmin(adminPage);
     await adminPage.goto('/app/admin');
     const scheduler = adminPage.getByRole('region', { name: 'Scheduler' });
     await scheduler.getByRole('button', { name: 'Run now' }).click();
