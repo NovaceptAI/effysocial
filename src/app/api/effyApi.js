@@ -309,7 +309,7 @@ export const effyApi = {
 
   // Strategy intelligence (real trends + competitors)
   strategyTrends: (workspaceId) => http(`/strategy/trends?workspace=${encodeURIComponent(workspaceId)}`),
-  strategyCompetitors: (workspaceId) => http(`/strategy/competitors?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.competitors),
+  strategyCompetitors: (workspaceId) => http(`/strategy/competitors?workspace=${encodeURIComponent(workspaceId)}`),   // { competitors, basis }
   addCompetitor: (payload) =>
     http('/strategy/competitors', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.competitor),
   deleteCompetitor: (id) => http(`/strategy/competitors/${id}`, { method: 'DELETE' }),

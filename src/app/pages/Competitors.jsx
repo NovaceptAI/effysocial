@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2, Swords, ExternalLink, Globe, RefreshCw, Info } from 'lucide-react';
+import { Plus, Trash2, Swords, ExternalLink, Globe, RefreshCw } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
 import { Card, PageHeader, Button, Badge } from '../../ui';
 import { ChannelIcon } from '../components/parts';
+import SourceNote from '../components/SourceNote';
 
 const LINK_FIELDS = [
   { key: 'instagram', label: 'Instagram URL / handle', placeholder: 'https://instagram.com/competitor' },
@@ -22,11 +23,12 @@ export default function Competitors() {
   const [notes, setNotes] = useState('');
 
   const key = ['competitors', workspace?.id];
-  const { data: competitors = [], isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: key,
     queryFn: () => effyApi.strategyCompetitors(workspace.id),
     enabled: !!workspace,
   });
+  const competitors = data?.competitors || [];
   const invalidate = () => qc.invalidateQueries({ queryKey: key });
 
   const add = useMutation({
@@ -96,6 +98,7 @@ export default function Competitors() {
                   <button onClick={() => remove.mutate(c.id)} title="Remove"
                     className="text-ink-faint hover:text-error transition shrink-0"><Trash2 className="w-3.5 h-3.5" /></button>
                 </div>
+                <p className="text-[0.7rem] text-ink-faint mb-1.5">Added {new Date(`${c.created}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
                 {c.notes && <p className="text-xs text-ink-soft leading-relaxed mb-2.5">{c.notes}</p>}
                 <div className="flex flex-wrap gap-1.5">
                   {Object.entries(c.links || {}).map(([k, url]) => (
@@ -110,10 +113,7 @@ export default function Competitors() {
               </Card>
             ))}
           </div>
-          <p className="mt-4 flex items-start gap-1.5 text-xs text-ink-faint max-w-xl">
-            <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-            Posting frequency, engagement and share-of-voice benchmarks for these accounts arrive with channel sync — nothing is estimated until then. Their names already sharpen your Studio competitor angles.
-          </p>
+          <SourceNote basis={data?.basis} className="max-w-2xl" />
         </>
       )}
     </div>

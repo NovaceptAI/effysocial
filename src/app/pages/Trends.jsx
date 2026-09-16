@@ -6,9 +6,10 @@ import { useWorkspace } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
 import { Card, PageHeader, Button, Badge } from '../../ui';
 import { cn } from '../../lib/cn';
+import SourceNote from '../components/SourceNote';
 
 const HEAT = { hot: 'text-error', warm: 'text-warning' };
-const EMPTY = { trending: [], hashtags: [], formats: [], gaps: [], seasonal: [] };
+const EMPTY = { trending: [], hashtags: [], formats: [], gaps: [], seasonal: [], basis: {} };
 
 export default function Trends() {
   const { workspace } = useWorkspace();
@@ -28,7 +29,7 @@ export default function Trends() {
 
   return (
     <div>
-      <PageHeader title="Trends" subtitle="AI-suggested themes for your industry — content gaps are computed from your real posts." />
+      <PageHeader title="Trends" subtitle="Themes to post about, gaps in your content and seasonal moments — each says where it comes from." />
 
       {isLoading && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -51,7 +52,10 @@ export default function Trends() {
       {!isLoading && !isError && (<>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="lg:col-span-2 p-5">
-          <h3 className="font-bold text-ink mb-3">Trending now</h3>
+          <div className="flex flex-wrap items-center gap-2 mb-3">
+            <h3 className="font-bold text-ink">Suggested themes</h3>
+            <Badge tone={t.provider === 'brand' ? 'info' : 'default'}>{t.provider === 'brand' ? 'AI suggestions' : 'General guidance'}</Badge>
+          </div>
           <div className="space-y-2.5">
             {t.trending.map((x) => (
               <div key={x.topic} className="flex items-start gap-3 p-3 rounded-lg border border-line hover:border-coral transition">
@@ -69,16 +73,26 @@ export default function Trends() {
               </div>
             ))}
           </div>
+          <SourceNote basis={t.basis.trending} />
         </Card>
 
         <div className="space-y-4">
           <Card className="p-5">
             <h3 className="font-bold text-ink mb-2 text-sm flex items-center gap-1.5"><Hash className="w-4 h-4" /> Suggested hashtags</h3>
             <div className="flex flex-wrap gap-1.5">{t.hashtags.map((h) => <Badge key={h} tone="new">#{h}</Badge>)}</div>
+            <SourceNote basis={t.basis.hashtags} />
           </Card>
           <Card className="p-5">
-            <h3 className="font-bold text-ink mb-2 text-sm flex items-center gap-1.5"><Clapperboard className="w-4 h-4" /> Hot formats</h3>
+            <h3 className="font-bold text-ink mb-2 text-sm flex items-center gap-1.5"><Clapperboard className="w-4 h-4" /> Formats to try</h3>
+            {t.yourBestFormat && (
+              <div className="mb-2 rounded-lg bg-success-soft/60 px-3 py-2 text-sm" role="region" aria-label="Your best format">
+                <span className="font-semibold text-ink">Your best so far: {t.yourBestFormat.label}</span>
+                <span className="text-ink-soft"> · {t.yourBestFormat.engagement}% engagement</span>
+                <SourceNote basis={t.yourBestFormat.basis} className="mt-1" />
+              </div>
+            )}
             <ul className="space-y-1.5 text-sm text-ink-soft">{t.formats.map((f) => <li key={f}>• {f}</li>)}</ul>
+            <SourceNote basis={t.basis.formats} />
           </Card>
         </div>
       </div>
@@ -87,10 +101,12 @@ export default function Trends() {
         <Card className="p-5">
           <h3 className="font-bold text-ink mb-3 text-sm flex items-center gap-1.5"><AlertTriangle className="w-4 h-4 text-warning" /> Content gaps</h3>
           <ul className="space-y-1.5 text-sm text-ink-soft">{t.gaps.map((g) => <li key={g}>• {g}</li>)}</ul>
+          <SourceNote basis={t.basis.gaps} />
         </Card>
         <Card className="p-5">
           <h3 className="font-bold text-ink mb-3 text-sm flex items-center gap-1.5"><CalendarDays className="w-4 h-4 text-coral-ink" /> Seasonal opportunities</h3>
           <div className="flex flex-wrap gap-2">{t.seasonal.map((s, i) => <Badge key={s} tone={i === 0 ? 'coral' : 'default'}>{s}</Badge>)}</div>
+          <SourceNote basis={t.basis.seasonal} />
         </Card>
       </div>
       </>)}
