@@ -5,6 +5,8 @@ import { useWorkspace } from '../context/WorkspaceContext';
 import { useConversations, useInvalidatingMutation } from '../api/hooks';
 import { effyApi } from '../api/effyApi';
 import { Card, PageHeader, Button, Badge, EmptyState } from '../../ui';
+import { TagEditor, EscalateDialog } from '../components/InboxActions';
+import { formatInZone, orgZone } from '../timezone';
 import { ChannelIcon } from '../components/parts';
 import { cn } from '../../lib/cn';
 
@@ -17,17 +19,22 @@ const QUEUES = [
   { id: 'sales', label: 'Sales intent', test: (c) => c.intent === 'sales' },
   { id: 'complaints', label: 'Complaints', test: (c) => c.intent === 'complaint' },
   { id: 'mentions', label: 'Mentions', test: (c) => c.kind === 'mention' },
+  { id: 'escalated', label: 'Escalated', test: (c) => !!c.escalation },
 ];
 
 export default function Inbox() {
-  const { workspace } = useWorkspace();
+  const { workspace, user, org } = useWorkspace();
   const { data: all = [] } = useConversations(workspace);
   const [queue, setQueue] = useState('all');
+  const [tagFilter, setTagFilter] = useState('');
   const [draft, setDraft] = useState('');
+  const [panel, setPanel] = useState('');   // '' | 'tags' | 'escalate'
+  const knownTags = useMemo(() => [...new Set(all.flatMap((c) => c.tags || []))].sort((a, b) => a.localeCompare(b)), [all]);
   const list = useMemo(() => {
     const q = QUEUES.find((x) => x.id === queue);
-    return q?.test ? all.filter(q.test) : all;
-  }, [all, queue]);
+    const queued = q?.test ? all.filter(q.test) : all;
+    return tagFilter ? queued.filter((c) => (c.tags || []).includes(tagFilter)) : queued;
+  }, [all, queue, tagFilter]);
   const [selId, setSelId] = useState(null);
   const active = all.find((c) => c.id === selId) || list[0];
 
@@ -36,6 +43,9 @@ export default function Inbox() {
   const reply = useInvalidatingMutation(({ id, text }) => effyApi.replyConversation(id, text), invalidate);
   const close = useInvalidatingMutation((id) => effyApi.closeConversation(id), invalidate);
   const convert = useInvalidatingMutation((id) => effyApi.convertLead(id), () => ['leads', workspace?.id]);
+  const tag = useInvalidatingMutation(({ id, tags }) => effyApi.tagConversation(id, tags), invalidate);
+  const escalate = useInvalidatingMutation(({ id, to, note }) => effyApi.escalateConversation(id, to, note), invalidate);
+  const resolve = useInvalidatingMutation((id) => effyApi.resolveEscalation(id), invalidate);
 
   const convertToLead = async () => {
     if (!active) return;
@@ -68,12 +78,25 @@ export default function Inbox() {
               );
             })}
           </ul>
+          {knownTags.length > 0 && (
+            <div className="mt-2 pt-2 border-t border-line px-1" role="group" aria-label="Filter by tag">
+              <p className="px-2 text-[0.65rem] font-bold uppercase tracking-wide text-ink-faint mb-1">Tags</p>
+              <div className="flex flex-wrap gap-1 px-1">
+                {knownTags.map((t) => (
+                  <button key={t} type="button" aria-pressed={tagFilter === t} onClick={() => setTagFilter(tagFilter === t ? '' : t)}
+                    className={cn('rounded-full px-2 py-0.5 text-xs font-semibold', tagFilter === t ? 'bg-coral-soft text-coral-ink' : 'bg-surface2 text-ink-soft hover:text-ink')}>
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </Card>
 
         {/* conversation list */}
         <Card className="p-1.5 h-max max-h-[72vh] overflow-y-auto">
           {list.length ? list.map((c) => (
-            <button key={c.id} onClick={() => setSelId(c.id)} className={cn('w-full text-left flex gap-2.5 p-3 rounded-lg transition', active?.id === c.id ? 'bg-surface2' : 'hover:bg-surface2/60')}>
+            <button key={c.id} onClick={() => { setSelId(c.id); setPanel(''); }} className={cn('w-full text-left flex gap-2.5 p-3 rounded-lg transition', active?.id === c.id ? 'bg-surface2' : 'hover:bg-surface2/60')}>
               <ChannelIcon channel={c.channel} className="w-7 h-7 shrink-0" />
               <span className="flex-1 min-w-0">
                 <span className="flex items-center gap-1.5">
@@ -82,7 +105,11 @@ export default function Inbox() {
                   {c.unread && <span className="w-2 h-2 rounded-full bg-coral shrink-0" />}
                 </span>
                 <span className="block text-xs text-ink-soft truncate mt-0.5">{c.messages[0].text}</span>
-                <span className="block text-[0.68rem] text-ink-faint mt-0.5">{c.messages[0].time}</span>
+                <span className="flex flex-wrap items-center gap-1 mt-0.5">
+                  <span className="text-[0.68rem] text-ink-faint">{c.messages[0].time}</span>
+                  {c.escalation && <Badge tone="error">escalated</Badge>}
+                  {(c.tags || []).map((t) => <span key={t} className="rounded-full bg-info-soft text-info px-1.5 text-[0.65rem] font-semibold">{t}</span>)}
+                </span>
               </span>
             </button>
           )) : <div className="p-6"><EmptyState icon="📭" title="Queue empty" body="Nothing here right now." /></div>}
@@ -104,6 +131,25 @@ export default function Inbox() {
               </div>
               <span className="flex items-center gap-1.5 text-xs text-ink-faint"><Clock className="w-3.5 h-3.5" /> SLA 2h</span>
             </div>
+
+            {active.escalation && (
+              <div role="status" className="mt-3 p-3 rounded-lg bg-error-soft text-sm flex items-start gap-2">
+                <ArrowUpRight className="w-4 h-4 text-error shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-ink">
+                    Escalated to {active.escalation.to?.name || 'a teammate who has left'}
+                    {active.escalation.by && <> by {active.escalation.by.name}</>} · {formatInZone(active.escalation.at, orgZone(org))}
+                  </p>
+                  <p className="text-ink-soft">{active.escalation.note}</p>
+                </div>
+                <Button size="sm" variant="secondary" disabled={resolve.isPending} onClick={() => resolve.mutate(active.id)}>Resolve</Button>
+              </div>
+            )}
+            {(active.tags || []).length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-3" aria-label="Tags">
+                {active.tags.map((t) => <span key={t} className="rounded-full bg-info-soft text-info px-2 py-0.5 text-xs font-semibold">{t}</span>)}
+              </div>
+            )}
 
             <div className="flex-1 py-4 space-y-3 min-h-[160px]">
               {active.messages.map((m, i) => (
@@ -143,12 +189,24 @@ export default function Inbox() {
               <Button size="sm" variant="ghost" disabled={convert.isPending} onClick={convertToLead}>
                 <UserPlus className="w-3.5 h-3.5" /> {convert.isPending ? 'Converting…' : 'Convert to lead'}
               </Button>
-              <Button size="sm" variant="ghost"><Tag className="w-3.5 h-3.5" /> Tag</Button>
-              <Button size="sm" variant="ghost"><ArrowUpRight className="w-3.5 h-3.5" /> Escalate</Button>
+              <Button size="sm" variant="ghost" aria-expanded={panel === 'tags'} onClick={() => setPanel(panel === 'tags' ? '' : 'tags')}>
+                <Tag className="w-3.5 h-3.5" /> Tag
+              </Button>
+              <Button size="sm" variant="ghost" aria-expanded={panel === 'escalate'} onClick={() => setPanel(panel === 'escalate' ? '' : 'escalate')}>
+                <ArrowUpRight className="w-3.5 h-3.5" /> {active.escalation ? 'Escalate again' : 'Escalate'}
+              </Button>
               <Button size="sm" variant="ghost" className="ml-auto" disabled={close.isPending} onClick={() => close.mutate(active.id)}>
                 <Check className="w-3.5 h-3.5" /> {active.status === 'closed' ? 'Closed' : 'Close'}
               </Button>
             </div>
+            {panel === 'tags' && (
+              <TagEditor key={`tags-${active.id}`} conversation={active} knownTags={knownTags}
+                onSave={(tags) => tag.mutateAsync({ id: active.id, tags })} onClose={() => setPanel('')} />
+            )}
+            {panel === 'escalate' && (
+              <EscalateDialog key={`esc-${active.id}`} conversation={active} me={user?.id}
+                onEscalate={(to, note) => escalate.mutateAsync({ id: active.id, to, note })} onClose={() => setPanel('')} />
+            )}
           </Card>
         ) : <Card className="p-8"><EmptyState icon="💬" title="Select a conversation" /></Card>}
       </div>

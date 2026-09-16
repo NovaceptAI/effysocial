@@ -341,6 +341,20 @@ export const effyApi = {
   closeConversation: (id) => http(`/conversations/${id}/close`, { method: 'POST' }),
   listReviews: (workspaceId) => http(`/reviews?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.reviews),
   respondReview: (id) => http(`/reviews/${id}/respond`, { method: 'POST' }),
+  // Inbox actions and review requests (launch plan 5.8)
+  tagConversation: (id, tags) =>
+    http(`/conversations/${id}/tags`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tags }) }).then((d) => d.conversation),
+  escalateConversation: (id, to, note) =>
+    http(`/conversations/${id}/escalate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ to, note }) }).then((d) => d.conversation),
+  resolveEscalation: (id) => http(`/conversations/${id}/escalate`, { method: 'DELETE' }).then((d) => d.conversation),
+  getReviewLink: (workspaceId) => http(`/reviews/request-link?workspace=${encodeURIComponent(workspaceId)}`),
+  saveReviewLink: (workspaceId, sites) =>
+    http('/reviews/request-link', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId, sites }) }).then((d) => d.link),
+  publicReviewPage: (slug) => http(`/public/reviews/${encodeURIComponent(slug)}`),
+  publicReviewClick: (slug, site) =>
+    http(`/public/reviews/${encodeURIComponent(slug)}/click`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ site }), keepalive: true }),
+  publicReviewFeedback: (slug, payload) =>
+    http(`/public/reviews/${encodeURIComponent(slug)}/feedback`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
 
   // Analytics
   organicAnalytics: (workspaceId) => http(`/analytics/organic?workspace=${encodeURIComponent(workspaceId)}`),
