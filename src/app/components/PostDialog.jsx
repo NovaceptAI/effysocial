@@ -120,7 +120,14 @@ export default function PostDialog({ open, onClose, post = null, initial = null,
   const captionProblem = form.channel === 'instagram' ? instagramCaptionProblem(form.caption) : '';
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
+  // The saved post goes into the cached list at once, so a list shown before the refetch
+  // lands never has it in an earlier state (Approved when it was just scheduled).
   const refresh = (saved) => {
+    if (saved) {
+      queryClient.setQueryData(['posts', workspace.id], (old) => (Array.isArray(old)
+        ? (old.some((p) => p.id === saved.id) ? old.map((p) => (p.id === saved.id ? saved : p)) : [...old, saved])
+        : old));
+    }
     queryClient.invalidateQueries({ queryKey: ['posts', workspace.id] });
     if (saved) { setCurrent(saved); onSaved?.(saved); }
   };

@@ -6,6 +6,8 @@ import PostDialog from './PostDialog';
 import { mockApi } from '../../test/mockApi';
 import { renderApp } from '../../test/render';
 import fx from '../../test/fixtures/postActions';
+import { usePosts } from '../api/hooks';
+import { useWorkspace } from '../context/WorkspaceContext';
 
 // New post and a post's details (launch plan 4.3, PUBL-017): what it saves, schedules
 // and refuses, following the post's status. Payloads come from the engine's test flow.
@@ -49,6 +51,30 @@ describe('PostDialog', () => {
       mediaUrl: IMAGE, date: created.date, time: '10:00', status: 'approved',
     });
     expect(api.callsTo(`POST /posts/${created.id}/schedule`)[0].body).toEqual({ date: created.date, time: '10:00' });
+  });
+
+  it('puts the scheduled post in the list at once, before any refetch lands', async () => {
+    const user = userEvent.setup();
+    const created = fx.createdApproved.post;
+    let listed = 0;
+    mockApi({
+      'GET /bootstrap': fx.bootstrap,
+      // The first list is empty; every refetch after a save is still under way.
+      'GET /posts': () => (listed++ ? new Promise(() => {}) : { status: 'ok', posts: [] }),
+      'POST /posts': fx.createdApproved,
+      [`POST /posts/${created.id}/schedule`]: fx.scheduled,
+    });
+    function Listed() {
+      const { workspace } = useWorkspace();
+      const { data = [] } = usePosts(workspace);
+      return <ul aria-label="Posts">{data.map((p) => <li key={p.id}>{p.title}: {p.status}</li>)}</ul>;
+    }
+    renderApp(<><PostDialog open onClose={() => {}} initial={{ date: created.date, time: '10:00' }} /><Listed /></>);
+    const d = await dialog();
+    await waitFor(() => expect(listed).toBe(1));
+    await user.type(field(d, 'Title'), 'Monsoon offer');
+    await user.click(within(d).getByRole('button', { name: 'Schedule' }));
+    await waitFor(() => expect(screen.getByRole('list', { name: 'Posts' })).toHaveTextContent(`${fx.scheduled.post.title}: scheduled`));
   });
 
   it('keeps the post and says why when it can’t be scheduled', async () => {
