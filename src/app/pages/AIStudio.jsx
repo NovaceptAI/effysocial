@@ -17,6 +17,7 @@ import DealerAvatarStudio from '../components/DealerAvatarStudio';
 import CharactersStudio from '../components/CharactersStudio';
 import ProductShotStudio from '../components/ProductShotStudio';
 import GrowNudge from '../components/GrowNudge';
+import SourceNote from '../components/SourceNote';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
 import { Button, Badge, Pacing } from '../../ui';
@@ -515,7 +516,7 @@ export default function AIStudio() {
                 {/* Fill the composer with calm, useful context — not an empty card. */}
                 {(ctx?.trends || []).length > 0 && (
                   <div className="mt-5 pt-5 border-t border-line">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-ink-soft mb-2.5"><Flame className="w-3.5 h-3.5 text-error" /> Trending now</div>
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-ink-soft mb-2.5"><Flame className="w-3.5 h-3.5 text-error" /> Theme ideas</div>
                     <div className="flex flex-wrap gap-1.5">
                       {(ctx?.trends || []).slice(0, 4).map((t) => (
                         <button key={t.topic} onClick={() => setTrend(t.topic)}
@@ -540,7 +541,7 @@ export default function AIStudio() {
             )}
             {panel === 'trends' && (
               <>
-                <h3 className="font-bold text-ink text-sm mb-1 flex items-center gap-1.5"><Flame className="w-4 h-4 text-error" /> Trending</h3>
+                <h3 className="font-bold text-ink text-sm mb-1 flex items-center gap-1.5"><Flame className="w-4 h-4 text-error" /> Theme ideas</h3>
                 <p className="text-xs text-ink-faint mb-3">Tap to write with this theme.</p>
                 <div className="space-y-2 mb-5">
                   {(ctx?.trends || []).map((t) => (
@@ -553,7 +554,8 @@ export default function AIStudio() {
                     </button>
                   ))}
                 </div>
-                <h3 className="font-bold text-ink text-sm mb-1 flex items-center gap-1.5"><Swords className="w-4 h-4 text-coral-ink" /> Competitor angles</h3>
+                <SourceNote basis={ctx?.basis?.trends} className="-mt-3 mb-5" />
+                <h3 className="font-bold text-ink text-sm mb-1 flex items-center gap-1.5"><Swords className="w-4 h-4 text-coral-ink" /> Angles to stand out</h3>
                 <p className="text-xs text-ink-faint mb-3">Differentiate — tap to set the angle.</p>
                 <div className="space-y-2">
                   {(ctx?.competitorAngles || []).map((a) => (
@@ -565,6 +567,7 @@ export default function AIStudio() {
                     </button>
                   ))}
                 </div>
+                <SourceNote basis={ctx?.basis?.angles} />
               </>
             )}
             {panel === 'brand' && (

@@ -1,8 +1,56 @@
 // Trends and competitors payloads captured from the engine's test flow (launch plan 5.11;
 // tests/test_effy_strategy_sources.py) on 17 Sep 2026: general guidance without a Brand Brain,
 // AI themes with one (the model stubbed) plus a measured reel, and competitors before and after
-// one is added. Regenerate rather than hand-edit.
+// one is added, and AI Studio's context for a workspace without a Brand Brain. Regenerate rather than hand-edit.
 const strategy = {
+ "studioContext": {
+  "basis": {
+   "angles": {
+    "asOf": null,
+    "covers": "Your posts in EffySocial",
+    "limits": "Not observations of competitors \u2014 nothing about their accounts is read.",
+    "source": "General positioning advice and gaps in your own content"
+   },
+   "trends": {
+    "asOf": null,
+    "covers": "Nothing specific to your business",
+    "limits": "Not measured trends. Open Trends with a Brand Brain for suggestions made for you.",
+    "source": "General guidance for businesses like yours"
+   }
+  },
+  "brand": {
+   "approved": [],
+   "offers": [],
+   "personas": [],
+   "products": [],
+   "prohibited": [],
+   "tone": []
+  },
+  "competitorAngles": [
+   "Differentiate on trust & outcomes, not price.",
+   "No short-form video (Reels) in your content yet \u2014 the highest-reach format is unused.",
+   "No carousels in your content yet \u2014 strong for how-to / educational saves."
+  ],
+  "status": "ok",
+  "trends": [
+   {
+    "heat": "hot",
+    "topic": "Seasonal your industry tips"
+   },
+   {
+    "heat": "hot",
+    "topic": "Myth vs fact reels"
+   },
+   {
+    "heat": "warm",
+    "topic": "Customer transformation stories"
+   },
+   {
+    "heat": "warm",
+    "topic": "\"Ask the expert\" Q&A"
+   }
+  ]
+ },
  "bootstrap": {
   "org": {
    "id": 1,

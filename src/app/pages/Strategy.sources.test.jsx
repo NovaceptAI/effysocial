@@ -66,3 +66,25 @@ describe('Competitors — your entries, with no metrics', () => {
     expect(await screen.findByRole('button', { name: /Add your first competitor/ })).toBeInTheDocument();
   });
 });
+
+describe('AI Studio — theme ideas and angles say what they are', async () => {
+  const { default: AIStudio } = await import('./AIStudio');
+  const { bootstrapFixture } = await import('../../test/mockApi');
+  it('calls themes ideas, not trends, and says the angles are not competitor observations', async () => {
+    mockApi({
+      'GET /bootstrap': bootstrapFixture, 'GET /studio/context': fx.studioContext,
+      'GET /studio/voices': { status: 'ok', voices: [], music: [{ key: '', name: 'None' }] },
+      'GET /integrations': { status: 'ok', integrations: [] }, 'GET /characters': { status: 'ok', presets: [], custom: [] },
+    });
+    renderApp(<AIStudio />, { route: '/app/studio?format=ig_post' });
+    expect(await screen.findByText('Theme ideas')).toBeInTheDocument();
+    expect(screen.queryByText(/Trending/)).not.toBeInTheDocument();
+    const { default: userEvent } = await import('@testing-library/user-event');
+    await userEvent.click(screen.getByRole('button', { name: /^Trends$/ }));
+    expect(screen.getByRole('heading', { name: 'Theme ideas' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Angles to stand out' })).toBeInTheDocument();
+    const notes = screen.getAllByLabelText('Source').map((n) => n.textContent);
+    expect(notes.some((t) => t.includes('General guidance for businesses like yours') && t.includes('Not measured trends'))).toBe(true);
+    expect(notes.some((t) => t.includes('Not observations of competitors'))).toBe(true);
+  });
+});
