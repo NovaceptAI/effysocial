@@ -24,6 +24,16 @@ const ACTIONS = [
 ];
 const ACTION_LABEL = Object.fromEntries(ACTIONS);
 const MESSAGE_ACTIONS = new Set(['whatsapp', 'email', 'sms', 'ai_voice', 'reminder', 'reactivation', 'nurture']);
+// What a message step really does today (followups.py Messaging). Email sends; the rest
+// have no provider yet and are recorded on the lead as not sent — never as sent.
+const CHANNEL_NOTE = {
+  email: 'Sent by email from EffySocial. Replies go to your organisation owner’s email.',
+  whatsapp: 'WhatsApp isn’t connected yet — this step is recorded on the lead as not sent.',
+  sms: 'SMS isn’t connected yet — this step is recorded on the lead as not sent.',
+  ai_voice: 'AI voice calls aren’t connected yet — this step is recorded on the lead as not sent.',
+  reactivation: 'Not sent yet — no messaging channel is connected for it. The message is kept on the lead.',
+  nurture: 'Not sent yet — no messaging channel is connected for it.',
+};
 
 // One-click starting points for common performance-marketing workflows.
 // Presets only pre-fill blocks — everything stays editable before activation.
@@ -144,6 +154,7 @@ function StepBlock({ step, onChange, onRemove }) {
             {DELAY_UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
           </select>
         </div>
+        <p className="mt-1.5 text-[0.7rem] text-ink-faint">The run waits here, then carries on — checking again that the lead is still there and the workflow is still on.</p>
       </Block>
     );
   }
@@ -153,10 +164,17 @@ function StepBlock({ step, onChange, onRemove }) {
         <select value={step.type} onChange={(e) => onChange({ ...step, type: e.target.value })} className={inputCls}>
           {ACTIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
         </select>
+        {step.type === 'email' && (
+          <input value={step.subject || ''} onChange={(e) => onChange({ ...step, subject: e.target.value })}
+            placeholder="Subject — use {name} for the lead's name" aria-label="Email subject" className={cn(inputCls, 'w-full')} />
+        )}
         {MESSAGE_ACTIONS.has(step.type) && (
           <textarea value={step.message || ''} onChange={(e) => onChange({ ...step, message: e.target.value })}
             placeholder="Message — use {name} for the lead's name" rows={2}
             className={cn(inputCls, 'w-full resize-none')} />
+        )}
+        {CHANNEL_NOTE[step.type] && (
+          <p className={cn('text-[0.7rem]', step.type === 'email' ? 'text-ink-faint' : 'text-warning')}>{CHANNEL_NOTE[step.type]}</p>
         )}
         {step.type === 'assign_salesperson' && (
           <input value={step.owner || ''} onChange={(e) => onChange({ ...step, owner: e.target.value })}
@@ -172,9 +190,6 @@ function StepBlock({ step, onChange, onRemove }) {
               placeholder="Audience name — e.g. All leads, 30 days" className={cn(inputCls, 'w-full')} />
             <p className="text-[0.7rem] text-ink-faint">Audience setup — saved and ready for integration. Syncs to Meta/Google once an ad account is connected.</p>
           </>
-        )}
-        {(step.type === 'reactivation' || step.type === 'nurture') && (
-          <p className="text-[0.7rem] text-ink-faint">Sends via your messaging provider once connected — until then it’s logged on the lead.</p>
         )}
       </div>
     </Block>
@@ -316,6 +331,10 @@ function Editor({ workflow, onClose, onSaved }) {
   );
 }
 
+const RUN_LABEL = { running: 'Running', waiting: 'Waiting', done: 'Finished', stopped: 'Stopped' };
+const RUN_TONE = { waiting: 'info', done: 'success', stopped: 'warning' };
+const when = (iso) => new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
 function RunsDrawer({ workflowId }) {
   const { data: runs = [], isLoading } = useQuery({
     queryKey: ['followup-runs', workflowId],
@@ -327,7 +346,11 @@ function RunsDrawer({ workflowId }) {
     <div className="px-4 py-3 space-y-3">
       {runs.map((r) => (
         <div key={r.id} className="rounded-lg border border-line p-3">
-          <p className="text-sm font-bold text-ink mb-1.5">{r.lead} <span className="font-normal text-xs text-ink-faint">· {new Date(r.at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span></p>
+          <div className="flex flex-wrap items-center gap-2 mb-1.5">
+            <p className="text-sm font-bold text-ink">{r.lead} <span className="font-normal text-xs text-ink-faint">· {when(r.at)}</span></p>
+            <Badge tone={RUN_TONE[r.status] || 'default'}>{RUN_LABEL[r.status] || r.status}</Badge>
+            {r.status === 'waiting' && r.resumeAt && <span className="text-xs text-ink-faint">carries on {when(r.resumeAt)}</span>}
+          </div>
           <ol className="space-y-1">
             {r.log.map((e, i) => (
               <li key={i} className="text-xs text-ink-soft flex items-start gap-1.5">
