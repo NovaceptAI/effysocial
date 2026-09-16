@@ -83,7 +83,8 @@ Every session-authenticated route under a gated prefix answers **403** `{code: "
 | GET | `/api/effy/campaigns?workspace=ws_N` | 🔒🏢 | → `{campaigns:[...]}` |
 | GET | `/api/effy/campaigns/:id` | 🔒🏢 | → `{campaign:{...}}` · 404 if not in your org |
 | POST | `/api/effy/campaigns` | 🔒🏢 | `{workspace, name, objective?, status?, channels?, budget?, ...}` → `{campaign}` |
-| PATCH | `/api/effy/campaigns/:id` | 🔒🏢 write | `{status?, name?, objective?, budget?}` → `{campaign}` (launch = status→live) |
+| PATCH | `/api/effy/campaigns/:id` | 🔒🏢 write | `{status?, name?, objective?, pillar?, owner?, budget?, channels?, start?, end?}` → `{campaign}` (launch = status→live) · channels outside instagram/facebook/whatsapp/linkedin/google/youtube/x are dropped · 400 `Use dates like 2026-09-30.` · 400 when the end is before the start |
+| GET | `/api/effy/campaigns/:id/workspace` | 🔒🏢 | everything the campaign's tabs show, from the rows linked to it → `{campaign, plan:{pillar?, kpis[], channels[], hasPlan}, content:[posts], conversion:{landing[], forms[]}, leads[], analytics:{leads, qualified, won, revenue, spend, budget, cpl, roas, published, scheduled, reach, engagement, byStage, submissions, views}, activity:[{at, kind, text}]}` — a new campaign reads as zeros |
 | GET | `/api/effy/campaigns/:id/assembly` | 🔒🏢 | `{campaign, counts:{content,forms,landing,leads}, checklist[], ready}` — real linked-children for the Launch playbook |
 
 

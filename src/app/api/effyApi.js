@@ -28,6 +28,7 @@ export const effyApi = {
   updateCampaign: (id, payload) =>
     http(`/campaigns/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.campaign),
   campaignAssembly: (id) => http(`/campaigns/${id}/assembly`),
+  campaignWorkspace: (id) => http(`/campaigns/${id}/workspace`),
 
   // Brand Brain
   getBrand: (workspaceId) => http(`/brand?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.brain),

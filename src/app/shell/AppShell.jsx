@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import NavRail from './NavRail';
 import TopBar from './TopBar';
 import CommandPalette from './CommandPalette';
-import AssistantPanel from '../components/AssistantPanel';
+import { AssistantProvider, AssistantSurface, useAssistant } from '../context/AssistantContext';
 import { useAppAuth } from '../context/AppAuth';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
@@ -70,6 +70,15 @@ function PlanBanner() {
 const FULL_BLEED = new Set(['/app/studio']);
 
 export default function AppShell() {
+  // The assistant is opened from the top bar and from pages ("Ask Effy" on a campaign).
+  return (
+    <AssistantProvider>
+      <Shell />
+    </AssistantProvider>
+  );
+}
+
+function Shell() {
   const { pathname } = useLocation();
   const { loading, user } = useAppAuth();
   // Compact density scales the app's rem-based sizes down a notch; the marketing site is unaffected.
@@ -83,7 +92,7 @@ export default function AppShell() {
   const lockedFeature = hasFeature(planInfo, featureForPath(pathname)) ? null : featureForPath(pathname);
   const fullBleed = FULL_BLEED.has(pathname);
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [assistantOpen, setAssistantOpen] = useState(false);
+  const { askEffy } = useAssistant();
   const [navOpen, setNavOpen] = useState(false);
   if (loading) return <div style={{ minHeight: '100dvh', background: '#0B0C0E', color: 'rgba(236,237,239,0.6)', display: 'grid', placeItems: 'center', fontFamily: 'Manrope, system-ui, sans-serif', fontSize: 13 }}>Loading…</div>;
   return (
@@ -96,7 +105,7 @@ export default function AppShell() {
       <div className="flex-1 min-w-0 flex flex-col">
         <TopBar
           onOpenPalette={() => setPaletteOpen(true)}
-          onOpenAssistant={() => setAssistantOpen(true)}
+          onOpenAssistant={() => askEffy('')}
           onOpenNav={() => setNavOpen(true)}
         />
         <VerifyBanner />
@@ -113,7 +122,7 @@ export default function AppShell() {
         </main>
       </div>
       <CommandPalette open={paletteOpen} setOpen={setPaletteOpen} />
-      <AssistantPanel open={assistantOpen} onClose={() => setAssistantOpen(false)} />
+      <AssistantSurface />
     </div>
   );
 }

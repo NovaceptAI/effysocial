@@ -7,7 +7,7 @@ import { effyApi } from '../api/effyApi';
 import { Card, PageHeader, Button, StatusBadge, Badge, Pacing, EmptyState } from '../../ui';
 
 export default function Campaigns() {
-  const { workspace } = useWorkspace();
+  const { workspace, canWrite } = useWorkspace();
   const navigate = useNavigate();
 
   const { data: campaigns, isLoading, isError } = useQuery({
@@ -21,7 +21,7 @@ export default function Campaigns() {
       <PageHeader
         title="Campaigns"
         subtitle="Every campaign holds its strategy, content, ads, leads and results."
-        actions={<Button variant="spark"><Sparkles className="w-4 h-4" /> New campaign</Button>}
+        actions={canWrite && <Button variant="spark" onClick={() => navigate('/app/launch')}><Sparkles className="w-4 h-4" /> New campaign</Button>}
       />
 
       {isLoading ? (
@@ -29,7 +29,7 @@ export default function Campaigns() {
       ) : isError ? (
         <EmptyState icon="⚠️" title="Couldn't load campaigns" body="Please refresh or try again." />
       ) : !campaigns?.length ? (
-        <EmptyState icon="📣" title="No campaigns yet for this client" body="Spin up a campaign and EffySocial will scaffold its plan, content, ads and funnel." action={<Button>Create campaign</Button>} />
+        <EmptyState icon="📣" title="No campaigns yet for this client" body="Spin up a campaign and EffySocial will scaffold its plan, content, ads and funnel." action={canWrite && <Button onClick={() => navigate('/app/launch')}>Create campaign</Button>} />
       ) : (
         <Card className="overflow-hidden">
           <table className="w-full text-sm">

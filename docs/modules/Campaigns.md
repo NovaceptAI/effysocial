@@ -45,3 +45,12 @@ Empty (no campaigns → create), draft vs live, paused, completed (read-only), t
 ## 10. Open questions / TODO
 - Tabs (Plan/Content/Ads/Conversion/Leads/Analytics/Activity) wire to their modules as built.
 - Attribution model for `revenue` (Phase 4 multi-touch).
+
+## The campaign workspace (16 Sep 2026, G40)
+Every tab now shows what is really linked to the campaign (`GET /campaigns/:id/workspace`), and a campaign with nothing in it reads as zeros rather than sample numbers.
+- **Overview**: leads, revenue, CPL and ROAS from its own leads and recorded spend; a funnel of reach → landing views → form submissions → leads → qualified → won; budget pacing; counts of what hangs off it.
+- **Plan**: what the campaign is for, and — when a marketing plan exists — the pillar it belongs to, that plan's cadence for the campaign's channels, and the targets it is working towards. Without a plan, a link to build one.
+- **Content**: the posts tagged to it, opening in the post dialog; empty state creates in AI Studio with the campaign attached.
+- **Ads**: spend against budget, the published posts available as creatives with their reach, and the honest note that ads run once Meta Ads is connected.
+- **Conversion**: its landing pages and forms with status, views and submissions. **Leads**: its leads with stage, quality and value, opening the pipeline. **Analytics**: published/reach/submissions/revenue, the same funnel and leads by stage. **Activity**: a timeline built from when each linked thing happened.
+- **Edit** opens a dialog (name, objective, status, pillar, owner, budget, dates, channels). **Ask Effy** opens the assistant with a question about this campaign (the panel is now opened through `AssistantContext`, so any page can ask). **New campaign** and the empty state's **Create campaign** open the launch wizard.

@@ -70,7 +70,7 @@ function Recommendations({ onNavigate }) {
   );
 }
 
-export default function AssistantPanel({ open, onClose }) {
+export default function AssistantPanel({ open, question = '', asked = 0, onClose }) {
   const { workspace } = useWorkspace();
   const navigate = useNavigate();
   const [tab, setTab] = useState('chat');
@@ -78,11 +78,14 @@ export default function AssistantPanel({ open, onClose }) {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const endRef = useRef(null);
+  const askRef = useRef(() => {});
 
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, busy]);
+  useEffect(() => { endRef.current?.scrollIntoView?.({ behavior: 'smooth' }); }, [messages, busy]);
   useEffect(() => { setMessages([]); }, [workspace?.id]);
-
-  if (!open) return null;
+  // A page that opened the panel with a question (Ask Effy) has it asked straight away.
+  useEffect(() => {
+    if (open && question) { setTab('chat'); askRef.current(question); }
+  }, [asked]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const ask = async (text) => {
     const q = (text || input).trim();
@@ -101,7 +104,10 @@ export default function AssistantPanel({ open, onClose }) {
     }
   };
 
+  askRef.current = ask;
   const go = (route) => { onClose(); navigate(route); };
+
+  if (!open) return null;
 
   return (
     <>
