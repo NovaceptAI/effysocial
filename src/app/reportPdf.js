@@ -60,6 +60,7 @@ export async function buildReportPdf(report, { sharedAt } = {}) {
   const period = [report.campaign.start && `from ${day(report.campaign.start)}`, report.campaign.end && `to ${day(report.campaign.end)}`].filter(Boolean).join(' ');
   paragraph([report.campaign.objective, report.campaign.status, period].filter(Boolean).join(' · '));
   paragraph(`Figures as of ${day(report.generatedAt)}${sharedAt ? `, shared ${day(sharedAt)}` : ''}.`, 9, [140, 129, 119]);
+  if (report.business.sample) paragraph('Sample data: this report is from a sample business, and its numbers are invented for a demo.', 10, [36, 89, 214]);
 
   heading('Results');
   // Two figures to a row: label, value, then a note under each.
@@ -109,7 +110,7 @@ export async function buildReportPdf(report, { sharedAt } = {}) {
   for (let i = 1; i <= pages; i += 1) {
     doc.setPage(i);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(140, 129, 119);
-    doc.text(`Prepared by ${report.business.preparedBy}`, M, H - 24);
+    doc.text(`Prepared by ${report.business.preparedBy}${report.business.sample ? ' · Sample data' : ''}`, M, H - 24);
     doc.text(`Page ${i} of ${pages}`, W - M, H - 24, { align: 'right' });
   }
   return doc;

@@ -1,6 +1,6 @@
 import React, { Suspense, useEffect, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { MailWarning, Check, Zap, Clock } from 'lucide-react';
+import { MailWarning, Check, Zap, Clock, FlaskConical } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import NavRail from './NavRail';
 import TopBar from './TopBar';
@@ -66,6 +66,19 @@ function PlanBanner() {
   );
 }
 
+// A sample business for demos: its numbers are invented, and nothing in it is published,
+// sent or connected (engine sample.py). Said on every screen, not only in its name.
+export function SampleBanner() {
+  const { workspace } = useWorkspace();
+  if (!workspace?.sample) return null;
+  return (
+    <div role="status" aria-label="Sample workspace" className="flex items-center gap-2.5 px-5 sm:px-8 py-2.5 bg-info-soft/70 text-sm text-ink">
+      <FlaskConical className="w-4 h-4 text-info shrink-0" />
+      <span className="flex-1"><strong>Sample workspace.</strong> The numbers here are invented for a demo, and nothing in it is published, sent or connected.</span>
+    </div>
+  );
+}
+
 // Routes that want the full viewport width (editor-style, no page gutter/cap).
 const FULL_BLEED = new Set(['/app/studio']);
 
@@ -108,6 +121,7 @@ function Shell() {
           onOpenAssistant={() => askEffy('')}
           onOpenNav={() => setNavOpen(true)}
         />
+        <SampleBanner />
         <VerifyBanner />
         <PlanBanner />
         <main className={fullBleed

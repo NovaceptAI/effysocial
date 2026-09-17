@@ -15,6 +15,11 @@ export default function ReportView({ report, actionLinks }) {
   const top = Math.max(1, ...report.funnel.map((f) => f.value));
   return (
     <div className="space-y-4">
+      {report.business.sample && (
+        <p role="note" className="rounded-xl bg-info-soft text-ink text-sm px-4 py-2.5">
+          <strong>Sample data.</strong> This report is from a sample business; its numbers are invented for a demo.
+        </p>
+      )}
       <section aria-label="Results" className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         {figures.map((f) => (
           <div key={f.label} className="rounded-2xl bg-surface shadow-e1 p-4">
