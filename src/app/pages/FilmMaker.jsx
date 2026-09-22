@@ -3,7 +3,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft, Upload, Sparkles, RefreshCw, Check, Pencil, Film, Mic, Layers,
-  Send, AlertTriangle, ShieldCheck, Play, Download, Lock, TrendingUp, ArrowRight,
+  Send, AlertTriangle, ShieldCheck, Play, Download, Lock, TrendingUp, ArrowRight, Scissors,
 } from 'lucide-react';
 import { effyApi } from '../api/effyApi';
 import AcceptanceCard from '../components/AcceptanceCard';
@@ -214,6 +214,9 @@ export default function FilmMaker() {
     canAssemble: allClips, blockers: allClips ? [] : ['Animate every scene first.'],
     masterStale: false, exportsStale: false, dealersStale: false,
   };
+  // Lines that still spill past their beat: in the mix they talk over the next line.
+  // The last line may run into the end card by design.
+  const longLines = scenes.filter((s) => s.vo && s.voSeconds > s.seconds + 0.4 && s.idx < scenes.length - 1);
   const signoffs = film.signoffs || { master: null, masterApproved: false, cutdowns: {}, history: [] };
   const signOff = (payload, label) => run(label, async () => {
     putFilm(await effyApi.filmSignoff(id, payload));
@@ -787,7 +790,8 @@ export default function FilmMaker() {
                 putFilm(r.film);
                 setVoEdits({});
                 const msgs = [];
-                if (r.overruns?.length) msgs.push(`Scene ${r.overruns.map((o) => o.idx + 1).join(', ')} runs LONG — shorten the line or it crowds the next beat.`);
+                if (r.tightened?.length) msgs.push(`Scene ${r.tightened.map((t) => t.idx + 1).join(', ')} ran slightly long and was sped up to fit.`);
+                if (r.overruns?.length) msgs.push(`Scene ${r.overruns.map((o) => o.idx + 1).join(', ')} runs LONG — use “Shorten to fit”, or edit the line, or it talks over the next beat.`);
                 if (r.underruns?.length) msgs.push(`Scene ${r.underruns.map((o) => `${o.idx + 1} (${o.seconds}s of ${o.window}s)`).join(', ')} runs SHORT — add words toward ~${r.underruns[0].targetWords} per line so the voice fills the scene.`);
                 if (msgs.length) setNotice({ kind: 'warn', text: msgs.join(' ') });
               })}>
@@ -848,6 +852,19 @@ export default function FilmMaker() {
                       ? <Flag title="The line or the narrator changed after this voiceover was made">Out of date — regenerate</Flag>
                       : <span style={{ fontSize: 11.5, whiteSpace: 'nowrap', color: (s.voSeconds > s.seconds + 0.4 || s.voSeconds < s.seconds * 0.55) ? T.amber : T.green }}>{s.voSeconds?.toFixed(1)}s / {s.seconds}s</span>}
                     <audio src={s.voUrl} controls style={{ height: 28, width: 170 }} />
+                    {s.voSeconds > s.seconds + 0.4 && s.idx < scenes.length - 1 && (
+                      <Btn kind="quiet" disabled={busy === `fit${s.id}`} style={{ padding: '4px 9px', fontSize: 11.5 }}
+                        title="Rewrite this line shorter so it fits the scene, and read it again"
+                        onClick={() => run(`fit${s.id}`, async () => {
+                          const r = await effyApi.filmSceneFit(id, s.id);
+                          await refetch();
+                          setVoEdits((v) => ({ ...v, [s.id]: r.line }));
+                          setNotice({ kind: r.over ? 'warn' : 'ok',
+                            text: `Scene ${s.idx + 1} is now “${r.line}” (${r.scene.voSeconds}s of ${s.seconds}s).${r.over ? ' Still long — shorten it further by hand.' : ''} Was: “${r.was}”` });
+                        })}>
+                        <Scissors size={12} className={busy === `fit${s.id}` ? 'animate-spin' : undefined} /> Shorten to fit
+                      </Btn>
+                    )}
                     <Btn kind="quiet" disabled={busy === `vo${s.id}`} style={{ padding: '4px 9px', fontSize: 11.5 }}
                       title="Regenerate this line's audio"
                       onClick={() => run(`vo${s.id}`, async () => {
@@ -874,6 +891,16 @@ export default function FilmMaker() {
               {master && cut.masterStale && (
                 <div role="status" style={{ display: 'flex', gap: 8, alignItems: 'center', background: '#3a2c10', color: T.amber, borderRadius: 10, padding: '9px 12px', fontSize: 12.5, marginBottom: 10 }}>
                   <AlertTriangle size={14} /> This cut is out of date — the film changed after it was assembled. Re-assemble to include the changes.
+                </div>
+              )}
+              {longLines.length > 0 && (
+                <div role="status" aria-label="Lines that run long" style={{ display: 'flex', gap: 8, alignItems: 'center', background: '#3a2c10', color: T.amber, borderRadius: 10, padding: '9px 12px', fontSize: 12.5, marginBottom: 10 }}>
+                  <AlertTriangle size={14} />
+                  <span style={{ flex: 1 }}>
+                    Scene {longLines.map((s) => s.idx + 1).join(', ')} {longLines.length === 1 ? 'runs' : 'run'} longer than {longLines.length === 1 ? 'its scene' : 'their scenes'},
+                    so the voice will talk over the next line. You can assemble anyway.
+                  </span>
+                  <Btn kind="quiet" style={{ padding: '4px 9px', fontSize: 11.5 }} onClick={() => goStage(5)}>Fix in Voice</Btn>
                 </div>
               )}
               <div style={{ background: '#000', borderRadius: 10, aspectRatio: film.aspect === '16:9' ? '16/9' : '9/16', display: 'grid', placeItems: 'center', marginBottom: 12 }}>

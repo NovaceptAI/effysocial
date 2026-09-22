@@ -186,6 +186,8 @@ export const effyApi = {
     http(`/films/${id}/script/import`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.film),
   filmSceneVo: (id, sceneId, payload) =>
     http(`/films/${id}/scenes/${sceneId}/vo`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload || {}) }),
+  filmSceneFit: (id, sceneId) =>
+    http(`/films/${id}/scenes/${sceneId}/fit`, { method: 'POST' }),
   filmStill: (id, sceneId, payload) =>
     http(`/films/${id}/scenes/${sceneId}/still`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload || {}) }),
   filmApprove: (id, sceneId, approved, note) =>
