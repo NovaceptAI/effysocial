@@ -794,39 +794,46 @@ export default function FilmMaker() {
                 {busy === 'vo' ? <RefreshCw size={15} className="animate-spin" /> : <Mic size={15} />} Generate all lines
               </Btn>
             </div>
-            {/* Casting: search the ElevenLabs shared library — previews are the
-                library's own MP3s, so auditioning costs nothing. */}
-            <div style={{ background: T.raised, borderRadius: 12, padding: 14, marginBottom: 16 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: T.dim, letterSpacing: '.05em', marginBottom: 10 }}>
-                FIND MORE VOICES
-              </div>
-              <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-                <input value={castQuery} onChange={(e) => setCastQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && runCastSearch()}
-                  placeholder='e.g. "hinglish", "hindi ad", "indian english female"'
-                  style={{ ...inputStyle, background: T.surface }} />
-                <Btn kind="quiet" disabled={busy === 'cast'} onClick={runCastSearch}>
-                  {busy === 'cast' ? <RefreshCw size={14} className="animate-spin" /> : 'Search'}
-                </Btn>
-              </div>
-              {castResults.map((v) => (
-                <div key={v.voiceId} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0', borderTop: `1px solid ${T.border}` }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{v.name}</div>
-                    <div style={{ fontSize: 11, color: T.dim }}>{[v.gender, v.accent, v.useCase].filter(Boolean).join(' · ')} · {(v.usedBy || 0).toLocaleString()} users</div>
-                  </div>
-                  {v.previewUrl && <audio src={v.previewUrl} controls preload="none" style={{ height: 26, width: 170 }} />}
-                  <Btn kind="quiet" style={{ padding: '5px 10px', fontSize: 12 }} disabled={!!busy}
-                    onClick={() => run('adopt', async () => {
-                      const f = await effyApi.filmVoiceAdopt(id, { voiceId: v.voiceId, ownerId: v.ownerId, name: v.name });
-                      putFilm(f);
-                      setNotice({ kind: 'warn', text: `${v.name} is now this film's narrator — regenerate the lines below.` });
-                    })}>
-                    Use
+            {/* Casting searches the ElevenLabs shared library, which needs a paid ElevenLabs
+                plan; on the free plan only the built-in voices above can be used. */}
+            {voicesPkg?.libraryVoices === false ? (
+              <p style={{ fontSize: 12.5, color: T.dim, margin: '0 0 16px' }}>
+                These are ElevenLabs’ built-in voices: they read any language, with a British or American accent.
+                Indian narrators and finding more voices need a paid ElevenLabs plan.
+              </p>
+            ) : (
+              <div style={{ background: T.raised, borderRadius: 12, padding: 14, marginBottom: 16 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: T.dim, letterSpacing: '.05em', marginBottom: 10 }}>
+                  FIND MORE VOICES
+                </div>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                  <input value={castQuery} onChange={(e) => setCastQuery(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && runCastSearch()}
+                    placeholder='e.g. "hinglish", "hindi ad", "indian english female"'
+                    style={{ ...inputStyle, background: T.surface }} />
+                  <Btn kind="quiet" disabled={busy === 'cast'} onClick={runCastSearch}>
+                    {busy === 'cast' ? <RefreshCw size={14} className="animate-spin" /> : 'Search'}
                   </Btn>
                 </div>
-              ))}
-            </div>
+                {castResults.map((v) => (
+                  <div key={v.voiceId} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0', borderTop: `1px solid ${T.border}` }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{v.name}</div>
+                      <div style={{ fontSize: 11, color: T.dim }}>{[v.gender, v.accent, v.useCase].filter(Boolean).join(' · ')} · {(v.usedBy || 0).toLocaleString()} users</div>
+                    </div>
+                    {v.previewUrl && <audio src={v.previewUrl} controls preload="none" style={{ height: 26, width: 170 }} />}
+                    <Btn kind="quiet" style={{ padding: '5px 10px', fontSize: 12 }} disabled={!!busy}
+                      onClick={() => run('adopt', async () => {
+                        const f = await effyApi.filmVoiceAdopt(id, { voiceId: v.voiceId, ownerId: v.ownerId, name: v.name });
+                        putFilm(f);
+                        setNotice({ kind: 'warn', text: `${v.name} is now this film's narrator — regenerate the lines below.` });
+                      })}>
+                      Use
+                    </Btn>
+                  </div>
+                ))}
+              </div>
+            )}
             {scenes.filter((s) => s.vo).length > 0 && (
               <div style={{ display: 'grid', gap: 8 }}>
                 {scenes.map((s) => s.vo && (
