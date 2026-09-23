@@ -112,6 +112,8 @@ export default function FilmMaker() {
   const fileRef = useRef(null);
   const briefRef = useRef(null);                      // the brief as typed, sent with Draft the script
   const [editDrafts, setEditDrafts] = useState({}); // sceneId → edit text
+  const [playing, setPlaying] = useState(false);
+  const playerRef = useRef(null);
   const [castQuery, setCastQuery] = useState('');
   const [castResults, setCastResults] = useState([]);
   const [dealerText, setDealerText] = useState('');
@@ -216,7 +218,41 @@ export default function FilmMaker() {
   };
   // Lines that still spill past their beat: in the mix they talk over the next line.
   // The last line may run into the end card by design.
-  const longLines = scenes.filter((s) => s.vo && s.voSeconds > s.seconds + 0.4 && s.idx < scenes.length - 1);
+  const isLong = (s) => s.voSeconds > s.seconds + 0.4 && s.idx < scenes.length - 1;
+  const longLines = scenes.filter((s) => s.vo && isLong(s));
+  const voiced = scenes.filter((s) => s.vo);
+  const spokenSeconds = voiced.reduce((t, s) => t + (s.voSeconds || 0), 0);
+  // What the line being typed would take to read, at the storyboard's 2.3 words a second —
+  // so the length can be fixed before spending a generation on it.
+  const estimate = (s) => {
+    const words = (voEdits[s.id] ?? s.line ?? '').trim().split(/\s+/).filter(Boolean).length;
+    const seconds = words / 2.3;
+    return { words, seconds, over: seconds > s.seconds + 0.4 && s.idx < scenes.length - 1 };
+  };
+  const fitLine = (s) => run(`fit${s.id}`, async () => {
+    const r = await effyApi.filmSceneFit(id, s.id);
+    await refetch();
+    setVoEdits((v) => ({ ...v, [s.id]: r.line }));
+    setNotice({ kind: r.over ? 'warn' : 'ok',
+      text: `Scene ${s.idx + 1} is now “${r.line}” (${r.scene.voSeconds}s of ${s.seconds}s).${r.over ? ' Still long — shorten it further by hand.' : ''} Was: “${r.was}”` });
+  });
+  // Play the lines in order, each starting where its scene does, so the read can be heard
+  // as it will sit in the film.
+  const playAll = () => {
+    if (playerRef.current) { playerRef.current.pause(); playerRef.current = null; setPlaying(false); return; }
+    const queue = voiced.slice();
+    const next = () => {
+      const s = queue.shift();
+      if (!s) { playerRef.current = null; setPlaying(false); return; }
+      const audio = new Audio(s.voUrl);
+      playerRef.current = audio;
+      audio.onended = () => { if (playerRef.current === audio) setTimeout(next, 250); };
+      audio.onerror = () => { playerRef.current = null; setPlaying(false); };
+      audio.play().catch(() => { playerRef.current = null; setPlaying(false); });
+    };
+    setPlaying(true);
+    next();
+  };
   const signoffs = film.signoffs || { master: null, masterApproved: false, cutdowns: {}, history: [] };
   const signOff = (payload, label) => run(label, async () => {
     putFilm(await effyApi.filmSignoff(id, payload));
@@ -766,120 +802,181 @@ export default function FilmMaker() {
 
         {/* ── Stage 5: Voice ──────────────────────────────────────────── */}
         {view === 5 && (
-          <section style={{ ...panel, padding: 20, maxWidth: 760 }}>
-            <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Voice</h2>
-            <p style={{ fontSize: 12.5, color: T.dim, marginBottom: 14 }}>
-              One narrator reads every line. Lines are measured against their 4-second windows — overruns get flagged
-              before the mix, not after.
-            </p>
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 16, flexWrap: 'wrap' }}>
-              <select value={film.voice?.startsWith('id:') ? '' : (film.voice || '')}
-                onChange={(e) => patch.mutate({ voice: e.target.value })}
-                style={{ ...inputStyle, width: 260 }}>
-                <option value="">
-                  {film.voice?.startsWith('id:')
-                    ? `${film.direction?.voiceName || 'Adopted voice'} (from library)`
-                    : `Default for ${film.language}`}
-                </option>
-                {voices.map((v) => (
-                  <option key={v.key} value={v.key}>{v.name} — {v.lang} ({v.gender})</option>
-                ))}
-              </select>
-              <Btn disabled={busy === 'vo' || !scenes.length} onClick={() => run('vo', async () => {
-                const r = await effyApi.filmVo(id, { voice: film.voice });
-                putFilm(r.film);
-                setVoEdits({});
-                const msgs = [];
-                if (r.tightened?.length) msgs.push(`Scene ${r.tightened.map((t) => t.idx + 1).join(', ')} ran slightly long and was sped up to fit.`);
-                if (r.overruns?.length) msgs.push(`Scene ${r.overruns.map((o) => o.idx + 1).join(', ')} runs LONG — use “Shorten to fit”, or edit the line, or it talks over the next beat.`);
-                if (r.underruns?.length) msgs.push(`Scene ${r.underruns.map((o) => `${o.idx + 1} (${o.seconds}s of ${o.window}s)`).join(', ')} runs SHORT — add words toward ~${r.underruns[0].targetWords} per line so the voice fills the scene.`);
-                if (msgs.length) setNotice({ kind: 'warn', text: msgs.join(' ') });
-              })}>
-                {busy === 'vo' ? <RefreshCw size={15} className="animate-spin" /> : <Mic size={15} />} Generate all lines
-              </Btn>
-            </div>
-            {/* Casting searches the ElevenLabs shared library, which needs a paid ElevenLabs
-                plan; on the free plan only the built-in voices above can be used. */}
-            {voicesPkg?.libraryVoices === false ? (
-              <p style={{ fontSize: 12.5, color: T.dim, margin: '0 0 16px' }}>
-                These are ElevenLabs’ built-in voices: they read any language, with a British or American accent.
-                Indian narrators and finding more voices need a paid ElevenLabs plan.
+          <section style={{ display: 'grid', gap: 16, gridTemplateColumns: 'minmax(0, 1fr) 320px', alignItems: 'start' }}>
+            <div style={{ ...panel, padding: 20 }}>
+              <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>The lines</h2>
+              <p style={{ fontSize: 12.5, color: T.dim, marginBottom: 14 }}>
+                One narrator reads every line. Each is measured against its scene, so a line that would talk over the
+                next beat is caught here, not in the mix. Edit a line and regenerate it (⌘/Ctrl + Enter).
               </p>
-            ) : (
-              <div style={{ background: T.raised, borderRadius: 12, padding: 14, marginBottom: 16 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: T.dim, letterSpacing: '.05em', marginBottom: 10 }}>
-                  FIND MORE VOICES
-                </div>
-                <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-                  <input value={castQuery} onChange={(e) => setCastQuery(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && runCastSearch()}
-                    placeholder='e.g. "hinglish", "hindi ad", "indian english female"'
-                    style={{ ...inputStyle, background: T.surface }} />
-                  <Btn kind="quiet" disabled={busy === 'cast'} onClick={runCastSearch}>
-                    {busy === 'cast' ? <RefreshCw size={14} className="animate-spin" /> : 'Search'}
-                  </Btn>
-                </div>
-                {castResults.map((v) => (
-                  <div key={v.voiceId} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0', borderTop: `1px solid ${T.border}` }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{v.name}</div>
-                      <div style={{ fontSize: 11, color: T.dim }}>{[v.gender, v.accent, v.useCase].filter(Boolean).join(' · ')} · {(v.usedBy || 0).toLocaleString()} users</div>
+              {!voiced.length && (
+                <p style={{ fontSize: 13, color: T.dim }}>
+                  Pick a narrator and choose <strong>Generate all lines</strong> to hear the script.
+                </p>
+              )}
+              <div style={{ display: 'grid', gap: 10 }}>
+                {scenes.map((s) => s.vo && (
+                  <div key={s.id} style={{ background: T.raised, borderRadius: 12, padding: 12, display: 'grid', gridTemplateColumns: '104px minmax(0, 1fr)', gap: 12 }}>
+                    <div>
+                      <div style={{ fontSize: 11.5, fontWeight: 700, color: T.dim, marginBottom: 6 }}>Scene {s.idx + 1} · {s.seconds}s</div>
+                      {s.stillUrl
+                        ? <img src={s.stillUrl} alt="" style={{ width: '100%', aspectRatio: '16/9', objectFit: 'cover', borderRadius: 8, border: `1px solid ${T.border}` }} />
+                        : <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: 8, background: T.surface, border: `1px solid ${T.border}` }} />}
                     </div>
-                    {v.previewUrl && <audio src={v.previewUrl} controls preload="none" style={{ height: 26, width: 170 }} />}
-                    <Btn kind="quiet" style={{ padding: '5px 10px', fontSize: 12 }} disabled={!!busy}
-                      onClick={() => run('adopt', async () => {
-                        const f = await effyApi.filmVoiceAdopt(id, { voiceId: v.voiceId, ownerId: v.ownerId, name: v.name });
-                        putFilm(f);
-                        setNotice({ kind: 'warn', text: `${v.name} is now this film's narrator — regenerate the lines below.` });
-                      })}>
-                      Use
-                    </Btn>
+                    <div style={{ display: 'grid', gap: 8, minWidth: 0 }}>
+                      <textarea value={voEdits[s.id] ?? s.line} rows={2}
+                        onChange={(e) => setVoEdits((v) => ({ ...v, [s.id]: e.target.value }))}
+                        onBlur={(e) => { const val = e.target.value; if (val !== s.line) run(`ln${s.id}`, async () => { await effyApi.filmSceneUpdate(id, s.id, { line: val }); await refetch(); }); }}
+                        onKeyDown={(e) => {
+                          if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+                            e.preventDefault();
+                            run(`vo${s.id}`, async () => { await effyApi.filmSceneVo(id, s.id, { line: voEdits[s.id] ?? s.line }); await refetch(); });
+                          }
+                        }}
+                        aria-label={`Line for scene ${s.idx + 1}`}
+                        style={{ ...inputStyle, background: T.surface, width: '100%', fontSize: 14, lineHeight: 1.5, padding: '9px 11px', resize: 'vertical', minHeight: 64 }} />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', fontSize: 11.5 }}>
+                        <span style={{ color: estimate(s).over ? T.amber : T.dim }}>
+                          ~{estimate(s).words} words ≈ {estimate(s).seconds.toFixed(1)}s of {s.seconds}s
+                        </span>
+                        {s.voStale
+                          ? <Flag title="The line or the narrator changed after this voiceover was made">Out of date — regenerate</Flag>
+                          : <span style={{ fontWeight: 700, color: (s.voSeconds > s.seconds + 0.4 || s.voSeconds < s.seconds * 0.55) ? T.amber : T.green }}>
+                              read: {s.voSeconds?.toFixed(1)}s
+                            </span>}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <audio src={s.voUrl} controls style={{ height: 30, flex: 1, minWidth: 180 }} />
+                        {isLong(s) && (
+                          <Btn kind="quiet" disabled={busy === `fit${s.id}`} style={{ padding: '5px 10px', fontSize: 11.5 }}
+                            title="Rewrite this line shorter so it fits the scene, and read it again"
+                            onClick={() => fitLine(s)}>
+                            <Scissors size={12} className={busy === `fit${s.id}` ? 'animate-spin' : undefined} /> Shorten to fit
+                          </Btn>
+                        )}
+                        <Btn kind="quiet" disabled={busy === `vo${s.id}`} style={{ padding: '5px 10px', fontSize: 11.5 }}
+                          title="Regenerate this line's audio (⌘/Ctrl + Enter)"
+                          onClick={() => run(`vo${s.id}`, async () => {
+                            await effyApi.filmSceneVo(id, s.id, { line: voEdits[s.id] ?? s.line });
+                            await refetch();
+                          })}>
+                          <RefreshCw size={12} className={busy === `vo${s.id}` ? 'animate-spin' : undefined} /> Regenerate
+                        </Btn>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
-            )}
-            {scenes.filter((s) => s.vo).length > 0 && (
-              <div style={{ display: 'grid', gap: 8 }}>
-                {scenes.map((s) => s.vo && (
-                  <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10, background: T.raised, borderRadius: 10, padding: '8px 12px' }}>
-                    <span style={{ fontSize: 12, color: T.dim, width: 18 }}>{s.idx + 1}</span>
-                    <input value={voEdits[s.id] ?? s.line}
-                      onChange={(e) => setVoEdits((v) => ({ ...v, [s.id]: e.target.value }))}
-                      onBlur={(e) => { const val = e.target.value; if (val !== s.line) run(`ln${s.id}`, async () => { await effyApi.filmSceneUpdate(id, s.id, { line: val }); await refetch(); }); }}
-                      title="Edit the line — fix a mispronounced word, then Regenerate"
-                      style={{ ...inputStyle, flex: 1, minWidth: 0, fontSize: 12.5, padding: '5px 8px' }} />
-                    {s.voStale
-                      ? <Flag title="The line or the narrator changed after this voiceover was made">Out of date — regenerate</Flag>
-                      : <span style={{ fontSize: 11.5, whiteSpace: 'nowrap', color: (s.voSeconds > s.seconds + 0.4 || s.voSeconds < s.seconds * 0.55) ? T.amber : T.green }}>{s.voSeconds?.toFixed(1)}s / {s.seconds}s</span>}
-                    <audio src={s.voUrl} controls style={{ height: 28, width: 170 }} />
-                    {s.voSeconds > s.seconds + 0.4 && s.idx < scenes.length - 1 && (
-                      <Btn kind="quiet" disabled={busy === `fit${s.id}`} style={{ padding: '4px 9px', fontSize: 11.5 }}
-                        title="Rewrite this line shorter so it fits the scene, and read it again"
-                        onClick={() => run(`fit${s.id}`, async () => {
-                          const r = await effyApi.filmSceneFit(id, s.id);
+            </div>
+
+            <aside style={{ display: 'grid', gap: 12 }}>
+              <div style={{ ...panel, padding: 16 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: T.dim, letterSpacing: '.05em', marginBottom: 10 }}>NARRATOR</div>
+                <select value={film.voice?.startsWith('id:') ? '' : (film.voice || '')}
+                  onChange={(e) => patch.mutate({ voice: e.target.value })}
+                  aria-label="Narrator"
+                  style={{ ...inputStyle, width: '100%', marginBottom: 10 }}>
+                  <option value="">
+                    {film.voice?.startsWith('id:')
+                      ? `${film.direction?.voiceName || 'Adopted voice'} (from library)`
+                      : `Default for ${film.language}`}
+                  </option>
+                  {voices.map((v) => (
+                    <option key={v.key} value={v.key}>{v.name} — {v.lang} ({v.gender})</option>
+                  ))}
+                </select>
+                <Btn disabled={busy === 'vo' || !scenes.length} style={{ width: '100%', justifyContent: 'center' }}
+                  onClick={() => run('vo', async () => {
+                    const r = await effyApi.filmVo(id, { voice: film.voice });
+                    putFilm(r.film);
+                    setVoEdits({});
+                    const msgs = [];
+                    if (r.tightened?.length) msgs.push(`Scene ${r.tightened.map((t) => t.idx + 1).join(', ')} ran slightly long and was sped up to fit.`);
+                    if (r.overruns?.length) msgs.push(`Scene ${r.overruns.map((o) => o.idx + 1).join(', ')} runs LONG — use “Shorten to fit”, or edit the line, or it talks over the next beat.`);
+                    if (r.underruns?.length) msgs.push(`Scene ${r.underruns.map((o) => `${o.idx + 1} (${o.seconds}s of ${o.window}s)`).join(', ')} runs SHORT — add words toward ~${r.underruns[0].targetWords} per line so the voice fills the scene.`);
+                    if (msgs.length) setNotice({ kind: 'warn', text: msgs.join(' ') });
+                  })}>
+                  {busy === 'vo' ? <RefreshCw size={15} className="animate-spin" /> : <Mic size={15} />} Generate all lines
+                </Btn>
+                {/* Casting searches the ElevenLabs shared library, which needs a paid ElevenLabs
+                    plan; on the free plan only the built-in voices above can be used. */}
+                {voicesPkg?.libraryVoices === false ? (
+                  <p style={{ fontSize: 12, color: T.dim, margin: '10px 0 0' }}>
+                    These are ElevenLabs’ built-in voices: they read any language, with a British or American accent.
+                    Indian narrators and finding more voices need a paid ElevenLabs plan.
+                  </p>
+                ) : (
+                  <div style={{ marginTop: 14, borderTop: `1px solid ${T.border}`, paddingTop: 12 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: T.dim, letterSpacing: '.05em', marginBottom: 10 }}>
+                      FIND MORE VOICES
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                      <input value={castQuery} onChange={(e) => setCastQuery(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && runCastSearch()}
+                        placeholder='e.g. "hinglish", "hindi ad"'
+                        style={{ ...inputStyle, background: T.surface, minWidth: 0 }} />
+                      <Btn kind="quiet" disabled={busy === 'cast'} onClick={runCastSearch}>
+                        {busy === 'cast' ? <RefreshCw size={14} className="animate-spin" /> : 'Search'}
+                      </Btn>
+                    </div>
+                    {castResults.map((v) => (
+                      <div key={v.voiceId} style={{ display: 'grid', gap: 6, padding: '8px 0', borderTop: `1px solid ${T.border}` }}>
+                        <div style={{ fontSize: 12.5, fontWeight: 600 }}>{v.name}</div>
+                        <div style={{ fontSize: 11, color: T.dim }}>{[v.gender, v.accent, v.useCase].filter(Boolean).join(' · ')} · {(v.usedBy || 0).toLocaleString()} users</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          {v.previewUrl && <audio src={v.previewUrl} controls preload="none" style={{ height: 26, flex: 1, minWidth: 0 }} />}
+                          <Btn kind="quiet" style={{ padding: '5px 10px', fontSize: 12 }} disabled={!!busy}
+                            onClick={() => run('adopt', async () => {
+                              const f = await effyApi.filmVoiceAdopt(id, { voiceId: v.voiceId, ownerId: v.ownerId, name: v.name });
+                              putFilm(f);
+                              setNotice({ kind: 'warn', text: `${v.name} is now this film's narrator — regenerate the lines below.` });
+                            })}>
+                            Use
+                          </Btn>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {voiced.length > 0 && (
+                <div style={{ ...panel, padding: 16 }} aria-label="This film">
+                  <div style={{ fontSize: 12, fontWeight: 700, color: T.dim, letterSpacing: '.05em', marginBottom: 10 }}>THIS FILM</div>
+                  <p style={{ fontSize: 13, margin: '0 0 6px' }}>
+                    {voiced.length} {voiced.length === 1 ? 'line' : 'lines'} · {spokenSeconds.toFixed(1)}s spoken of {film.durationS}s
+                  </p>
+                  <p style={{ fontSize: 12.5, color: longLines.length ? T.amber : T.green, margin: '0 0 12px' }}>
+                    {longLines.length
+                      ? `${longLines.length} ${longLines.length === 1 ? 'line runs' : 'lines run'} past ${longLines.length === 1 ? 'its' : 'their'} scene (${longLines.map((s) => s.idx + 1).join(', ')})`
+                      : 'Every line fits its scene'}
+                  </p>
+                  <div style={{ display: 'grid', gap: 8 }}>
+                    {longLines.length > 0 && (
+                      <Btn kind="quiet" disabled={busy === 'fitall'} style={{ justifyContent: 'center' }}
+                        title="Shorten every line that runs past its scene"
+                        onClick={() => run('fitall', async () => {
+                          const done = [];
+                          for (const s of longLines) {
+                            const r = await effyApi.filmSceneFit(id, s.id);   // one at a time: each is an AI call
+                            done.push(`${s.idx + 1} → ${r.scene.voSeconds}s`);
+                          }
                           await refetch();
-                          setVoEdits((v) => ({ ...v, [s.id]: r.line }));
-                          setNotice({ kind: r.over ? 'warn' : 'ok',
-                            text: `Scene ${s.idx + 1} is now “${r.line}” (${r.scene.voSeconds}s of ${s.seconds}s).${r.over ? ' Still long — shorten it further by hand.' : ''} Was: “${r.was}”` });
+                          setVoEdits({});
+                          setNotice({ kind: 'ok', text: `Shortened scene ${done.join(', ')}. Check the new lines before assembling.` });
                         })}>
-                        <Scissors size={12} className={busy === `fit${s.id}` ? 'animate-spin' : undefined} /> Shorten to fit
+                        <Scissors size={14} className={busy === 'fitall' ? 'animate-spin' : undefined} /> Fit all long lines
                       </Btn>
                     )}
-                    <Btn kind="quiet" disabled={busy === `vo${s.id}`} style={{ padding: '4px 9px', fontSize: 11.5 }}
-                      title="Regenerate this line's audio"
-                      onClick={() => run(`vo${s.id}`, async () => {
-                        await effyApi.filmSceneVo(id, s.id, { line: voEdits[s.id] ?? s.line });
-                        await refetch();
-                      })}>
-                      <RefreshCw size={12} className={busy === `vo${s.id}` ? 'animate-spin' : undefined} /> Regenerate
+                    <Btn kind="quiet" style={{ justifyContent: 'center' }} onClick={playAll}
+                      title="Play every line in order, with the gap each scene leaves">
+                      {playing ? <RefreshCw size={14} className="animate-spin" /> : <Play size={14} />} {playing ? 'Stop' : 'Play all'}
                     </Btn>
+                    <Btn style={{ justifyContent: 'center' }} onClick={() => goStage(6)}>Continue to assemble</Btn>
                   </div>
-                ))}
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6 }}>
-                  <Btn onClick={() => goStage(6)}>Continue to assemble</Btn>
                 </div>
-              </div>
-            )}
+              )}
+            </aside>
           </section>
         )}
 
