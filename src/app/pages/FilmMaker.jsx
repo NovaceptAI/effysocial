@@ -1088,89 +1088,110 @@ export default function FilmMaker() {
 
         {/* ── Stage 7: Deliver ────────────────────────────────────────── */}
         {view === 7 && (
-          <section style={{ ...panel, padding: 20, maxWidth: 700 }}>
-            <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Deliver</h2>
-            <p style={{ fontSize: 12.5, color: T.dim, marginBottom: 14 }}>
-              Exports are auto-filed into the Media Library, reusable across posts and campaigns.
-            </p>
-            {!master && <p style={{ fontSize: 13, color: T.amber }}>Assemble the film first (stage 6).</p>}
-            {master && cut.masterStale && (
-              <div role="status" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', background: '#3a2c10', color: T.amber, borderRadius: 10, padding: '10px 14px', fontSize: 12.5, marginBottom: 14 }}>
-                <AlertTriangle size={14} />
-                <span style={{ flex: 1, minWidth: 200 }}>The film changed after it was assembled. Re-assemble it before building exports or dealer versions.</span>
-                <Btn kind="quiet" onClick={() => goStage(6)} style={{ padding: '5px 10px', fontSize: 12 }}>Go to assemble</Btn>
-              </div>
-            )}
-            {master && !cut.masterStale && !signoffs.masterApproved && (
-              <div role="status" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', background: '#3a2c10', color: T.amber, borderRadius: 10, padding: '10px 14px', fontSize: 12.5, marginBottom: 14 }}>
-                <Lock size={14} />
-                <span style={{ flex: 1, minWidth: 200 }}>Approve the master before building exports or dealer versions.</span>
-                <Btn kind="quiet" onClick={() => goStage(6)} style={{ padding: '5px 10px', fontSize: 12 }}>Go to sign-off</Btn>
-              </div>
-            )}
-            {master && (
-              <>
-                <Btn disabled={busy === 'exp' || cut.masterStale || !signoffs.masterApproved} onClick={() => run('exp', async () => {
-                  const f = await effyApi.filmExports(id);
-                  putFilm(f);
-                })} style={{ marginBottom: 16 }}>
-                  {busy === 'exp' ? <RefreshCw size={15} className="animate-spin" /> : <Send size={15} />}
-                  {film.status === 'delivered' ? 'Rebuild exports' : 'Build exports & mark delivered'}
-                </Btn>
-                <div style={{ display: 'grid', gap: 8 }}>
-                  {[['master', 'Master ' + film.aspect], ['reel', '9:16 Reel'], ['whatsapp', 'WhatsApp 480p']].map(([k, label]) => (
-                    film.renders?.[k] && typeof film.renders[k] === 'string' && (
-                      <div key={k} data-testid={`export-${k}`} style={{ background: T.raised, borderRadius: 10, padding: '10px 14px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <Play size={14} color={T.dim} />
-                        <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>{label}</span>
-                        {(k === 'master' ? cut.masterStale : cut.exportsStale) && <Flag />}
-                        {k !== 'master' && k in signoffs.cutdowns && signoffs.cutdowns[k]?.decision !== 'approved' && (
-                          <Btn kind="quiet" disabled={!!busy} style={{ padding: '3px 9px', fontSize: 11.5 }}
-                            onClick={() => signOff({ stage: 'cutdown', target: k, decision: 'approved' }, `cut${k}`)}>
-                            <Check size={12} /> Approve
-                          </Btn>
-                        )}
-                        <button type="button" title="Copy link"
-                          onClick={() => run(`share${k}`, async () => {
-                            // Links in the app expire within a day; a copied link is a 7-day share link.
-                            const { url, expires } = await effyApi.shareMediaLink(film.renders[k]);
-                            await navigator.clipboard?.writeText(url);
-                            setNotice({ kind: 'warn', text: `${label} link copied. It works until ${new Date(expires * 1000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}.` });
-                          })}
-                          style={{ background: 'none', color: T.dim, cursor: 'pointer', fontSize: 12.5, fontWeight: 600 }}>
-                          Copy link
-                        </button>
-                        <a href={film.renders[k]} target="_blank" rel="noreferrer" style={{ color: T.coral, fontSize: 12.5, fontWeight: 600, display: 'inline-flex', gap: 5, alignItems: 'center' }}>
-                          <Download size={13} /> Download
-                        </a>
-                      </div>
-                      {(k === 'master' ? signoffs.master : signoffs.cutdowns[k]) && (
-                        <div style={{ marginTop: 6, paddingLeft: 24 }}>
-                          <SignoffLine signoff={k === 'master' ? signoffs.master : signoffs.cutdowns[k]} />
-                        </div>
-                      )}
-                      </div>
-                    )
-                  ))}
+          <section style={{ display: 'grid', gap: 16, gridTemplateColumns: 'minmax(0, 1fr) 340px', alignItems: 'start' }}>
+            <div style={{ ...panel, padding: 20, display: 'grid', gap: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
+                <div style={{ flex: 1, minWidth: 220 }}>
+                  <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Deliver</h2>
+                  <p style={{ fontSize: 12.5, color: T.dim, margin: 0 }}>
+                    Exports are auto-filed into the Media Library, reusable across posts and campaigns.
+                  </p>
                 </div>
-
-                {film.status === 'delivered' && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: T.raised, borderRadius: 12, padding: '12px 14px', marginTop: 16 }}>
-                    <span style={{ display: 'grid', placeItems: 'center', width: 32, height: 32, borderRadius: 9, background: T.coral, color: '#fff', flexShrink: 0 }}>
-                      <TrendingUp size={16} />
-                    </span>
-                    <span style={{ flex: 1, fontSize: 12.5, color: T.text }}>Film delivered. Schedule it and run it as a campaign in Performance Marketing.</span>
-                    <button type="button" onClick={() => navigate('/app/home')}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 700, color: T.stage, background: T.coral, borderRadius: 999, padding: '6px 12px', flexShrink: 0 }}>
-                      Open Performance Marketing <ArrowRight size={13} />
-                    </button>
-                  </div>
+                {master && (
+                  <Btn disabled={busy === 'exp' || cut.masterStale || !signoffs.masterApproved} onClick={() => run('exp', async () => {
+                    const f = await effyApi.filmExports(id);
+                    putFilm(f);
+                  })}>
+                    {busy === 'exp' ? <RefreshCw size={15} className="animate-spin" /> : <Send size={15} />}
+                    {film.status === 'delivered' ? 'Rebuild exports' : 'Build exports & mark delivered'}
+                  </Btn>
                 )}
+              </div>
 
-                {/* Dealer personalization: scene renders are reused — each
-                    variant only rebuilds the end card, so extra dealers are free. */}
-                <div style={{ background: T.raised, borderRadius: 12, padding: 14, marginTop: 16 }}>
+              {!master && <p style={{ fontSize: 13, color: T.amber, margin: 0 }}>Assemble the film first (stage 6).</p>}
+              {master && cut.masterStale && (
+                <div role="status" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', background: '#3a2c10', color: T.amber, borderRadius: 10, padding: '10px 14px', fontSize: 12.5 }}>
+                  <AlertTriangle size={14} />
+                  <span style={{ flex: 1, minWidth: 200 }}>The film changed after it was assembled. Re-assemble it before building exports or dealer versions.</span>
+                  <Btn kind="quiet" onClick={() => goStage(6)} style={{ padding: '5px 10px', fontSize: 12 }}>Go to assemble</Btn>
+                </div>
+              )}
+              {master && !cut.masterStale && !signoffs.masterApproved && (
+                <div role="status" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', background: '#3a2c10', color: T.amber, borderRadius: 10, padding: '10px 14px', fontSize: 12.5 }}>
+                  <Lock size={14} />
+                  <span style={{ flex: 1, minWidth: 200 }}>Approve the master before building exports or dealer versions.</span>
+                  <Btn kind="quiet" onClick={() => goStage(6)} style={{ padding: '5px 10px', fontSize: 12 }}>Go to sign-off</Btn>
+                </div>
+              )}
+
+              {master && (
+                <div style={{ display: 'grid', gap: 16, alignItems: 'start',
+                              gridTemplateColumns: film.aspect === '9:16' ? '200px minmax(0, 1fr)' : 'minmax(0, 1.15fr) minmax(0, 1fr)' }}>
+                  {/* The master itself, so it can be watched once more before it goes out. */}
+                  <video src={master} poster={film.posterUrl || undefined} controls preload="metadata" aria-label="The master"
+                    style={{ width: '100%', aspectRatio: film.aspect === '9:16' ? '9/16' : '16/9', background: '#000', borderRadius: 10, border: `1px solid ${T.border}` }} />
+                  <div style={{ display: 'grid', gap: 8 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: T.dim, letterSpacing: '.05em' }}>EXPORTS</div>
+                    {[['master', 'Master ' + film.aspect], ['reel', '9:16 Reel'], ['whatsapp', 'WhatsApp 480p']].map(([k, label]) => (
+                      film.renders?.[k] && typeof film.renders[k] === 'string' ? (
+                        <div key={k} data-testid={`export-${k}`} style={{ background: T.raised, borderRadius: 10, padding: '10px 12px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: 13, fontWeight: 600, flex: 1, minWidth: 90 }}>{label}</span>
+                            {(k === 'master' ? cut.masterStale : cut.exportsStale) && <Flag />}
+                            {k !== 'master' && k in signoffs.cutdowns && signoffs.cutdowns[k]?.decision !== 'approved' && (
+                              <Btn kind="quiet" disabled={!!busy} style={{ padding: '3px 9px', fontSize: 11.5 }}
+                                onClick={() => signOff({ stage: 'cutdown', target: k, decision: 'approved' }, `cut${k}`)}>
+                                <Check size={12} /> Approve
+                              </Btn>
+                            )}
+                            <button type="button" title="Copy link"
+                              onClick={() => run(`share${k}`, async () => {
+                                // Links in the app expire within a day; a copied link is a 7-day share link.
+                                const { url, expires } = await effyApi.shareMediaLink(film.renders[k]);
+                                await navigator.clipboard?.writeText(url);
+                                setNotice({ kind: 'warn', text: `${label} link copied. It works until ${new Date(expires * 1000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}.` });
+                              })}
+                              style={{ background: 'none', color: T.dim, cursor: 'pointer', fontSize: 12.5, fontWeight: 600 }}>
+                              Copy link
+                            </button>
+                            <a href={film.renders[k]} target="_blank" rel="noreferrer" style={{ color: T.coral, fontSize: 12.5, fontWeight: 600, display: 'inline-flex', gap: 5, alignItems: 'center' }}>
+                              <Download size={13} /> Download
+                            </a>
+                          </div>
+                          {(k === 'master' ? signoffs.master : signoffs.cutdowns[k]) && (
+                            <div style={{ marginTop: 6 }}>
+                              <SignoffLine signoff={k === 'master' ? signoffs.master : signoffs.cutdowns[k]} />
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div key={k} data-testid={`export-${k}-pending`} style={{ border: `1px dashed ${T.border}`, borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <span style={{ fontSize: 13, fontWeight: 600, flex: 1, color: T.dim }}>{label}</span>
+                          <span style={{ fontSize: 11.5, color: T.dim }}>Built with the exports</span>
+                        </div>
+                      )
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {film.status === 'delivered' && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: T.raised, borderRadius: 12, padding: '12px 14px', flexWrap: 'wrap' }}>
+                  <span style={{ display: 'grid', placeItems: 'center', width: 32, height: 32, borderRadius: 9, background: T.coral, color: '#fff', flexShrink: 0 }}>
+                    <TrendingUp size={16} />
+                  </span>
+                  <span style={{ flex: 1, minWidth: 200, fontSize: 12.5, color: T.text }}>Film delivered. Schedule it and run it as a campaign in Performance Marketing.</span>
+                  <button type="button" onClick={() => navigate('/app/home')}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 700, color: T.stage, background: T.coral, borderRadius: 999, padding: '6px 12px', flexShrink: 0 }}>
+                    Open Performance Marketing <ArrowRight size={13} />
+                  </button>
+                </div>
+              )}
+
+              {/* Dealer personalization: scene renders are reused — each
+                  variant only rebuilds the end card, so extra dealers are free. */}
+              {master && (
+                <div style={{ background: T.raised, borderRadius: 12, padding: 14 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: T.dim, letterSpacing: '.05em', marginBottom: 6 }}>
                     DEALER VERSIONS
                   </div>
@@ -1178,75 +1199,81 @@ export default function FilmMaker() {
                     One dealer per line as <em>Name, Shop, City</em>. Each gets the same film with a personalized
                     end card — no extra AI spend (up to 10 per run).
                   </p>
-                  <textarea value={dealerText} onChange={(e) => setDealerText(e.target.value)} rows={3}
-                    placeholder={'Sharma Hardware, Sharma Traders, Pune\nGupta Paints, Gupta & Sons, Nagpur'}
-                    style={{ ...inputStyle, background: T.surface, resize: 'vertical', marginBottom: 8 }} />
-                  <Btn kind="quiet" disabled={busy === 'pers' || !dealerText.trim() || cut.masterStale || !signoffs.masterApproved} onClick={() => run('pers', async () => {
-                    const dealers = dealerText.split('\n').map((l) => {
-                      const [name, shop, city] = l.split(',').map((x) => x.trim());
-                      return name ? { name, shop: shop || '', city: city || '' } : null;
-                    }).filter(Boolean);
-                    const r = await effyApi.filmPersonalize(id, dealers);
-                    putFilm(r.film);
-                  })}>
-                    {busy === 'pers' ? <RefreshCw size={14} className="animate-spin" /> : <Layers size={14} />}
-                    Build dealer versions
-                  </Btn>
-                  {(film.renders?.personalized || []).length > 0 && (
-                    <div style={{ display: 'grid', gap: 6, marginTop: 10 }}>
-                      {film.renders.personalized.map((p) => (
+                  <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', alignItems: 'start' }}>
+                    <div>
+                      <textarea value={dealerText} onChange={(e) => setDealerText(e.target.value)} rows={4}
+                        aria-label="Dealers"
+                        placeholder={'Sharma Hardware, Sharma Traders, Pune\nGupta Paints, Gupta & Sons, Nagpur'}
+                        style={{ ...inputStyle, background: T.surface, resize: 'vertical', marginBottom: 8 }} />
+                      <Btn kind="quiet" disabled={busy === 'pers' || !dealerText.trim() || cut.masterStale || !signoffs.masterApproved} onClick={() => run('pers', async () => {
+                        const dealers = dealerText.split('\n').map((l) => {
+                          const [name, shop, city] = l.split(',').map((x) => x.trim());
+                          return name ? { name, shop: shop || '', city: city || '' } : null;
+                        }).filter(Boolean);
+                        const r = await effyApi.filmPersonalize(id, dealers);
+                        putFilm(r.film);
+                      })}>
+                        {busy === 'pers' ? <RefreshCw size={14} className="animate-spin" /> : <Layers size={14} />}
+                        Build dealer versions
+                      </Btn>
+                    </div>
+                    <div style={{ display: 'grid', gap: 6 }}>
+                      {(film.renders?.personalized || []).length === 0 && (
+                        <p style={{ fontSize: 12, color: T.dim, margin: 0, border: `1px dashed ${T.border}`, borderRadius: 8, padding: '10px 12px' }}>
+                          Built versions appear here, each with its own download and sign-off.
+                        </p>
+                      )}
+                      {(film.renders?.personalized || []).map((p) => (
                         <div key={p.media} data-testid={`dealer-${p.name}`} style={{ background: T.surface, borderRadius: 8, padding: '8px 12px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <span style={{ fontSize: 12.5, fontWeight: 600, flex: 1 }}>{p.name}</span>
-                          {cut.dealersStale && <Flag />}
-                          {`dealer:${p.name}` in signoffs.cutdowns && signoffs.cutdowns[`dealer:${p.name}`]?.decision !== 'approved' && (
-                            <Btn kind="quiet" disabled={!!busy} style={{ padding: '3px 9px', fontSize: 11.5 }}
-                              onClick={() => signOff({ stage: 'cutdown', target: `dealer:${p.name}`, decision: 'approved' }, `cut${p.name}`)}>
-                              <Check size={12} /> Approve
-                            </Btn>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <span style={{ fontSize: 12.5, fontWeight: 600, flex: 1 }}>{p.name}</span>
+                            {cut.dealersStale && <Flag />}
+                            {`dealer:${p.name}` in signoffs.cutdowns && signoffs.cutdowns[`dealer:${p.name}`]?.decision !== 'approved' && (
+                              <Btn kind="quiet" disabled={!!busy} style={{ padding: '3px 9px', fontSize: 11.5 }}
+                                onClick={() => signOff({ stage: 'cutdown', target: `dealer:${p.name}`, decision: 'approved' }, `cut${p.name}`)}>
+                                <Check size={12} /> Approve
+                              </Btn>
+                            )}
+                            <a href={p.url} target="_blank" rel="noreferrer" style={{ color: T.coral, fontSize: 12, fontWeight: 600, display: 'inline-flex', gap: 4, alignItems: 'center' }}>
+                              <Download size={12} /> Download
+                            </a>
+                          </div>
+                          {signoffs.cutdowns[`dealer:${p.name}`] && (
+                            <div style={{ marginTop: 5 }}><SignoffLine signoff={signoffs.cutdowns[`dealer:${p.name}`]} /></div>
                           )}
-                          <a href={p.url} target="_blank" rel="noreferrer" style={{ color: T.coral, fontSize: 12, fontWeight: 600, display: 'inline-flex', gap: 4, alignItems: 'center' }}>
-                            <Download size={12} /> Download
-                          </a>
-                        </div>
-                        {signoffs.cutdowns[`dealer:${p.name}`] && (
-                          <div style={{ marginTop: 5 }}><SignoffLine signoff={signoffs.cutdowns[`dealer:${p.name}`]} /></div>
-                        )}
                         </div>
                       ))}
                     </div>
-                  )}
+                  </div>
                 </div>
-              </>
-            )}
+              )}
+            </div>
 
-            {film.acceptance && (
-              <div style={{ marginTop: 16 }}>
+            <aside style={{ display: 'grid', gap: 12 }}>
+              {film.acceptance && (
                 <AcceptanceCard kind="film" refId={film.id} summary={film.acceptance} onSaved={() => refetch()}
                   deliveredLabel="brief to exports"
-                  palette={{ text: T.text, dim: T.dim, raised: T.raised, surface: T.surface, border: T.border, green: T.green, amber: T.amber, red: T.red, accent: T.coral }} />
-              </div>
-            )}
-
-            {signoffs.history.length > 0 && (
-              <section aria-label="Sign-off record" style={{ background: T.raised, borderRadius: 12, padding: 14, marginTop: 16 }}>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: T.dim, letterSpacing: '.05em' }}>SIGN-OFF RECORD</div>
-                  <span style={{ fontSize: 11.5, color: T.dim }}>
+                  palette={{ text: T.text, dim: T.dim, raised: T.surface, surface: T.raised, border: T.border, green: T.green, amber: T.amber, red: T.red, accent: T.coral }} />
+              )}
+              {signoffs.history.length > 0 && (
+                <section aria-label="Sign-off record" style={{ ...panel, padding: 14 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: T.dim, letterSpacing: '.05em', marginBottom: 4 }}>SIGN-OFF RECORD</div>
+                  <div style={{ fontSize: 11.5, color: T.dim, marginBottom: 8 }}>
                     {film.revisionAllowance == null ? 'Revisions included: not agreed' : `Revisions included: ${film.revisionAllowance} per deliverable`}
                     {signoffs.history.some((h) => h.extraScope) && ` · ${signoffs.history.filter((h) => h.extraScope).length} extra-scope decision(s)`}
-                  </span>
-                </div>
-                <ol style={{ display: 'grid', gap: 8, listStyle: 'none', margin: 0, padding: 0 }}>
-                  {signoffs.history.map((h) => (
-                    <li key={h.id} style={{ borderTop: `1px solid ${T.border}`, paddingTop: 8 }}>
-                      <div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 2 }}>{deliverableLabel(h)}</div>
-                      <SignoffLine signoff={h} />
-                    </li>
-                  ))}
-                </ol>
-              </section>
-            )}
+                  </div>
+                  {/* Long histories scroll here rather than stretching the page. */}
+                  <ol style={{ display: 'grid', gap: 8, listStyle: 'none', margin: 0, padding: '0 4px 0 0', maxHeight: 320, overflowY: 'auto' }}>
+                    {signoffs.history.map((h) => (
+                      <li key={h.id} style={{ borderTop: `1px solid ${T.border}`, paddingTop: 8 }}>
+                        <div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 2 }}>{deliverableLabel(h)}</div>
+                        <SignoffLine signoff={h} />
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+              )}
+            </aside>
           </section>
         )}
       </main>
