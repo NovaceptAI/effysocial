@@ -804,7 +804,7 @@ export default function FilmMaker() {
         {view === 5 && (
           <section style={{ display: 'grid', gap: 16, gridTemplateColumns: 'minmax(0, 1fr) 320px', alignItems: 'start' }}>
             <div style={{ ...panel, padding: 20 }}>
-              <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>The lines</h2>
+              <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>Voice</h2>
               <p style={{ fontSize: 12.5, color: T.dim, marginBottom: 14 }}>
                 One narrator reads every line. Each is measured against its scene, so a line that would talk over the
                 next beat is caught here, not in the mix. Edit a line and regenerate it (⌘/Ctrl + Enter).

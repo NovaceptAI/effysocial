@@ -45,10 +45,10 @@ describe('Ad Films — renders that no longer match the film', () => {
   it('an edited line flags its voiceover, not the others', async () => {
     openFilm(films.lineEdited, 5);
     await screen.findByRole('heading', { name: 'Voice' });
-    const rows = screen.getAllByTitle("Edit the line — fix a mispronounced word, then Regenerate").map((i) => i.parentElement);
+    const rows = [1, 2].map((n) => screen.getByLabelText(`Line for scene ${n}`).parentElement);
     expect(within(rows[0]).getByText('Out of date — regenerate')).toBeInTheDocument();
     expect(within(rows[1]).queryByText(/Out of date/)).not.toBeInTheDocument();
-    expect(within(rows[1]).getByText(/s \/ 4s$/)).toBeInTheDocument();
+    expect(within(rows[1]).getByText(/^read: [\d.]+s$/)).toBeInTheDocument();
   });
 
   it('delivery waits for re-assembly and marks every existing export out of date (FILM-016)', async () => {
