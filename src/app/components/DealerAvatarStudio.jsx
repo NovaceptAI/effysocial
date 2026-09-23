@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
+import AudioLine from './AudioLine';
 import { Button, Badge, Card } from '../../ui';
 import ShareRow from './ShareRow';
 import NotifyMe from './NotifyMe';
@@ -276,7 +277,11 @@ export default function DealerAvatarStudio({ onBack }) {
               })}>
               {busy === 'voice' ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Volume2 className="w-3.5 h-3.5" />} Preview voice
             </Button>
-            {previewAudio && <audio src={previewAudio} controls autoPlay className="w-full" />}
+            {previewAudio && (
+              <AudioLine src={previewAudio} autoPlay label="the dealer's voice"
+                theme={{ bg: 'var(--surface2, #f5efe6)', border: 'var(--line, #ece2d6)', fill: '#e84a33', over: '#a8520a', text: 'inherit', dim: 'currentColor' }}
+                style={{ width: '100%', opacity: 0.95 }} />
+            )}
             <p className="text-xs text-ink-faint">Dialogues are spoken over the avatar scenes; the branding line and end card render as text in the video.</p>
           </div>
         </div>

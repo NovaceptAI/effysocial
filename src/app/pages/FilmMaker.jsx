@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { effyApi } from '../api/effyApi';
 import AcceptanceCard from '../components/AcceptanceCard';
+import AudioLine from '../components/AudioLine';
 
 /* The theatre: a silent, full-screen production room. Neutral dark greys so
    the footage is judged against nothing; pure black only in the preview well;
@@ -846,7 +847,8 @@ export default function FilmMaker() {
                             </span>}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                        <audio src={s.voUrl} controls style={{ height: 30, flex: 1, minWidth: 180 }} />
+                        <AudioLine src={s.voUrl} window={s.seconds} label={`scene ${s.idx + 1}`}
+                          style={{ flex: 1, minWidth: 190 }} />
                         {isLong(s) && (
                           <Btn kind="quiet" disabled={busy === `fit${s.id}`} style={{ padding: '5px 10px', fontSize: 11.5 }}
                             title="Rewrite this line shorter so it fits the scene, and read it again"
@@ -924,7 +926,7 @@ export default function FilmMaker() {
                         <div style={{ fontSize: 12.5, fontWeight: 600 }}>{v.name}</div>
                         <div style={{ fontSize: 11, color: T.dim }}>{[v.gender, v.accent, v.useCase].filter(Boolean).join(' · ')} · {(v.usedBy || 0).toLocaleString()} users</div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          {v.previewUrl && <audio src={v.previewUrl} controls preload="none" style={{ height: 26, flex: 1, minWidth: 0 }} />}
+                          {v.previewUrl && <AudioLine src={v.previewUrl} label={v.name} style={{ flex: 1, minWidth: 0 }} />}
                           <Btn kind="quiet" style={{ padding: '5px 10px', fontSize: 12 }} disabled={!!busy}
                             onClick={() => run('adopt', async () => {
                               const f = await effyApi.filmVoiceAdopt(id, { voiceId: v.voiceId, ownerId: v.ownerId, name: v.name });
