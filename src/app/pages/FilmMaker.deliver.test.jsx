@@ -6,9 +6,9 @@ import { mockApi, bootstrapFixture } from '../../test/mockApi';
 import { renderApp } from '../../test/render';
 import films from '../../test/fixtures/films';
 
-// Deliver on one screen: the master to watch beside the exports it makes, dealer versions
-// side by side with the list, and the records in a sidebar.
-// Assembled and approved, with no exports or dealer versions built yet.
+// Deliver on one screen: the master to watch beside the exports it makes, and the records
+// in a sidebar. There are no dealer versions here any more.
+// Assembled and approved, with no exports built yet.
 const assembled = { ...films.fresh, renders: { master: films.fresh.renders.master, qa: films.fresh.renders.qa } };
 
 const open = (film) => {
@@ -32,10 +32,11 @@ describe('Film Maker — Deliver', () => {
     }
   });
 
-  it('says where dealer versions will appear before any are built', async () => {
-    open(assembled);
+  it('has no dealer versions section', async () => {
+    open(films.fresh);   // even a film that had dealer versions built before
     await screen.findByRole('heading', { name: 'Deliver' });
-    expect(screen.getByLabelText('Dealers')).toBeInTheDocument();
-    expect(screen.getByText('Built versions appear here, each with its own download and sign-off.')).toBeInTheDocument();
+    expect(screen.queryByText('DEALER VERSIONS')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /dealer versions/i })).not.toBeInTheDocument();
+    expect(screen.queryByTestId('dealer-Sharma')).not.toBeInTheDocument();
   });
 });

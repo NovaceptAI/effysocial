@@ -210,8 +210,6 @@ export const effyApi = {
   filmVoiceSearch: (q) => http(`/films/voices/search?q=${encodeURIComponent(q)}`).then((d) => d.voices),
   filmVoiceAdopt: (id, payload) =>
     http(`/films/${id}/voice-adopt`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).then((d) => d.film),
-  filmPersonalize: (id, dealers) =>
-    http(`/films/${id}/personalize`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dealers }) }),
 
   // Product Shot Video Builder
   listProductShots: (workspaceId) => http(`/product-shots?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.shots),

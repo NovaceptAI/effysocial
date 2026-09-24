@@ -71,7 +71,7 @@ describe('Ad Films — who signed off, when, and in which round', () => {
   it('delivery stays locked until the master is approved', async () => {
     openFilm(films.awaitingMasterSignoff, 7);
     await screen.findByRole('heading', { name: 'Deliver' });
-    expect(screen.getByText('Approve the master before building exports or dealer versions.')).toBeInTheDocument();
+    expect(screen.getByText('Approve the master before building exports.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /build exports/i })).toBeDisabled();
   });
 
@@ -87,10 +87,8 @@ describe('Ad Films — who signed off, when, and in which round', () => {
     expect(within(screen.getByTestId('export-whatsapp')).queryByRole('button', { name: /approve/i })).not.toBeInTheDocument();
 
     await user.click(within(screen.getByTestId('export-reel')).getByRole('button', { name: /approve/i }));
-    await user.click(within(screen.getByTestId('dealer-Sharma')).getByRole('button', { name: /approve/i }));
     await waitFor(() => expect(api.callsTo('POST /films/1/signoff').map((c) => c.body)).toEqual([
       { stage: 'cutdown', target: 'reel', decision: 'approved' },
-      { stage: 'cutdown', target: 'dealer:Sharma', decision: 'approved' },
     ]));
 
     const record = screen.getByRole('region', { name: 'Sign-off record' });

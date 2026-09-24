@@ -38,7 +38,7 @@ test('the master is signed off before delivery, and the record names the approve
     'POST /films/1/signoff': () => { film = { ...films.fresh, stage: 6 }; return { status: 'ok', film }; },
   });
   await page.goto('/app/films/1');
-  await expect(page.getByText('Approve the master before building exports or dealer versions.')).toBeVisible();
+  await expect(page.getByText('Approve the master before building exports.')).toBeVisible();
   await page.getByRole('button', { name: 'Go to sign-off' }).click();
   const box = page.getByRole('region', { name: 'Master sign-off' });
   await box.getByRole('button', { name: /approve master/i }).click();

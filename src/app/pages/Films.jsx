@@ -25,8 +25,8 @@ const STEPS = [
     details: ['Search 5,000+ library voices, audition free', 'Lines measured against each scene window', 'Long or short reads flagged before the mix'] },
   { icon: Layers, title: 'Assemble', tag: 'The final cut', cost: 'free',
     details: ['Beat-timed voiceover over scene ambience', 'Brand end card with your real logo', 'Final AI audio QA on the mix'] },
-  { icon: Send, title: 'Deliver', tag: 'Every format, every dealer', cost: 'free',
-    details: ['Master, 9:16 reel, WhatsApp exports', 'Per-dealer versions at zero extra AI spend', 'Auto-filed into your Media Library'] },
+  { icon: Send, title: 'Deliver', tag: 'Every format you need', cost: 'free',
+    details: ['Master, 9:16 reel, WhatsApp exports', 'Each export signed off on its own', 'Auto-filed into your Media Library'] },
 ];
 
 const LANGS = ['Hinglish', 'English', 'Hindi'];

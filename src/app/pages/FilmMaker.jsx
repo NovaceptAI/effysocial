@@ -117,7 +117,6 @@ export default function FilmMaker() {
   const playerRef = useRef(null);
   const [castQuery, setCastQuery] = useState('');
   const [castResults, setCastResults] = useState([]);
-  const [dealerText, setDealerText] = useState('');
   const [otherField, setOtherField] = useState(null); // which direction field shows the custom input
   const [otherText, setOtherText] = useState('');
   const [sceneCount, setSceneCount] = useState(0);    // 0 = derive from duration
@@ -1040,7 +1039,7 @@ export default function FilmMaker() {
                   </div>
                   {signoffs.master
                     ? <SignoffLine signoff={signoffs.master} />
-                    : <p style={{ fontSize: 12, color: T.dim }}>Not signed off yet. Exports and dealer versions unlock once the master is approved.</p>}
+                    : <p style={{ fontSize: 12, color: T.dim }}>Not signed off yet. Exports unlock once the master is approved.</p>}
                   <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap', alignItems: 'center' }}>
                     {!signoffs.masterApproved && (
                       <Btn style={{ background: T.green, color: '#08130d', padding: '6px 12px', fontSize: 12.5 }} disabled={!!busy}
@@ -1112,14 +1111,14 @@ export default function FilmMaker() {
               {master && cut.masterStale && (
                 <div role="status" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', background: '#3a2c10', color: T.amber, borderRadius: 10, padding: '10px 14px', fontSize: 12.5 }}>
                   <AlertTriangle size={14} />
-                  <span style={{ flex: 1, minWidth: 200 }}>The film changed after it was assembled. Re-assemble it before building exports or dealer versions.</span>
+                  <span style={{ flex: 1, minWidth: 200 }}>The film changed after it was assembled. Re-assemble it before building exports.</span>
                   <Btn kind="quiet" onClick={() => goStage(6)} style={{ padding: '5px 10px', fontSize: 12 }}>Go to assemble</Btn>
                 </div>
               )}
               {master && !cut.masterStale && !signoffs.masterApproved && (
                 <div role="status" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', background: '#3a2c10', color: T.amber, borderRadius: 10, padding: '10px 14px', fontSize: 12.5 }}>
                   <Lock size={14} />
-                  <span style={{ flex: 1, minWidth: 200 }}>Approve the master before building exports or dealer versions.</span>
+                  <span style={{ flex: 1, minWidth: 200 }}>Approve the master before building exports.</span>
                   <Btn kind="quiet" onClick={() => goStage(6)} style={{ padding: '5px 10px', fontSize: 12 }}>Go to sign-off</Btn>
                 </div>
               )}
@@ -1185,66 +1184,6 @@ export default function FilmMaker() {
                     style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 700, color: T.stage, background: T.coral, borderRadius: 999, padding: '6px 12px', flexShrink: 0 }}>
                     Open Performance Marketing <ArrowRight size={13} />
                   </button>
-                </div>
-              )}
-
-              {/* Dealer personalization: scene renders are reused — each
-                  variant only rebuilds the end card, so extra dealers are free. */}
-              {master && (
-                <div style={{ background: T.raised, borderRadius: 12, padding: 14 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: T.dim, letterSpacing: '.05em', marginBottom: 6 }}>
-                    DEALER VERSIONS
-                  </div>
-                  <p style={{ fontSize: 11.5, color: T.dim, marginBottom: 10 }}>
-                    One dealer per line as <em>Name, Shop, City</em>. Each gets the same film with a personalized
-                    end card — no extra AI spend (up to 10 per run).
-                  </p>
-                  <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', alignItems: 'start' }}>
-                    <div>
-                      <textarea value={dealerText} onChange={(e) => setDealerText(e.target.value)} rows={4}
-                        aria-label="Dealers"
-                        placeholder={'Sharma Hardware, Sharma Traders, Pune\nGupta Paints, Gupta & Sons, Nagpur'}
-                        style={{ ...inputStyle, background: T.surface, resize: 'vertical', marginBottom: 8 }} />
-                      <Btn kind="quiet" disabled={busy === 'pers' || !dealerText.trim() || cut.masterStale || !signoffs.masterApproved} onClick={() => run('pers', async () => {
-                        const dealers = dealerText.split('\n').map((l) => {
-                          const [name, shop, city] = l.split(',').map((x) => x.trim());
-                          return name ? { name, shop: shop || '', city: city || '' } : null;
-                        }).filter(Boolean);
-                        const r = await effyApi.filmPersonalize(id, dealers);
-                        putFilm(r.film);
-                      })}>
-                        {busy === 'pers' ? <RefreshCw size={14} className="animate-spin" /> : <Layers size={14} />}
-                        Build dealer versions
-                      </Btn>
-                    </div>
-                    <div style={{ display: 'grid', gap: 6 }}>
-                      {(film.renders?.personalized || []).length === 0 && (
-                        <p style={{ fontSize: 12, color: T.dim, margin: 0, border: `1px dashed ${T.border}`, borderRadius: 8, padding: '10px 12px' }}>
-                          Built versions appear here, each with its own download and sign-off.
-                        </p>
-                      )}
-                      {(film.renders?.personalized || []).map((p) => (
-                        <div key={p.media} data-testid={`dealer-${p.name}`} style={{ background: T.surface, borderRadius: 8, padding: '8px 12px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <span style={{ fontSize: 12.5, fontWeight: 600, flex: 1 }}>{p.name}</span>
-                            {cut.dealersStale && <Flag />}
-                            {`dealer:${p.name}` in signoffs.cutdowns && signoffs.cutdowns[`dealer:${p.name}`]?.decision !== 'approved' && (
-                              <Btn kind="quiet" disabled={!!busy} style={{ padding: '3px 9px', fontSize: 11.5 }}
-                                onClick={() => signOff({ stage: 'cutdown', target: `dealer:${p.name}`, decision: 'approved' }, `cut${p.name}`)}>
-                                <Check size={12} /> Approve
-                              </Btn>
-                            )}
-                            <a href={p.url} target="_blank" rel="noreferrer" style={{ color: T.coral, fontSize: 12, fontWeight: 600, display: 'inline-flex', gap: 4, alignItems: 'center' }}>
-                              <Download size={12} /> Download
-                            </a>
-                          </div>
-                          {signoffs.cutdowns[`dealer:${p.name}`] && (
-                            <div style={{ marginTop: 5 }}><SignoffLine signoff={signoffs.cutdowns[`dealer:${p.name}`]} /></div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
                 </div>
               )}
             </div>
