@@ -32,6 +32,12 @@ describe('Film Maker — Deliver', () => {
     }
   });
 
+  it('plays the master in the film player area (sizes are measured in the browser tests)', async () => {
+    open(assembled);
+    await screen.findByRole('heading', { name: 'Deliver' });
+    expect(screen.getByLabelText('The master').parentElement.parentElement.style.aspectRatio).toBe('16/9');
+  });
+
   it('has no dealer versions section', async () => {
     open(films.fresh);   // even a film that had dealer versions built before
     await screen.findByRole('heading', { name: 'Deliver' });

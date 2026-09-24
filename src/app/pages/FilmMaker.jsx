@@ -24,6 +24,22 @@ const STAGE_LABELS = ['Direction', 'Script', 'Stills', 'Animate', 'Voice', 'Asse
 const fmtDur = (s) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
 
 const panel = { background: T.surface, border: `1px solid ${T.border}`, borderRadius: 14 };
+
+// The film's player area, sized like a video site's player: as wide as the column, but
+// never taller than the window leaves room for — so what sits under it (the exports, the
+// Assemble button) stays on screen. A 9:16 film is letterboxed to the same height.
+function FilmScreen({ aspect, children }) {
+  const tall = aspect !== '16:9';
+  const size = tall
+    ? { height: 'min(62vh, 720px)' }
+    : { aspectRatio: '16/9', width: '100%', maxWidth: 'calc((100vh - 300px) * 16 / 9)', margin: '0 auto' };
+  return (
+    <div style={{ background: '#000', borderRadius: 12, border: `1px solid ${T.border}`, overflow: 'hidden',
+                  display: 'grid', placeItems: 'center', ...size }}>
+      <div style={{ height: '100%', width: tall ? 'auto' : '100%', aspectRatio: tall ? '9/16' : '16/9' }}>{children}</div>
+    </div>
+  );
+}
 const inputStyle = {
   background: T.raised, border: `1px solid ${T.border}`, borderRadius: 10,
   color: T.text, padding: '8px 12px', fontSize: 13, width: '100%',
@@ -324,7 +340,7 @@ export default function FilmMaker() {
         </div>
       )}
 
-      <main style={{ padding: '20px', maxWidth: 1200, margin: '0 auto' }}>
+      <main style={{ padding: '20px', maxWidth: 1600, margin: '0 auto' }}>
 
         {/* ── Stage 1: Assets & Direction ─────────────────────────────── */}
         {view === 1 && (
@@ -1001,10 +1017,12 @@ export default function FilmMaker() {
                   <Btn kind="quiet" style={{ padding: '4px 9px', fontSize: 11.5 }} onClick={() => goStage(5)}>Fix in Voice</Btn>
                 </div>
               )}
-              <div style={{ background: '#000', borderRadius: 10, aspectRatio: film.aspect === '16:9' ? '16/9' : '9/16', display: 'grid', placeItems: 'center', marginBottom: 12 }}>
-                {master
-                  ? <video src={master} controls style={{ width: '100%', height: '100%' }} />
-                  : <span style={{ color: T.dim, fontSize: 13 }}>Assemble to see the film here</span>}
+              <div style={{ marginBottom: 12 }}>
+                <FilmScreen aspect={film.aspect}>
+                  {master
+                    ? <video src={master} controls aria-label="The cut" style={{ width: '100%', height: '100%', display: 'block', background: '#000' }} />
+                    : <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', color: T.dim, fontSize: 13 }}>Assemble to see the film here</div>}
+                </FilmScreen>
               </div>
               <Btn disabled={!cut.canAssemble || busy === 'asm'} onClick={() => run('asm', async () => {
                 const f = await effyApi.filmAssemble(id);
@@ -1124,13 +1142,14 @@ export default function FilmMaker() {
               )}
 
               {master && (
-                <div style={{ display: 'grid', gap: 16, alignItems: 'start',
-                              gridTemplateColumns: film.aspect === '9:16' ? '200px minmax(0, 1fr)' : 'minmax(0, 1.15fr) minmax(0, 1fr)' }}>
-                  {/* The master itself, so it can be watched once more before it goes out. */}
-                  <video src={master} poster={film.posterUrl || undefined} controls preload="metadata" aria-label="The master"
-                    style={{ width: '100%', aspectRatio: film.aspect === '9:16' ? '9/16' : '16/9', background: '#000', borderRadius: 10, border: `1px solid ${T.border}` }} />
-                  <div style={{ display: 'grid', gap: 8 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: T.dim, letterSpacing: '.05em' }}>EXPORTS</div>
+                <div style={{ display: 'grid', gap: 12 }}>
+                  {/* The master itself, as large as the column allows — watched once more before it goes out. */}
+                  <FilmScreen aspect={film.aspect}>
+                    <video src={master} poster={film.posterUrl || undefined} controls preload="metadata" aria-label="The master"
+                      style={{ width: '100%', height: '100%', display: 'block', background: '#000' }} />
+                  </FilmScreen>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: T.dim, letterSpacing: '.05em', marginTop: 4 }}>EXPORTS</div>
+                  <div style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', alignItems: 'start' }}>
                     {[['master', 'Master ' + film.aspect], ['reel', '9:16 Reel'], ['whatsapp', 'WhatsApp 480p']].map(([k, label]) => (
                       film.renders?.[k] && typeof film.renders[k] === 'string' ? (
                         <div key={k} data-testid={`export-${k}`} style={{ background: T.raised, borderRadius: 10, padding: '10px 12px' }}>

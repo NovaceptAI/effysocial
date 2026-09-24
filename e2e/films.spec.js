@@ -75,3 +75,26 @@ test('a delivered film shows its acceptance record, and the Creation Acceptance 
   await expect(page.getByRole('heading', { name: 'Creation Acceptance' })).toBeVisible();
   await expect(page.getByRole('link', { name: film.title })).toBeVisible();
 });
+
+// The film plays like a video site's player: a 16:9 master fills the Deliver column on a
+// laptop screen, a 9:16 one fits the window's height, and the exports stay in view under it.
+test('the master plays large on Deliver, and a portrait film fits the window', async ({ page }) => {
+  await page.setViewportSize({ width: 1512, height: 900 });
+  const assembled = { ...films.fresh, renders: { master: films.fresh.renders.master, qa: films.fresh.renders.qa } };
+  await open(page, assembled, 7);
+  const wide = await page.getByLabel('The master').boundingBox();
+  expect(wide.width).toBeGreaterThan(900);                       // was ~560 beside the export list
+  expect(Math.abs(wide.width / wide.height - 16 / 9)).toBeLessThan(0.05);
+  // Everything on one screen: the exports under the player are in view without scrolling.
+  const exportsRow = await page.getByTestId('export-master').boundingBox();
+  expect(exportsRow.y + exportsRow.height).toBeLessThanOrEqual(900);
+  await page.screenshot({ path: test.info().outputPath('deliver-16x9.png') });
+
+  await open(page, { ...assembled, aspect: '9:16' }, 7);
+  const tall = await page.getByLabel('The master').boundingBox();
+  expect(tall.height).toBeLessThanOrEqual(900 * 0.62 + 2);
+  const tallRow = await page.getByTestId('export-master').boundingBox();
+  expect(tallRow.y + tallRow.height).toBeLessThanOrEqual(900);
+  expect(Math.abs(tall.width / tall.height - 9 / 16)).toBeLessThan(0.05);
+  await page.screenshot({ path: test.info().outputPath('deliver-9x16.png') });
+});
