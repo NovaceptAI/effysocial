@@ -96,7 +96,7 @@ test('creation only skips connections and the plan and lands in AI Studio (ONB-0
   });
 
   await signUp(page, `create-${Date.now()}@example.in`);
-  await page.getByRole('radio', { name: /^Freelancer/ }).click();
+  await page.getByRole('radio', { name: /^Agency & Creators/ }).click();
   await cont(page).click();
   await page.getByLabel('Name', { exact: true }).fill('Meera Studio');
   await page.getByLabel('Industry', { exact: true }).selectOption({ label: 'Other — not listed' });

@@ -52,6 +52,9 @@ test('plan, schedule, approve, review and report', async ({ page, browser }) => 
   await test.step('Fill gaps suggests from the Ideas board and says what AI couldn’t fill (PUBL-017)', async () => {
     expect((await api('/ideas', { workspace: ws, title: 'Why terraces leak', notes: 'The three usual causes' })).ok()).toBeTruthy();
     await page.getByRole('button', { name: 'Month', exact: true }).click();
+    // Fill gaps covers tomorrow to the end of the month on screen: near a month's end that can be a single
+    // day, which the one idea fills. Next month is always a whole month with days left over.
+    await page.getByRole('button', { name: 'Next month' }).click();
     await page.getByRole('button', { name: 'Fill gaps', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: 'Fill gaps' });
     const idea = dialog.locator('label').filter({ hasText: 'Why terraces leak' });

@@ -86,7 +86,8 @@ export function WorkEmailBanner() {
   const work = org?.profile?.workEmail;
   if (!work || work.verified) return null;
   return (
-    <div role="status" aria-label="Work email" className="flex items-center gap-2.5 px-5 sm:px-8 py-2.5 bg-warning-soft/70 text-sm text-ink">
+    // A note, not a live status: it's on every page until done, so screen readers shouldn't announce it each time.
+    <div role="note" aria-label="Work email" className="flex items-center gap-2.5 px-5 sm:px-8 py-2.5 bg-warning-soft/70 text-sm text-ink">
       <BadgeCheck className="w-4 h-4 text-warning shrink-0" />
       <span className="flex-1">
         <strong>Confirm this business.</strong> Verify a work email at your company’s own domain

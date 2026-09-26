@@ -45,7 +45,7 @@ describe('Confirm this business', () => {
   it('asks an unverified Business for its work email', async () => {
     mockApi({ 'GET /bootstrap': withProfile({ ...PROFILES.business, workEmail: { ...unverified, pending: 'owner@northwind.in' } }) });
     renderApp(<WorkEmailBanner />);
-    const banner = await screen.findByRole('status', { name: 'Work email' });
+    const banner = await screen.findByRole('note', { name: 'Work email' });
     expect(banner).toHaveTextContent('Confirm this business. Verify a work email at your company’s own domain — we sent a code to owner@northwind.in.');
     expect(screen.getByRole('link', { name: 'Verify now' })).toHaveAttribute('href', '/app/settings#work-email');
   });
@@ -59,7 +59,7 @@ describe('Confirm this business', () => {
       mockApi({ 'GET /bootstrap': bootstrap });
       const { unmount } = renderApp(<><WorkEmailBanner /><p>Loaded</p></>);
       await screen.findByText('Loaded');
-      expect(screen.queryByRole('status', { name: 'Work email' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('note', { name: 'Work email' })).not.toBeInTheDocument();
       unmount();
     }
   });
