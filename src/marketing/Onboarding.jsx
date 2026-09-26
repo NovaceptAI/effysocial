@@ -32,9 +32,10 @@ export function stepsFor(offer) {
 }
 
 const ORG_TYPES = [
-  { id: 'business', label: 'Business', desc: 'I market my own brand.' },
-  { id: 'agency', label: 'Marketing agency', desc: 'I manage many clients.' },
-  { id: 'freelancer', label: 'Freelancer / consultant', desc: 'I run marketing for a few brands.' },
+  // The three profiles (engine profiles.py). Each says what the profile does.
+  { id: 'business', label: 'Business', desc: 'We market our own company or shop.' },
+  { id: 'personal_brand', label: 'Personal Brand', desc: 'I market myself — my expertise, practice or profile.' },
+  { id: 'agency', label: 'Agency & Creators', desc: 'I create and run marketing for other brands.' },
 ];
 const OFFERS = [
   { id: 'creation', label: 'Create content', desc: 'Posts, images, Product Shots and ad films in AI Studio and Ad Films.' },
@@ -247,7 +248,7 @@ export default function Onboarding() {
   }[step] || {});
 
   const problem = () => {
-    if (cur === 'details' && !details.name.trim()) return 'Enter your business or agency name.';
+    if (cur === 'details' && !details.name.trim()) return orgType === 'personal_brand' ? 'Enter your name.' : 'Enter your business or agency name.';
     if (cur === 'details' && !details.industry.trim()) {
       return otherIndustry ? 'Tell us which business you’re in.' : 'Choose your industry, or pick Other and describe it.';
     }
@@ -338,9 +339,10 @@ export default function Onboarding() {
           )}
 
           {cur === 'details' && (
-            <Step title={orgType === 'agency' ? 'Tell us about your agency' : 'Tell us about your business'} sub="This personalises your workspace, plans and reports.">
+            <Step title={{ agency: 'Tell us about your agency', personal_brand: 'Tell us about yourself' }[orgType] || 'Tell us about your business'} sub="This personalises your workspace, plans and reports.">
               <div className="grid sm:grid-cols-2 gap-4">
-                <Field label="Name"><input className={input} value={details.name} onChange={setDetail('name')} maxLength={160} placeholder="e.g. Roofseal Pune" /></Field>
+                <Field label="Name"><input className={input} value={details.name} onChange={setDetail('name')} maxLength={160}
+                  placeholder={{ agency: 'e.g. Northwind Digital', personal_brand: 'e.g. Dr Asha Rao' }[orgType] || 'e.g. Roofseal Pune'} /></Field>
                 <Field label="Website" hint="Optional — we’ll read your home page and main pages to learn what you do.">
                   <input className={input} value={details.website} onChange={setDetail('website')} maxLength={300} placeholder="https://…" />
                 </Field>

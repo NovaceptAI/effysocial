@@ -8,6 +8,7 @@ import { useTheme } from '../context/ThemeContext';
 import { effyApi } from '../api/effyApi';
 import { Card, PageHeader, Button, Badge } from '../../ui';
 import { cn } from '../../lib/cn';
+import WorkEmailForm from '../components/WorkEmailForm';
 import NotifyMe from '../components/NotifyMe';
 
 // Settings (G44): your profile and preferences, the organisation's time zone and
@@ -192,6 +193,10 @@ export default function Settings() {
     setBusy('');
   };
   const savePrefs = (patch) => act('prefs', () => effyApi.savePreferences(patch));
+  // Arriving from the "Confirm this business" banner: bring the work email into view.
+  useEffect(() => {
+    if (window.location.hash === '#work-email') document.getElementById('work-email')?.scrollIntoView({ block: 'center' });
+  }, [org.profile?.workEmail?.verified]);
   const twoFactorChanged = () => { qc.invalidateQueries({ queryKey: ['two-factor'] }); refresh(); };
 
   return (
@@ -256,6 +261,16 @@ export default function Settings() {
           <Card className="p-5">
             <section aria-label="Organisation">
               <h3 className="font-bold text-ink mb-2 flex items-center gap-2"><Building2 className="w-4 h-4 text-coral-ink" /> Organisation</h3>
+              {org.profile && (
+                <Row title="Profile" desc={org.profile.desc}><span className="text-sm font-semibold text-ink">{org.profile.label}</span></Row>
+              )}
+              {org.profile?.workEmail && (
+                <div id="work-email">
+                  <Row title="Work email" desc="An address at your business’s own domain, to confirm this is your business.">
+                    <WorkEmailForm workEmail={org.profile.workEmail} canManage={canManageWorkspaces} onChanged={refresh} />
+                  </Row>
+                </div>
+              )}
               {orgSettings ? (
                 <>
                   <Row title="Time zone" desc={canManageWorkspaces ? 'Your organisation’s time zone.' : 'Set by your organisation’s admins.'}>

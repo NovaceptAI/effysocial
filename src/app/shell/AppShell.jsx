@@ -1,6 +1,6 @@
 import React, { Suspense, useEffect, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { MailWarning, Check, Zap, Clock, FlaskConical } from 'lucide-react';
+import { MailWarning, Check, Zap, Clock, FlaskConical, BadgeCheck } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import NavRail from './NavRail';
 import TopBar from './TopBar';
@@ -79,6 +79,24 @@ export function SampleBanner() {
   );
 }
 
+// A Business profile confirms itself with a work email (engine profiles.py). It can use
+// everything meanwhile; this asks for it until it's done.
+export function WorkEmailBanner() {
+  const { org } = useWorkspace();
+  const work = org?.profile?.workEmail;
+  if (!work || work.verified) return null;
+  return (
+    <div role="status" aria-label="Work email" className="flex items-center gap-2.5 px-5 sm:px-8 py-2.5 bg-warning-soft/70 text-sm text-ink">
+      <BadgeCheck className="w-4 h-4 text-warning shrink-0" />
+      <span className="flex-1">
+        <strong>Confirm this business.</strong> Verify a work email at your company’s own domain
+        {work.pending ? ` — we sent a code to ${work.pending}.` : '.'}
+      </span>
+      <Link to="/app/settings#work-email" className="text-xs font-bold text-warning whitespace-nowrap">Verify now</Link>
+    </div>
+  );
+}
+
 // Routes that want the full viewport width (editor-style, no page gutter/cap).
 const FULL_BLEED = new Set(['/app/studio']);
 
@@ -122,6 +140,7 @@ function Shell() {
           onOpenNav={() => setNavOpen(true)}
         />
         <SampleBanner />
+        <WorkEmailBanner />
         <VerifyBanner />
         <PlanBanner />
         <main className={fullBleed

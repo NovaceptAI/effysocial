@@ -449,6 +449,10 @@ export const effyApi = {
   acceptInvite: (token, body = {}) =>
     http(`/invites/${encodeURIComponent(token)}/accept`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }),
   // Onboarding and marketing plans (G20)
+  sendWorkEmailCode: (email) =>
+    http('/profile/work-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) }),
+  verifyWorkEmail: (code) =>
+    http('/profile/work-email/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) }),
   getOnboarding: () => http('/onboarding'),
   saveOnboarding: (payload) =>
     http('/onboarding', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),

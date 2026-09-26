@@ -41,7 +41,7 @@ test('the setup rail shows the logo and readable step names', async ({ page }) =
 test('onboarding controls have no browser-default fill or bevel', async ({ page }) => {
   await page.goto('/onboarding');
   const business = page.getByRole('radio', { name: /^Business/ });
-  const agency = page.getByRole('radio', { name: /^Marketing agency/ });
+  const agency = page.getByRole('radio', { name: /^Agency & Creators/ });
   await agency.click();
 
   // The cards fade between states, so wait for them to settle.

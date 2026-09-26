@@ -10,7 +10,7 @@ import ob from '../test/fixtures/onboarding';
 import sources from '../test/fixtures/brandSources';
 
 // Onboarding (G20; ONB-001..005). Payloads come from the engine's test flow: a
-// business choosing both offers through to a plan, and a creation-only freelancer.
+// business choosing both offers through to a plan, and a creation-only Agency & Creators profile.
 function Where() {
   const { pathname } = useLocation();
   return <output aria-label="Current page">{pathname}</output>;
@@ -66,7 +66,7 @@ describe('Onboarding answers (ONB-001)', () => {
     });
     open();
     expect(await screen.findByRole('button', { name: /back/i })).toBeDisabled(); // ONB-005: no Back on step 1
-    await user.click(screen.getByRole('radio', { name: /Marketing agency/ }));
+    await user.click(screen.getByRole('radio', { name: /Agency & Creators/ }));
     await user.click(screen.getByRole('button', { name: /continue/i }));
     await screen.findByRole('heading', { name: 'Tell us about your agency' });
 
