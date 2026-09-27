@@ -26,8 +26,8 @@ const SECTIONS = [
 const PROVIDERS = [
   ['Amazon Web Services', 'Hosts the application and database; stores uploaded and generated media and encrypted backups', 'United States (servers); India (media and backups)'],
   ['Groq', 'Generates text: captions, scripts, brand suggestions, landing-page copy and assistant replies', 'United States'],
-  ['Google (Gemini, Imagen, Veo)', 'Generates and edits images and video from your prompts and uploads', 'Google’s global infrastructure'],
-  ['Pollinations', 'Backup image generation when Google is unavailable; receives the image prompt', 'Outside India'],
+  ['Google (Gemini, Veo)', 'Generates and edits images and video from your prompts and uploads', 'Google’s global infrastructure'],
+  ['Cloudflare', 'Backup image generation when Google is unavailable; receives the image prompt', 'Cloudflare’s global network'],
   ['ElevenLabs', 'Turns scripts into speech and provides voice options', 'United States / European Union'],
   ['Sync Labs', 'Lip-syncs speech to a person’s video for avatar and character clips', 'United States'],
   ['Resend', 'Sends verification and password-reset emails', 'United States'],

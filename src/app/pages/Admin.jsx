@@ -10,7 +10,7 @@ const usd = (v) => `$${Number(v || 0).toFixed(2)}`;
 // Platform engine switch — flips instantly for ALL workspaces (DB-backed).
 const ENGINES = [
   { key: 'image_provider', label: 'Image engine', icon: ImageIcon,
-    options: [{ v: 'imagen', name: 'Imagen 4', hint: 'paid · ~$0.04/image · best quality' },
+    options: [{ v: 'google', name: 'Google Nano Banana 2', hint: 'paid · ~$0.07/image · best quality' },
               { v: 'flux', name: 'FLUX (Cloudflare)', hint: 'free · lower quality' }] },
   { key: 'video_provider', label: 'Video engine', icon: Film,
     options: [{ v: 'veo', name: 'Veo 3.1', hint: 'paid · ~$1.2/render · real AI motion' },

@@ -58,7 +58,7 @@ nav badges/phase placeholders removed · AI Studio chooser uses real generated p
 
 ### ✅ Present (engine .env)
 GROQ (AI) · META_APP_ID/SECRET (IG/FB/Ads dev-mode) · LINKEDIN_CLIENT_ID/SECRET ·
-CLOUDFLARE (images) · POLLINATIONS_API_KEY · AWS/S3 · SECRET_KEY · DATABASE_URL
+GEMINI_API_KEY (images, Veo) · CLOUDFLARE (image fallback) · AWS/S3 · SECRET_KEY · DATABASE_URL
 
 ### ❌ Missing — blocks real user-facing behaviour
 | Credential | Unlocks | How to get |

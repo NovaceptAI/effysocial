@@ -48,7 +48,7 @@ groups: `auth·tenancy` (routes.py), `campaigns`, `brand`, `studio`, `publish`,
 | Design system | "Bright Studio" — coral `#e84a33` + cream, warm-charcoal rail; Fraunces (display) + Manrope (body). Tokens in `tailwind.config.js` + `src/styles/theme.css`; primitives in `src/ui/index.jsx` |
 | Backend | Flask + SQLAlchemy 2.0 (`Mapped` style) + Alembic, gunicorn under systemd |
 | Database | PostgreSQL `novastudy_db` (shared); pgvector enabled (RAG deferred) |
-| AI | Groq `llama-3.3-70b-versatile` (text); Cloudflare FLUX / Pollinations (images, free); `rembg` local (CEO photo) |
+| AI | Groq `llama-3.3-70b-versatile` (text); Google Nano Banana 2 `gemini-3.1-flash-image` (images, paid) with Cloudflare FLUX as the fallback; `rembg` local (CEO photo) |
 | Auth | EffySocial-native accounts, Werkzeug password hashing, Flask signed-cookie session (`effy_uid`) |
 | Crypto | `cryptography` MultiFernet for OAuth tokens at rest (keys in `EFFY_TOKEN_KEY`) |
 
