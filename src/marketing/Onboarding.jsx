@@ -11,6 +11,8 @@ import BrandSources from '../app/components/BrandSources';
 import PlanView from '../app/components/PlanView';
 import { cn } from '../lib/cn';
 import { INDUSTRY_GROUPS, INDUSTRIES } from './industries';
+import { PROFILE_TYPES } from '../app/profiles';
+import { hasFeature } from '../app/plans';
 
 // Onboarding (G20). Answers are saved on the organisation as you go, so a reload
 // resumes at the same step. What you want from EffySocial decides the route:
@@ -31,12 +33,6 @@ export function stepsFor(offer) {
   return ['type', 'details', 'offer', 'goals', 'connect', 'brand', 'plan'];
 }
 
-const ORG_TYPES = [
-  // The three profiles (engine profiles.py). Each says what the profile does.
-  { id: 'business', label: 'Business', desc: 'We market our own company or shop.' },
-  { id: 'personal_brand', label: 'Personal Brand', desc: 'I market myself — my expertise, practice or profile.' },
-  { id: 'agency', label: 'Agency & Creators', desc: 'I create and run marketing for other brands.' },
-];
 const OFFERS = [
   { id: 'creation', label: 'Create content', desc: 'Posts, images, Product Shots and ad films in AI Studio and Ad Films.' },
   { id: 'marketing', label: 'Market and grow', desc: 'Campaigns, leads, ads and analytics.' },
@@ -63,10 +59,11 @@ function Field({ label, hint, className, children }) {
   );
 }
 
-function Choice({ selected, onClick, label, desc }) {
+function Choice({ selected, onClick, label, desc, disabled = false }) {
   return (
-    <button type="button" role="radio" aria-checked={selected} onClick={onClick}
-      className={cn('w-full text-left p-4 rounded-xl border-2 transition', selected ? 'border-coral bg-coral-soft/40' : 'border-line hover:border-coral/50')}>
+    <button type="button" role="radio" aria-checked={selected} onClick={onClick} disabled={disabled}
+      className={cn('w-full text-left p-4 rounded-xl border-2 transition disabled:opacity-50 disabled:cursor-not-allowed',
+        selected ? 'border-coral bg-coral-soft/40' : 'border-line hover:border-coral/50')}>
       <div className="flex items-center justify-between"><span className="font-bold text-ink">{label}</span>{selected && <Check className="w-5 h-5 text-coral" />}</div>
       <p className="text-sm text-ink-soft mt-0.5">{desc}</p>
     </button>
@@ -222,6 +219,8 @@ export default function Onboarding() {
   const [error, setError] = useState('');
 
   const canSetUp = WORKSPACE_ADMIN_ROLES.has(bootstrap?.role);
+  // A profile added after the first starts on Creative (engine profiles.py), which has no marketing.
+  const canMarket = hasFeature(bootstrap?.org?.planInfo, 'marketing');
 
   useEffect(() => {
     effyApi.getOnboarding().then((d) => {
@@ -250,7 +249,8 @@ export default function Onboarding() {
   const problem = () => {
     if (cur === 'details' && !details.name.trim()) return orgType === 'personal_brand' ? 'Enter your name.' : 'Enter your business or agency name.';
     if (cur === 'details' && !details.industry.trim()) {
-      return otherIndustry ? 'Tell us which business you’re in.' : 'Choose your industry, or pick Other and describe it.';
+      if (otherIndustry) return orgType === 'personal_brand' ? 'Tell us what you do.' : 'Tell us which business you’re in.';
+      return 'Choose your industry, or pick Other and describe it.';
     }
     if (cur === 'offer' && !offer) return 'Choose what you want to do with EffySocial.';
     if (cur === 'goals' && !goals.length) return 'Pick at least one goal.';
@@ -333,7 +333,7 @@ export default function Onboarding() {
           {cur === 'type' && (
             <Step title="Welcome! What best describes you?" sub="We'll tailor EffySocial to how you work.">
               <div role="radiogroup" aria-label="Organisation type" className="space-y-3">
-                {ORG_TYPES.map((t) => <Choice key={t.id} selected={orgType === t.id} onClick={() => setOrgType(t.id)} label={t.label} desc={t.desc} />)}
+                {PROFILE_TYPES.map((t) => <Choice key={t.id} selected={orgType === t.id} onClick={() => setOrgType(t.id)} label={t.label} desc={t.desc} />)}
               </div>
             </Step>
           )}
@@ -342,7 +342,7 @@ export default function Onboarding() {
             <Step title={{ agency: 'Tell us about your agency', personal_brand: 'Tell us about yourself' }[orgType] || 'Tell us about your business'} sub="This personalises your workspace, plans and reports.">
               <div className="grid sm:grid-cols-2 gap-4">
                 <Field label="Name"><input className={input} value={details.name} onChange={setDetail('name')} maxLength={160}
-                  placeholder={{ agency: 'e.g. Northwind Digital', personal_brand: 'e.g. Dr Asha Rao' }[orgType] || 'e.g. Roofseal Pune'} /></Field>
+                  placeholder={PROFILE_TYPES.find((t) => t.id === orgType)?.placeholder || 'e.g. Roofseal Pune'} /></Field>
                 <Field label="Website" hint="Optional — we’ll read your home page and main pages to learn what you do.">
                   <input className={input} value={details.website} onChange={setDetail('website')} maxLength={300} placeholder="https://…" />
                 </Field>
@@ -361,8 +361,9 @@ export default function Onboarding() {
                   </select>
                 </Field>
                 {otherIndustry && (
-                  <Field label="Which business are you in?" hint="A few words is enough, e.g. “AI voice agents for banks”." className="sm:col-span-2">
-                    <input className={input} value={details.industry} onChange={setDetail('industry')} maxLength={80} autoFocus placeholder="Describe your business" />
+                  <Field label={orgType === 'personal_brand' ? 'What do you do?' : 'Which business are you in?'}
+                    hint={orgType === 'personal_brand' ? 'A few words is enough, e.g. “Paediatric dentist”.' : 'A few words is enough, e.g. “AI voice agents for banks”.'} className="sm:col-span-2">
+                    <input className={input} value={details.industry} onChange={setDetail('industry')} maxLength={80} autoFocus placeholder={orgType === 'personal_brand' ? 'Describe what you do' : 'Describe your business'} />
                   </Field>
                 )}
                 <Field label="Primary location"><input className={input} value={details.location} onChange={setDetail('location')} maxLength={80} placeholder="e.g. Pune, India" /></Field>
@@ -388,8 +389,17 @@ export default function Onboarding() {
           {cur === 'offer' && (
             <Step title="What do you want to do with EffySocial?" sub="We'll set up the right tools first. You can use everything later.">
               <div role="radiogroup" aria-label="What you need" className="space-y-3">
-                {OFFERS.map((o) => <Choice key={o.id} selected={offer === o.id} onClick={() => setOffer(o.id)} label={o.label} desc={o.desc} />)}
+                {OFFERS.map((o) => (
+                  <Choice key={o.id} selected={offer === o.id} onClick={() => setOffer(o.id)} label={o.label} desc={o.desc}
+                    disabled={!canMarket && o.id !== 'creation'} />
+                ))}
               </div>
+              {!canMarket && (
+                <p role="note" className="mt-3 text-sm rounded-lg bg-surface2 text-ink-soft px-3.5 py-2.5">
+                  This profile is on the free Creative plan, which is for creating content. Marketing comes with Growth
+                  and above — upgrade it in Billing whenever you’re ready.
+                </p>
+              )}
             </Step>
           )}
 

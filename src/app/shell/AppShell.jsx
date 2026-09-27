@@ -82,7 +82,7 @@ export function SampleBanner() {
 // A Business profile confirms itself with a work email (engine profiles.py). It can use
 // everything meanwhile; this asks for it until it's done.
 export function WorkEmailBanner() {
-  const { org } = useWorkspace();
+  const { org, canManageWorkspaces } = useWorkspace();
   const work = org?.profile?.workEmail;
   if (!work || work.verified) return null;
   return (
@@ -93,7 +93,9 @@ export function WorkEmailBanner() {
         <strong>Confirm this business.</strong> Verify a work email at your company’s own domain
         {work.pending ? ` — we sent a code to ${work.pending}.` : '.'}
       </span>
-      <Link to="/app/settings#work-email" className="text-xs font-bold text-warning whitespace-nowrap">Verify now</Link>
+      {canManageWorkspaces
+        ? <Link to="/app/settings#work-email" className="text-xs font-bold text-warning whitespace-nowrap">Verify now</Link>
+        : <span className="text-xs text-ink-soft whitespace-nowrap">An owner or admin can verify it.</span>}
     </div>
   );
 }

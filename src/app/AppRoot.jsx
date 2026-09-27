@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useMemo } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WorkspaceProvider } from './context/WorkspaceContext';
@@ -69,8 +69,6 @@ const CreativeAnalytics = lazy(() => import('./pages/CreativeAnalytics'));
 const Acceptance = lazy(() => import('./pages/Acceptance'));
 const ModulePlaceholder = lazy(() => import('./pages/ModulePlaceholder'));
 
-const queryClient = new QueryClient();
-
 // Routes that are fully built (override the auto-generated placeholders).
 const BUILT = new Set([
   '/app', '/app/home', '/app/clients', '/app/campaigns', '/app/brand', '/app/studio',
@@ -92,9 +90,13 @@ const childPath = (to) => (to === '/app' ? '' : to.replace(/^\/app\//, ''));
 
 export default function AppRoot() {
   const { bootstrap } = useAppAuth();
+  const orgId = bootstrap?.org?.id ?? null;
+  // Each profile has its own cache and a freshly mounted app (6.15): after a switch no
+  // page can show the last profile's team, posts or figures, even for a moment.
+  const queryClient = useMemo(() => new QueryClient(), [orgId]);
   if (bootstrap && !bootstrap.org) return <NoOrganisation />;
   return (
-    <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient} key={orgId ?? 'none'}>
       <ThemeProvider>
       <WorkspaceProvider>
         <Routes>

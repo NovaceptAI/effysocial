@@ -69,6 +69,24 @@ export function AppAuthProvider({ children }) {
     return ok;
   }, []);
 
+  // Several profiles on one login (6.15): work in another one, or add one. `then` runs
+  // in the same update as the new profile arriving — e.g. to move to a page that suits it.
+  const switchProfile = useCallback(async (orgId, then) => {
+    const { ok, data } = await post(`/profiles/${orgId}/switch`);
+    if (!ok) return { ok: false, message: data.message || 'Couldn’t switch to that profile.' };
+    then?.(data);
+    setUser(data.user); setBootstrap(data);
+    return { ok: true };
+  }, []);
+
+  const addProfile = useCallback(async (payload, then) => {
+    const { ok, data } = await post('/profiles', payload);
+    if (!ok) return { ok: false, message: data.message || 'Couldn’t add that profile.' };
+    then?.(data);
+    setUser(data.user); setBootstrap(data);
+    return { ok: true, trial: !!data.trial };
+  }, []);
+
   const verifyEmail = useCallback(async (token) => {
     const { ok, data } = await post('/auth/verify', { token });
     if (ok && data.user) { setUser(data.user); setBootstrap(data); }  // auto sign-in on verify
@@ -81,7 +99,7 @@ export function AppAuthProvider({ children }) {
 
   return (
     <Ctx.Provider value={{
-      user, bootstrap, loading, login, verifyTwoFactor, register, logout, refresh,
+      user, bootstrap, loading, login, verifyTwoFactor, register, logout, refresh, switchProfile, addProfile,
       verifyEmail, resendVerification, resendPublic, forgotPassword, resetPassword,
     }}>
       {children}

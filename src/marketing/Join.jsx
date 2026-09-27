@@ -13,7 +13,7 @@ export default function Join() {
   const [params] = useSearchParams();
   const token = params.get('token') || '';
   const navigate = useNavigate();
-  const { user, loading, refresh, logout } = useAppAuth();
+  const { user, bootstrap, loading, refresh, logout } = useAppAuth();
   const [invite, setInvite] = useState(null);
   const [problem, setProblem] = useState('');
   const [name, setName] = useState('');
@@ -70,6 +70,11 @@ export default function Join() {
       body = (
         <>
           {heading}
+          {bootstrap?.org && (
+            <p className="text-sm text-ink-soft -mt-3 mb-5">
+              It’s added to your profiles beside {bootstrap.org.name} — switch between them from the top bar.
+            </p>
+          )}
           <button type="button" onClick={accept} disabled={busy} className={primary}>
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Join {invite.org}
           </button>

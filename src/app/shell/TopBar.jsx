@@ -8,20 +8,10 @@ import { useTheme } from '../context/ThemeContext';
 import { usePosts } from '../api/hooks';
 import { effyApi } from '../api/effyApi';
 import WorkspaceDialog from '../components/WorkspaceDialog';
+import Dropdown from './Dropdown';
+import ProfileSwitcher from './ProfileSwitcher';
 import { hasFeature } from '../plans';
 import { cn } from '../../lib/cn';
-
-function Dropdown({ open, onClose, children, className }) {
-  if (!open) return null;
-  return (
-    <>
-      <div className="fixed inset-0 z-30" onClick={onClose} />
-      <div className={cn('absolute z-40 mt-2 rounded-lg border border-line bg-surface shadow-e3 py-1.5', className)}>
-        {children}
-      </div>
-    </>
-  );
-}
 
 const WORKSPACE_ITEM = 'Client workspace';
 const SEV_ICON = { error: ShieldAlert, warning: AlertTriangle, info: Info };
@@ -92,7 +82,7 @@ export default function TopBar({ onOpenPalette, onOpenAssistant, onOpenNav }) {
         <Menu className="w-5 h-5" />
       </button>
 
-
+      <ProfileSwitcher />
 
       <div className="flex-1" />
 

@@ -16,18 +16,27 @@ function initials(name = '') {
   return name.split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'U';
 }
 
-// The chosen workspace survives a reload; storage can be unavailable (private mode).
-function savedChoice(userId) {
+// The chosen workspace survives a reload, remembered for each profile on the login
+// (6.15); storage can be unavailable (private mode).
+function readSaved(userId) {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
-    return saved && saved.user === userId ? saved.workspace : null;
+    return saved && saved.user === userId ? saved : null;
   } catch {
     return null;
   }
 }
 
-function saveChoice(userId, workspaceId) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ user: userId, workspace: workspaceId })); } catch { /* private mode */ }
+export function savedChoice(userId, orgId) {
+  const saved = readSaved(userId);
+  // `workspace` is how the choice was kept before profiles; it is checked against the
+  // profile's own workspaces before use, so it can't open another profile's.
+  return saved ? saved.byOrg?.[orgId] ?? saved.workspace ?? null : null;
+}
+
+export function saveChoice(userId, orgId, workspaceId) {
+  const byOrg = { ...(readSaved(userId)?.byOrg || {}), [orgId]: workspaceId };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ user: userId, byOrg })); } catch { /* private mode */ }
 }
 
 const WorkspaceContext = createContext(null);
@@ -35,6 +44,7 @@ const WorkspaceContext = createContext(null);
 export function WorkspaceProvider({ children }) {
   const { bootstrap, refresh } = useAppAuth();
   const userId = bootstrap?.user?.id;
+  const orgId = bootstrap?.org?.id;
 
   const workspaces = useMemo(() => bootstrap?.workspaces || [], [bootstrap]);
 
@@ -44,14 +54,14 @@ export function WorkspaceProvider({ children }) {
   const workspaceId = useMemo(() => {
     const has = (id) => id != null && workspaces.some((w) => w.id === id);
     if (has(chosen)) return chosen;
-    const saved = savedChoice(userId);
+    const saved = savedChoice(userId, orgId);
     return has(saved) ? saved : workspaces[0]?.id ?? null;
-  }, [workspaces, chosen, userId]);
+  }, [workspaces, chosen, userId, orgId]);
 
   const setWorkspaceId = useCallback((id) => {
     setChosen(id);
-    if (userId != null) saveChoice(userId, id);
-  }, [userId]);
+    if (userId != null) saveChoice(userId, orgId, id);
+  }, [userId, orgId]);
 
   const workspace = workspaces.find((w) => w.id === workspaceId) || null;
   const user = bootstrap?.user ? { ...bootstrap.user, avatar: initials(bootstrap.user.name) } : { name: 'User', avatar: 'U' };
@@ -60,6 +70,8 @@ export function WorkspaceProvider({ children }) {
   const canManageWorkspaces = WORKSPACE_ADMIN_ROLES.has(role);
   const canWrite = !!role && !READ_ONLY_ROLES.has(role);
   const planInfo = bootstrap?.org?.planInfo || null;
+  // Every profile on this login, for the switcher (engine profiles.profiles_of).
+  const profiles = useMemo(() => bootstrap?.profiles || [], [bootstrap]);
   // Why a new workspace can't be added on this plan, or null when it can.
   const cap = planInfo?.limits?.workspaces;
   const workspaceLimit = cap != null && workspaces.length >= cap
@@ -69,9 +81,9 @@ export function WorkspaceProvider({ children }) {
   const value = useMemo(
     () => ({
       org, user, role, canManageWorkspaces, canWrite, planInfo, workspaceLimit, workspaces, workspace, workspaceId: workspace?.id, setWorkspaceId,
-      refreshWorkspaces: refresh,
+      refreshWorkspaces: refresh, profiles,
     }),
-    [org, user, role, canManageWorkspaces, canWrite, planInfo, workspaceLimit, workspaces, workspace, setWorkspaceId, refresh],
+    [org, user, role, canManageWorkspaces, canWrite, planInfo, workspaceLimit, workspaces, workspace, setWorkspaceId, refresh, profiles],
   );
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
 }

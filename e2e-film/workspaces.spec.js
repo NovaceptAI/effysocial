@@ -98,7 +98,8 @@ test('an agency adds a client, sees real figures and switches cleanly', async ({
     await page.getByPlaceholder('Lead name…').fill('Half typed');
     await page.getByTitle('Asha Rao').click();
     await page.getByRole('button', { name: /Workspace\s*Sunrise Motors/ }).click();
-    await page.getByRole('button', { name: 'Northwind' }).click();
+    // The workspace in the menu, not the profile switcher ("Profile: Northwind. Switch profile").
+    await page.getByRole('button', { name: /Northwind$/ }).click();
     await expect(page.getByRole('link', { name: 'Kiran Patil' }).first()).toBeVisible();
     await expect(page.getByPlaceholder('Lead name…')).toHaveCount(0);
     await page.getByTitle('Asha Rao').click();
