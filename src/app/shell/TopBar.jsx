@@ -63,7 +63,7 @@ function Notifications() {
 }
 
 export default function TopBar({ onOpenPalette, onOpenAssistant, onOpenNav }) {
-  const { user, org, workspaces, workspace, setWorkspaceId, canManageWorkspaces, workspaceLimit } = useWorkspace();
+  const { user, workspaces, workspace, setWorkspaceId, canManageWorkspaces, workspaceLimit, switches } = useWorkspace();
   const { user: authUser, logout } = useAppAuth();
   const { theme, toggleTheme } = useTheme();
   const [wsExpanded, setWsExpanded] = useState(false);
@@ -97,7 +97,7 @@ export default function TopBar({ onOpenPalette, onOpenAssistant, onOpenNav }) {
               disabled={c === WORKSPACE_ITEM && (!canManageWorkspaces || !!workspaceLimit)}
               title={c === WORKSPACE_ITEM ? (!canManageWorkspaces ? 'Only owners and admins can create workspaces.' : workspaceLimit || undefined) : undefined}
               className="w-full text-left px-3 py-2 text-sm text-ink bg-transparent hover:bg-surface2 transition disabled:opacity-50">
-              {c === WORKSPACE_ITEM && org?.type !== 'agency' ? 'Workspace' : c}
+              {c === WORKSPACE_ITEM && !switches.clientsPage ? 'Workspace' : c}
             </button>
           ))}
         </Dropdown>

@@ -11,6 +11,8 @@ export const WORKSPACE_ADMIN_ROLES = new Set(['Agency owner', 'Agency admin', 'W
 export const READ_ONLY_ROLES = new Set(['View-only', 'Client approver']);
 
 const STORAGE_KEY = 'effy.workspace';
+// Settings → Roles & client approval (engine profiles.SWITCHES), each off until turned on.
+const SWITCHES_OFF = { clientsPage: false, clientApprover: false, clientReview: false, requireApproval: false };
 
 function initials(name = '') {
   return name.split(/\s+/).map((w) => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || 'U';
@@ -72,6 +74,7 @@ export function WorkspaceProvider({ children }) {
   const planInfo = bootstrap?.org?.planInfo || null;
   // Every profile on this login, for the switcher (engine profiles.profiles_of).
   const profiles = useMemo(() => bootstrap?.profiles || [], [bootstrap]);
+  const switches = useMemo(() => ({ ...SWITCHES_OFF, ...(bootstrap?.org?.profile?.settings || {}) }), [bootstrap]);
   // Why a new workspace can't be added on this plan, or null when it can.
   const cap = planInfo?.limits?.workspaces;
   const workspaceLimit = cap != null && workspaces.length >= cap
@@ -81,9 +84,9 @@ export function WorkspaceProvider({ children }) {
   const value = useMemo(
     () => ({
       org, user, role, canManageWorkspaces, canWrite, planInfo, workspaceLimit, workspaces, workspace, workspaceId: workspace?.id, setWorkspaceId,
-      refreshWorkspaces: refresh, profiles,
+      refreshWorkspaces: refresh, profiles, switches,
     }),
-    [org, user, role, canManageWorkspaces, canWrite, planInfo, workspaceLimit, workspaces, workspace, setWorkspaceId, refresh, profiles],
+    [org, user, role, canManageWorkspaces, canWrite, planInfo, workspaceLimit, workspaces, workspace, setWorkspaceId, refresh, profiles, switches],
   );
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;
 }

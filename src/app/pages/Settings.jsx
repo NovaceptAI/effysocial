@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import QRCode from 'qrcode';
-import { Palette, Shield, Bell, Sun, Moon, User, Building2, X, Copy, Check, Loader2 } from 'lucide-react';
+import { Palette, Shield, Bell, Sun, Moon, User, Building2, X, Copy, Check, Loader2, UsersRound } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useAppAuth } from '../context/AppAuth';
 import { useTheme } from '../context/ThemeContext';
@@ -18,6 +18,14 @@ const NOTIFICATIONS = [
   ['failures', 'Publishing failures', 'Failed posts and expired connections.'],
   ['leads', 'New leads', 'A lead is captured or needs a follow-up.'],
   ['reportsEmail', 'Email reports', 'When a monthly report is ready.'],
+];
+// Settings → Roles & client approval (6.16): Business and Agency & Creators only, each off
+// until an owner or admin turns it on (engine profiles.SWITCHES).
+const SWITCHES = [
+  ['clientsPage', 'Clients page', 'A page listing every client workspace with its figures, and client wording across the app.'],
+  ['clientApprover', 'Client approver role', 'Invite clients to review and approve their own content. Turns on the client review stage.'],
+  ['clientReview', 'Client review stage', 'After internal review, content waits for the client before it’s approved.'],
+  ['requireApproval', 'Require approval before publishing', 'Nothing is scheduled or published until it’s been approved. Changing an approved post sends it back to review.'],
 ];
 const TZ_LABELS = { 'Asia/Kolkata': 'Asia/Kolkata (IST)' };
 const CURRENCY_LABELS = { INR: 'INR (₹)', USD: 'USD ($)', GBP: 'GBP (£)', EUR: 'EUR (€)' };
@@ -171,7 +179,7 @@ function ConfirmWithCode({ title, intro, needsPassword, action, onClose, onDone 
 }
 
 export default function Settings() {
-  const { org, workspace, canManageWorkspaces } = useWorkspace();
+  const { org, workspace, canManageWorkspaces, switches } = useWorkspace();
   const { user, refresh } = useAppAuth();
   const { theme, setTheme } = useTheme();
   const qc = useQueryClient();
@@ -289,6 +297,21 @@ export default function Settings() {
               ) : <p className="text-sm text-ink-faint py-2">Loading…</p>}
             </section>
           </Card>
+
+          {org.profile?.clientFeatures && (
+            <Card className="p-5">
+              <section aria-label="Roles & client approval">
+                <h3 className="font-bold text-ink mb-1 flex items-center gap-2"><UsersRound className="w-4 h-4 text-coral-ink" /> Roles &amp; client approval</h3>
+                <p className="text-xs text-ink-faint mb-1">{canManageWorkspaces ? 'Each is off until you turn it on.' : 'Set by your organisation’s owners and admins.'}</p>
+                {SWITCHES.map(([key, title, desc]) => (
+                  <Row key={key} title={title} desc={desc}>
+                    <Toggle label={title} on={switches[key]} disabled={!canManageWorkspaces || busy === 'roles'}
+                      onChange={(v) => act('roles', () => effyApi.saveProfileSettings({ [key]: v }), `${title} turned ${v ? 'on' : 'off'}.`)} />
+                  </Row>
+                ))}
+              </section>
+            </Card>
+          )}
 
           <Card className="p-5">
             <section aria-label="Security">

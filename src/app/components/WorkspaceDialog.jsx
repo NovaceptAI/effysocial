@@ -10,10 +10,10 @@ const INPUT = 'w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm
 // Create or edit a workspace (G21). For an agency every workspace is a client, so
 // the same form backs "New workspace", "+ Add client" and a client's Edit.
 export default function WorkspaceDialog({ open, onClose, onSaved, workspace = null }) {
-  const { org, user, refreshWorkspaces } = useWorkspace();
+  const { user, refreshWorkspaces, switches } = useWorkspace();
   const qc = useQueryClient();
   const editing = !!workspace;
-  const client = org?.type === 'agency';
+  const client = switches.clientsPage;  // workspaces are clients once the Clients page is on (6.16)
   const noun = client ? 'client' : 'workspace';
   const nameRef = useRef(null);
 

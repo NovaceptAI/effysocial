@@ -62,7 +62,9 @@ describe('Limits in the app', () => {
   });
 
   it('adding a workspace past the plan’s limit is disabled with the reason', async () => {
-    mockApi({ 'GET /bootstrap': plans.creativeBootstrap, 'GET /workspaces/summary': { status: 'ok', clients: [] } });
+    // An agency with the Clients page switched on (Settings → Roles & client approval, 6.16).
+    const boot = { ...plans.creativeBootstrap, org: { ...plans.creativeBootstrap.org, profile: { clientFeatures: true, settings: { clientsPage: true } } } };
+    mockApi({ 'GET /bootstrap': boot, 'GET /workspaces/summary': { status: 'ok', clients: [] } });
     renderApp(<Clients />, { route: '/app/clients' });
     const add = await screen.findByRole('button', { name: /add client/i });
     expect(add).toBeDisabled();

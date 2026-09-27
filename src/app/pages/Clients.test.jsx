@@ -8,10 +8,16 @@ import { useWorkspace } from '../context/WorkspaceContext';
 import { sinceLabel } from '../components/ClientFigures';
 import { mockApi, bootstrapFixture } from '../../test/mockApi';
 import { renderApp } from '../../test/render';
-import clients from '../../test/fixtures/clients';
+import captured from '../../test/fixtures/clients';
 
 // Workspaces and client workspaces (G21). Payloads come from the engine's test flow:
-// an agency whose two clients hold different data, then a third client added.
+// an agency whose two clients hold different data, then a third client added. The agency
+// has switched the Clients page on (Settings → Roles & client approval, 6.16).
+const clientsOn = (boot) => ({
+  ...boot,
+  org: { ...boot.org, profile: { type: 'agency', label: 'Agency & Creators', clientFeatures: true, settings: { clientsPage: true } } },
+});
+const clients = { ...captured, bootstrap: clientsOn(captured.bootstrap), bootstrapAfterAdd: clientsOn(captured.bootstrapAfterAdd) };
 const row = (id) => screen.getByTestId(`client-${id}`);
 const cell = (id, column) => {
   const headers = [...screen.getAllByRole('columnheader')].map((h) => h.textContent);

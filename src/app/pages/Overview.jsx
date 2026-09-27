@@ -212,8 +212,9 @@ function InstagramMini({ workspace }) {
 }
 
 export default function Overview() {
-  const { workspace, org } = useWorkspace();
-  const isAgency = org?.type === 'agency';
+  const { workspace, switches } = useWorkspace();
+  // The all-clients view comes with the Clients page (Settings → Roles & client approval).
+  const isAgency = switches.clientsPage;
   const [view, setView] = useState(isAgency ? 'agency' : 'client');
 
   const { data: posts = [] } = usePosts(workspace);

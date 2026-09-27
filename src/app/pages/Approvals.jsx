@@ -14,22 +14,24 @@ const STAGES = ['Idea', 'Draft', 'Internal Review', 'Client Review', 'Approved',
 const STAGE_OF = { internal_review: 2, client_review: 3 };
 const CLIENT_APPROVER = 'Client approver';
 
-function StageBar({ status }) {
+// The client review stage shows when it's switched on, or while a post is still in it.
+function StageBar({ status, clientReview }) {
   const cur = STAGE_OF[status] ?? 1;
+  const shown = clientReview || status === 'client_review';
   return (
     <div className="flex items-center gap-1 flex-wrap">
-      {STAGES.map((s, i) => (
+      {STAGES.map((s, i) => (!shown && s === 'Client Review' ? null : (
         <span key={s} className={cn('text-[0.65rem] font-semibold px-2 py-0.5 rounded-full',
           i < cur ? 'bg-success-soft text-success' : i === cur ? 'bg-coral text-white' : 'bg-surface2 text-ink-faint')}>
           {s}
         </span>
-      ))}
+      )))}
     </div>
   );
 }
 
 export default function Approvals() {
-  const { workspace, org, role } = useWorkspace();
+  const { workspace, org, role, switches } = useWorkspace();
   const zone = orgZone(org);
   const queryClient = useQueryClient();
   const { data: posts = [] } = usePosts(workspace);
@@ -149,7 +151,7 @@ export default function Approvals() {
               <PostStatus status={active.status} />
             </div>
 
-            <div className="mb-4"><StageBar status={active.status} /></div>
+            <div className="mb-4"><StageBar status={active.status} clientReview={switches.clientReview} /></div>
 
             {/* preview + comments */}
             <div className="grid sm:grid-cols-2 gap-4">

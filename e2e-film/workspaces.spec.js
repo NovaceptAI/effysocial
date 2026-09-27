@@ -20,6 +20,15 @@ test('an agency adds a client, sees real figures and switches cleanly', async ({
     first = (await r.json()).workspaces[0];
   });
 
+  await test.step('turn on the Clients page and client review in Settings (6.16)', async () => {
+    await page.goto('/app/settings');
+    const roles = page.getByRole('region', { name: 'Roles & client approval' });
+    for (const name of ['Clients page', 'Client review stage']) {
+      await roles.getByRole('switch', { name }).click();
+      await expect(roles.getByRole('switch', { name })).toHaveAttribute('aria-checked', 'true');
+    }
+  });
+
   await test.step('add a client from the Clients page (TEN-007)', async () => {
     await page.goto('/app/clients');
     await page.getByRole('button', { name: /add client/i }).click();

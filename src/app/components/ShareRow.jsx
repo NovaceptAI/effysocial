@@ -13,7 +13,7 @@ import { ChannelIcon } from './parts';
    outcome; Facebook/YouTube are honestly gated until their connections exist.
    Download always works. */
 export default function ShareRow({ videoUrl, imageUrl, caption = '', title }) {
-  const { workspace, canWrite } = useWorkspace();
+  const { workspace, canWrite, switches } = useWorkspace();
   const queryClient = useQueryClient();
   const [state, setState] = useState('idle');   // idle|publishing|waiting|done|error
   const [msg, setMsg] = useState('');
@@ -69,7 +69,12 @@ export default function ShareRow({ videoUrl, imageUrl, caption = '', title }) {
     <div className="mt-4 w-full rounded-xl bg-surface2/60 p-3">
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-xs font-bold uppercase tracking-wide text-ink-faint mr-1">Share</span>
-        {igConnected ? (
+        {switches.requireApproval ? (
+          // Settings → Roles & client approval (6.16): straight to Instagram would skip review.
+          <Button size="sm" variant="secondary" disabled title="Posts here need approval before they’re published">
+            <ChannelIcon channel="instagram" className="w-4 h-4" /> Instagram — needs approval
+          </Button>
+        ) : igConnected ? (
           <Button size="sm" onClick={publishIG} disabled={!canWrite || !!captionProblem || ['publishing', 'waiting', 'done'].includes(state)}>
             {state === 'done' ? <Check className="w-3.5 h-3.5" />
               : ['publishing', 'waiting'].includes(state) ? <RefreshCw className="w-3.5 h-3.5 animate-spin" />
@@ -111,7 +116,10 @@ export default function ShareRow({ videoUrl, imageUrl, caption = '', title }) {
           <Link to="/app/published" className="font-bold text-coral-ink">See it on Published</Link>
         </p>
       )}
-      {!igConnected && <p className="text-[0.7rem] text-ink-faint mt-2">Facebook needs a connected Page; YouTube upload arrives with Google sign-in. Download works everywhere.</p>}
+      {switches.requireApproval && (
+        <p role="note" className="text-[0.7rem] text-ink-faint mt-2">Posts here need approval before they’re published: send this to approval, then schedule or publish it once it’s approved.</p>
+      )}
+      {!igConnected && !switches.requireApproval && <p className="text-[0.7rem] text-ink-faint mt-2">Facebook needs a connected Page; YouTube upload arrives with Google sign-in. Download works everywhere.</p>}
     </div>
   );
 }

@@ -40,7 +40,8 @@ function RailItem({ to, end, icon: Icon, label, onNavigate }) {
 // Runway-style rail: icons with a small label underneath — no full-text
 // sidebar. Clicking a group opens a flyout panel to the right with that
 // group's pages (portal-positioned so nothing clips).
-const AGENCY_ONLY = new Set(['/app/clients']);
+// Shown once the Clients page is switched on in Settings → Roles & client approval (6.16).
+const CLIENTS_ONLY = new Set(['/app/clients']);
 const GROUP_HINTS = {
   Strategy: 'Plan the market',
   Content: 'Create the assets',
@@ -61,10 +62,9 @@ const GROUP_SHORT = { Administration: 'Admin' };
 const RAIL_W = 74; // px — icon + label column
 
 export default function NavRail({ mobileOpen = false, onNavigate }) {
-  const { org, planInfo } = useWorkspace();
+  const { planInfo, switches } = useWorkspace();
   const { user: authUser } = useAppAuth();
   const { pathname } = useLocation();
-  const isAgency = org?.type === 'agency';
   const home = NAV.find((grp) => grp.group === 'Overview')?.items[0];
   const groups = NAV.filter((grp) => grp.group !== 'Overview');
   const [flyout, setFlyout] = useState(null); // {group, top}
@@ -133,7 +133,7 @@ export default function NavRail({ mobileOpen = false, onNavigate }) {
           <RailItem to={home.to} end={home.end} icon={home.icon} label="Home" onNavigate={onNavigate} />
         )}
         {!hub && groups.map((grp) => {
-          const visibleItems = grp.items.filter((item) => (isAgency || !AGENCY_ONLY.has(item.to)) && (!item.adminOnly || authUser?.is_admin));
+          const visibleItems = grp.items.filter((item) => (switches.clientsPage || !CLIENTS_ONLY.has(item.to)) && (!item.adminOnly || authUser?.is_admin));
           if (!visibleItems.length) return null;
           const GIcon = GROUP_ICONS[grp.group] || Compass;
           const groupActive = visibleItems.some((item) => pathname === item.to || pathname.startsWith(`${item.to}/`));

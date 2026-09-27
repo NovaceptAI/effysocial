@@ -451,6 +451,9 @@ export const effyApi = {
   // Onboarding and marketing plans (G20)
   sendWorkEmailCode: (email) =>
     http('/profile/work-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) }),
+  // Settings → Roles & client approval (6.16): clientsPage, clientApprover, clientReview, requireApproval.
+  saveProfileSettings: (patch) =>
+    http('/profile/settings', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch) }),
   verifyWorkEmail: (code) =>
     http('/profile/work-email/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) }),
   getOnboarding: () => http('/onboarding'),

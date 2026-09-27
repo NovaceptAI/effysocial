@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { LayoutGrid, Table2, AlertTriangle, CheckSquare, Pencil, Plus } from 'lucide-react';
 import { useWorkspace, inr, num } from '../context/WorkspaceContext';
 import { useClientSummary } from '../api/hooks';
 import WorkspaceDialog from '../components/WorkspaceDialog';
 import { HealthDot, channelList, sinceLabel } from '../components/ClientFigures';
-import { Card, PageHeader, Button, Badge } from '../../ui';
+import { Card, PageHeader, Button, Badge, EmptyState } from '../../ui';
 import { cn } from '../../lib/cn';
 
 const COLUMNS = [
@@ -16,7 +16,25 @@ const COLUMNS = [
 ];
 
 export default function Clients() {
-  const { workspaces, setWorkspaceId, canManageWorkspaces, workspaceLimit } = useWorkspace();
+  const { workspaces, setWorkspaceId, canManageWorkspaces, workspaceLimit, switches } = useWorkspace();
+  if (!switches.clientsPage) return <ClientsOff canManage={canManageWorkspaces} />;
+  return <ClientsTable {...{ workspaces, setWorkspaceId, canManageWorkspaces, workspaceLimit }} />;
+}
+
+// The page is switched off (Settings → Roles & client approval, 6.16): say where to turn it on.
+function ClientsOff({ canManage }) {
+  return (
+    <div>
+      <PageHeader title="Clients" subtitle="Every client workspace with its figures" />
+      <EmptyState icon="🏢" title="The Clients page is off"
+        body={canManage ? 'Turn it on in Settings → Roles & client approval to manage client workspaces here.'
+          : 'An owner or admin can turn it on in Settings.'}
+        action={canManage ? <Link to="/app/settings"><Button variant="secondary">Open Settings</Button></Link> : null} />
+    </div>
+  );
+}
+
+function ClientsTable({ workspaces, setWorkspaceId, canManageWorkspaces, workspaceLimit }) {
   const { data: figures, isLoading, isError } = useClientSummary();
   const [view, setView] = useState('table');
   const [dialog, setDialog] = useState(null); // null | 'new' | workspace being edited

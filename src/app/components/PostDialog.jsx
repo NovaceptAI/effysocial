@@ -92,7 +92,7 @@ function MediaChooser({ value, kind, onChange }) {
 // follows the post's status: save, send for review, schedule or reschedule,
 // unschedule and publish now. Messages from the engine are shown as they come.
 export default function PostDialog({ open, onClose, post = null, initial = null, onSaved }) {
-  const { workspace, org, canWrite } = useWorkspace();
+  const { workspace, org, canWrite, switches } = useWorkspace();
   const queryClient = useQueryClient();
   const titleRef = useRef(null);
   const [current, setCurrent] = useState(post);
@@ -117,6 +117,10 @@ export default function PostDialog({ open, onClose, post = null, initial = null,
   const status = current?.status;
   const readOnly = !canWrite || (current && !EDITABLE.includes(status));
   const scheduled = status === 'scheduled';
+  // Settings → Roles & client approval (6.16): only approved posts are scheduled or published,
+  // and a new one can't be saved as approved to skip review.
+  const needsReview = switches.requireApproval && (!current || !['approved', 'scheduled', 'failed'].includes(status));
+  const canRelease = (!current && !switches.requireApproval) || ['approved', 'scheduled', 'failed'].includes(status);
   const captionProblem = form.channel === 'instagram' ? instagramCaptionProblem(form.caption) : '';
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
@@ -258,6 +262,11 @@ export default function PostDialog({ open, onClose, post = null, initial = null,
           </fieldset>
 
           {current?.error && status === 'failed' && <div role="alert" className="text-sm rounded-lg bg-error-soft text-error px-3.5 py-2.5">Last attempt: {current.error}</div>}
+          {needsReview && !readOnly && (
+            <p role="note" className="text-xs rounded-lg bg-surface2 text-ink-soft px-3 py-2">
+              Posts here need approval before they’re scheduled or published. Send it for review — once it’s approved you can schedule or publish it.
+            </p>
+          )}
           {error && <div role="alert" className="text-sm rounded-lg bg-error-soft text-error px-3.5 py-2.5">{error}</div>}
           {notice && <div role="status" className="text-sm rounded-lg bg-success-soft text-success px-3.5 py-2.5">{notice}</div>}
           {current?.permalink && (
@@ -269,7 +278,7 @@ export default function PostDialog({ open, onClose, post = null, initial = null,
           {!readOnly && (
             <div className="flex flex-wrap justify-end gap-2 pt-1">
               {scheduled && <Button type="button" variant="ghost" disabled={!!busy} onClick={unschedule}>{busy === 'unschedule' ? 'Unscheduling…' : 'Unschedule'}</Button>}
-              {(!current || ['approved', 'scheduled', 'failed'].includes(status)) && form.channel === 'instagram' && (
+              {canRelease && form.channel === 'instagram' && (
                 <Button type="button" variant="secondary" disabled={!!busy || !canPublish} onClick={publishNow}>{busy === 'publish' ? 'Publishing…' : 'Publish now'}</Button>
               )}
               {(!current || ['idea', 'draft', 'internal_review', 'client_review', 'approved', 'failed'].includes(status)) && (
@@ -278,7 +287,7 @@ export default function PostDialog({ open, onClose, post = null, initial = null,
               {(!current || ['idea', 'draft'].includes(status)) && (
                 <Button type="button" variant="secondary" disabled={!!busy} onClick={sendForReview}>{busy === 'review' ? 'Sending…' : 'Send for review'}</Button>
               )}
-              {(!current || ['approved', 'scheduled', 'failed'].includes(status)) && form.channel === 'instagram' && (
+              {canRelease && form.channel === 'instagram' && (
                 <Button type="button" disabled={!!busy || !form.date || !form.time || !!captionProblem} onClick={schedule}>
                   {busy === 'schedule' ? 'Scheduling…' : scheduled ? 'Reschedule' : 'Schedule'}
                 </Button>

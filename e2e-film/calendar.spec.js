@@ -68,6 +68,8 @@ test('plan, schedule, approve, review and report', async ({ page, browser }) => 
 
   let approver;
   await test.step('Bulk approve moves the selected posts on together (PUBL-017)', async () => {
+    // Clients review here: the Client approver role brings the client review stage (6.16).
+    expect((await page.request.patch('/api/effy/profile/settings', { data: { clientApprover: true } })).ok()).toBeTruthy();
     for (const title of ['Terrace before and after', 'Waterproofing myths']) {
       const r = await api('/posts', { workspace: ws, title, status: 'internal_review', caption: `${title} caption`, mediaUrl: IMAGE, date: indiaDate(3), time: '18:00' });
       expect(r.ok()).toBeTruthy();
