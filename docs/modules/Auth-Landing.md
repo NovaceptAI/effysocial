@@ -1,46 +1,52 @@
-# Module: Marketing Landing, Login & Auth
+# Module: Marketing Landing, Login, Accounts & Profiles
 
-> The public front door → login → onboarding → gated product. _Status: ✅ landing + real login · ✅ onboarding saved on the organisation, routed by offer, with a real first plan (15 Sep 2026, G20)._
-> Spec ref: §6 (onboarding), screens #1–3 · Phase 0
+> The public front door → sign-up → onboarding → the app, and the profiles a login works in. _Status (27 Sep 2026): ✅ real accounts, email verification and reset, two-factor · ✅ onboarding saved and routed by offer · ✅ three profiles with a Business work email (6.14) · ✅ several profiles per login, switcher, invites across organisations (6.15)._
+> Spec ref: §6 (onboarding), screens #1–3
 
 ## 1. What it does
-`/` markets the EffySocial product and routes visitors to **/login**, which authenticates and drops them into **/app**. Currently a mock client-side session gates the product; real EffySocial-native accounts + onboarding land with the backend.
+`/` markets EffySocial and sends visitors to **/login**, which signs in or creates an account and continues to **/onboarding** or **/app**. Every account works inside a **profile** — an organisation of one of three types — and one login can hold several.
 
 ## 2. Where it lives
-- **Routes:** `/` (Landing), `/login` (Login), `/app/*` (gated). Demo tools at `/tools`, `/lipsync`, etc.
-- **Frontend files:** `src/marketing/Landing.jsx`, `src/marketing/Login.jsx`, auth `src/app/context/AppAuth.jsx`, guard `RequireAuth` in `src/App.jsx`. Logout in `TopBar`.
+- **Routes:** `/` (Landing), `/login`, `/verify`, `/forgot`, `/reset`, `/join` (invites), `/onboarding`, `/privacy`, `/terms`, `/app/*` (gated by `RequireAuth`).
+- **Frontend:** `src/marketing/{Landing, Login, Onboarding, Join, Privacy, Terms}.jsx`, auth state `src/app/context/AppAuth.jsx` (bootstrap, `switchProfile`, `addProfile`), profile definitions `src/app/profiles.js`, switcher `src/app/shell/ProfileSwitcher.jsx`, `src/app/components/AddProfileDialog.jsx`, `WorkEmailForm.jsx`, `WorkEmailBanner` in `AppShell.jsx`.
+- **Engine:** `routes.py` (register, login, verify, reset, bootstrap), `auth.py` (session, active profile), `profiles.py`, `onboarding.py`, `team.py` (invites), `twofactor.py`, `account.py`, `email.py`, `ratelimit.py`.
 
 ## 3. Screens & key UI
-- **Landing:** sticky nav (Log in / Get started), fluid-shader hero with the positioning line, mock app preview, connected-journey strip, feature grid, who-it's-for, CTA band, footer.
-- **Login:** split screen (brand panel + form), email/password, Google (stub), → `/app`. Demo: any credentials work.
-- **Logout:** TopBar profile menu → clears session → `/`.
+- **Landing:** positioning hero with the product films, connected-journey strip, feature grid, pricing link, footer with Privacy and Terms.
+- **Login:** sign in or create an account (email + 8–128 character password); two-factor code step when on; resend verification; *Continue with Google* is not built yet (6.5).
+- **Onboarding:** profile type → details → what you need (create, market, both) → goals → connect → Brand Brain → first plan (or *Start creating* for creation only). A Personal Brand is asked about themselves; a Creative-plan profile (a second profile) onboards for creation only.
+- **Profile switcher** (top bar): every profile on the login with its type, role and plan; *Add account type* (type + name; says whether the trial comes with it).
+- **Work email** (Business): a banner until verified; Settings → Organisation → Work email sends and checks the code.
 
 ## 4. Data model
-Mock: `localStorage['effy.auth'] = { email, name }` via `AppAuthProvider`.
-Backend: `user`, `session`, plus onboarding writes `organization` + first `workspace` + `brand_brain`.
+`effy_users` (email, password hash, email_verified, preferences incl. last-used profile, 2FA) · `effy_orgs` (the profile: name, `type` business | personal_brand | agency, plan, trial_ends_at, owner, onboarding answers, work_email, settings) · `effy_memberships` (user × org × role; unique per pair) · `effy_workspaces` · `effy_invites` · `effy_tokens` (verify, reset, OAuth state). The session holds `effy_uid` and the active profile `effy_org`.
 
 ## 5. Connections (object graph)
-- Auth establishes the `user` → memberships → workspaces that scope the whole app (see App-Shell, Clients).
-- Onboarding (§6) feeds Brand Brain, Integrations, and generates the first Marketing Plan.
+- The active profile scopes every request (`tenancy.current_membership`); switching profile remounts the app with a fresh cache.
+- Onboarding feeds Brand Brain (brief, documents, website), Integrations (connect step) and the first Marketing Plan.
+- Invites add an organisation to someone's profiles; removal leaves their other profiles.
 
 ## 6. AI involvement
-**Onboarding (G20)** — Details asks for the industry from a grouped list of ~130 categories, with *Other* opening a text box; the Brand Brain step says a brief goes a long way and offers upload, a written brief and the website (which is read). — `src/marketing/Onboarding.jsx`, engine `onboarding.py`. Each Continue saves that step's answers and the next step on `effy_orgs.onboarding`, so a reload or a later visit (Home shows *Finish setting up*) resumes there. Steps by offer: *Create content* → organisation, details, offer, Brand Brain, start (AI Studio or Ad Films; no connections, no plan). *Market and grow* / *Both* → organisation, details, offer, goals, connect (real integration states; Connect starts the real OAuth flow and returns to onboarding), Brand Brain (documents and website links), first plan (generated from the answers, Brand Brain and its documents; Finish stays disabled until it exists) → `/app/home` (marketing) or `/app` (both). The plan is stored in `effy_marketing_plans` and shown on Marketing Plan. Only owners and admins set up the organisation. Tests: `tests/test_effy_onboarding.py`, `Onboarding.test.jsx`, `MarketingPlan.test.jsx`, `e2e-film/onboarding.spec.js` (real engine).
+The first marketing plan (Groq, grounded in the answers, Brand Brain and documents) and the website read during onboarding. Nothing else here calls AI.
 
 ## 7. Integrations
-Onboarding "connect accounts" step uses the Integrations adapter (OAuth) with connected/partial/expired states.
+Onboarding's connect step uses the real OAuth flows with their true states; email goes through Resend (the test sender only reaches the account owner until effybiz.in is verified, G06).
 
 ## 8. States
-Logged-out (→ landing/login), logging-in, invalid creds (real auth), gated redirect to `/login`, onboarding incomplete → resume.
+Signed out → landing/login; unverified email (banner; sign-in isn't blocked while `EFFY_REQUIRE_VERIFIED_EMAIL=false`); two-factor pending; onboarding incomplete → *Finish setting up* on Home; no organisation → *You're not part of a team* with *Create your own profile*; unverified Business → work-email banner; rate-limited → 429 with a wait.
 
-## 9. Backend contract (to implement)
-- **Endpoints:** `POST /api/auth/register|login|logout`, `GET /api/auth/me`, `GET /api/bootstrap` (user + org + workspaces + role), `POST /api/onboarding/*` (org, goals, connect, brand, invite, plan).
-- **Swap:** replace `AppAuth` localStorage with the session cookie; `RequireAuth` checks `/api/auth/me`.
-- **RBAC:** role assigned at invite; org-owner on signup.
+## 9. Backend contract (built)
+See [API.md](../API.md) — Auth & tenancy, Profiles, Email verification, Account and two-factor. Rules that matter:
+- Only a login's **first own profile** gets the 14-day trial; later ones start on Creative.
+- A Business work email must be at the company's own domain (free-mail providers refused); code: 6 digits, salted hash, 30 minutes, 5 tries, row-locked while checked, 5 codes an hour.
+- Names are HTML-escaped in every email.
+- Tests: `test_effy_auth.py`, `test_effy_profiles.py`, `test_effy_onboarding.py`, `test_effy_team.py`, `profiles.test.jsx`, `profileSwitcher.test.jsx`, `Onboarding.test.jsx`, `e2e-film/{onboarding,profiles,team}.spec.js`.
 
 ## Email (transactional)
-Provider-agnostic sender `app/tools/effy/email.py` — tries **Resend** (`RESEND_API_KEY`), then **SMTP** (`EFFY_SMTP_HOST` + `EFFY_SMTP_PORT/USER/PASS`), else **dev-log** (logs the link; endpoints return `dev_link`). Set `EFFY_EMAIL_SENDER` and `EFFY_BASE_URL` too. Verification token 48h, reset token 1h, one-time use. Tables: `effy_tokens` + `effy_users.email_verified` (migration `b1d2e3f40511`).
+`app/tools/effy/email.py` tries **Resend** (`RESEND_API_KEY`), then **SMTP** (`EFFY_SMTP_*`), else logs the link. Verification token 48 h, reset token 1 h, one-time use.
 
 ## 10. Open questions / TODO
-- Plug a real email provider (set `RESEND_API_KEY` or SMTP env) — currently dev-log only.
-- Gate sensitive actions on `email_verified` (currently a soft banner, non-blocking).
-- SSO (Google) is still a stub; SSO bridge to existing novacept session optional.
+- Verified sending domain (G06, 6.3), then `EFFY_REQUIRE_VERIFIED_EMAIL=true`.
+- Google sign-in (6.5).
+- Privacy Policy and Terms wording to be approved (`LEGAL.draft`).
+- A way to leave or delete a profile (not built).

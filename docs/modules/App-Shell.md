@@ -1,51 +1,44 @@
 # Module: App Shell & Foundation
 
-> The chrome every screen lives in + the design/data foundation. _Status: ✅ frontend · 🔌 auth/tenancy backend pending._
-> Spec ref: §4, §5 · Phase 0
+> The chrome every screen lives in + the design/data foundation. _Status (27 Sep 2026): ✅ built on the real bootstrap — profiles, workspaces, roles, plans and Roles & client approval switches._
+> Spec ref: §4, §5
 
 ## 1. What it does
-Provides the persistent application frame — left nav rail, top bar, command palette, (future) right context panel — plus the shared design system, UI primitive kit, mock data layer and workspace context that all modules build on.
+Provides the persistent frame — nav rail, top bar with the profile switcher, notification centre, command palette, the Effy assistant panel and the banners — plus the design system and the contexts every module reads.
 
 ## 2. Where it lives
-- **Route:** wraps everything under `/app/*` (lazy-loaded).
-- **Frontend files:** `src/app/shell/AppShell.jsx`, `NavRail.jsx`, `TopBar.jsx`, `CommandPalette.jsx` (+ css); `src/app/AppRoot.jsx` (router + providers); `src/app/nav.js`; `src/ui/index.jsx` (primitives); `src/lib/cn.js`; theme in `src/styles/theme.css` + `tailwind.config.js`; context `src/app/context/WorkspaceContext.jsx`; mock data `src/app/data/sampleData.js`.
-- **Backend (when built):** auth + tenancy + RBAC (`app/tools/tenancy/`, `app/core/auth`).
+- **Route:** everything under `/app/*`, each page lazy-loaded.
+- **Frontend:** `src/app/AppRoot.jsx` (router + providers; one `QueryClient` per profile, keyed by organisation id), `src/app/shell/{AppShell, NavRail, TopBar, ProfileSwitcher, Dropdown, CommandPalette}.jsx`, `src/app/nav.js`, `src/app/plans.js`, contexts `src/app/context/{AppAuth, WorkspaceContext, AssistantContext, ThemeContext}.jsx`, primitives `src/ui/index.jsx`.
 
 ## 3. Screens & key UI
-- **NavRail** (warm-charcoal): 9 collapsible groups (Overview/Strategy/Content/Publish/Engage/Advertise/Convert/Analytics/Administration), active highlight, badge counts, phase tags (P2/P3), open-state persisted in localStorage.
-- **TopBar:** workspace switcher (with health dots), command/search trigger, date-range (stub), Create menu (Campaign/Post/Ad/Landing/Form/Report/Rule/Client), AI/notifications/help/profile.
-- **CommandPalette (⌘K):** quick actions, switch workspace, go-to any page.
-- **Pending:** right context panel (§5.3) for AI recs / details / comments / activity.
+- **NavRail:** the hub menu (Home, AI Studio, Ad Films, Performance Marketing, Media Library…) and the deep Performance Marketing menu in groups; `railMode()` keeps the marketing rail on shared pages. Items the plan doesn't include are locked; *Clients* shows only when the Clients page is switched on.
+- **TopBar:** profile switcher (left), Create menu, Effy AI, theme, notifications, and the avatar menu (workspace switcher, Profile & settings, Log out).
+- **Banners:** sample workspace, Business work email (owners and admins get *Verify now*), email verification, plan/trial.
+- **PlanGate:** a locked page explains which plan includes it.
+- **Command palette (⌘K):** go to any page, quick actions.
 
 ## 4. Data model
-`WorkspaceContext` exposes `{ org, user, workspaces, workspace, setWorkspaceId }`. Currently from mock `sampleData.js`. INR/number helpers (`inr`, `num`).
-
-Backend tenancy tables: `organization`, `workspace`, `user`, `membership`, `invitation`, `role`/`permission`.
+`WorkspaceContext` exposes `{org, user, role, canManageWorkspaces, canWrite, planInfo, workspaceLimit, workspaces, workspace, setWorkspaceId, profiles, switches, refreshWorkspaces}` from the engine's bootstrap. The chosen workspace is remembered per profile (`localStorage effy.workspace = {user, byOrg}`); `switches` are the Roles & client approval settings.
 
 ## 5. Connections (object graph)
-- `workspace` is the global scope key passed to every module's data calls.
-- Nav badges (approvals, inbox) aggregate from Publish/Engage.
-- Create menu deep-links into module creation flows.
+- The workspace id scopes every module's data calls; the page outlet is keyed by workspace.
+- Switching profile sets a new bootstrap and remounts the app with an empty cache.
+- Notifications combine pending approvals with the assistant's recommendations (ad-rule alerts, escalations, failures).
 
 ## 6. AI involvement
-Top-bar AI entry + ⌘K "Ask Effy" open the persistent assistant (Effy AI, §16 — pending).
+Effy AI opens from the top bar, ⌘K or any page's *Ask Effy* (`AssistantContext`), with a seeded question.
 
 ## 7. Integrations
-None directly; surfaces connection health from the Integrations module in the switcher/overview.
+Connection health appears through Integrations and the notification centre.
 
 ## 8. States
-Loading (suspense fallback while `/app` chunk loads), workspace-switching, reduced-motion, (future) signed-out → redirect to login.
+Page loading (suspense), workspace switching, profile switching, locked by plan, sample workspace, no organisation, reduced motion, compact density.
 
-## 9. Backend contract (to implement)
-- **Auth:** EffySocial-native accounts; `POST /api/auth/login`, `/register`, `GET /api/auth/me`, session cookie (can bridge existing novacept session later).
-- **Tenancy:** `GET /api/bootstrap` → { user, org, workspaces, role per workspace } to hydrate the shell.
-- **Scoping middleware:** every domain request carries/validates `workspace_id` against membership.
-- **RBAC:** roles per §17.1 (agency-owner … view-only); permission checks per feature.
+## 9. Backend contract (built)
+`GET /api/effy/bootstrap` hydrates the shell (see [API.md](../API.md) for the shape). Every workspace-scoped call is checked against the active profile (401/404).
+
+## Coming features and unknown addresses (G49)
+`ModulePlaceholder` is the in-shell *Page not found*. Features not built yet — the blog, WhatsApp alerts, dealer voice cloning, two playbooks — carry `components/NotifyMe`, which records the ask once per person (`effy_interest`); Admin lists who asked.
 
 ## 10. Open questions / TODO
-- Right context panel component + API.
-- Login/onboarding screens (Phase 0 remaining).
-- Density modes (comfortable/compact) per §4.
-
-## Coming features and unknown addresses (15 Sep 2026, G49)
-Every menu item has a real page, so `ModulePlaceholder` is now the in-shell *Page not found* for mistyped addresses (no notify button). Features that aren't built yet — the blog, WhatsApp alerts, dealer voice cloning, two playbooks — carry `components/NotifyMe`, which records the ask once per person (`effy_interest`, engine `interest.py`) and confirms who will be told; Admin lists who asked.
+- Right context panel (spec §5.3) for details, comments and activity.
