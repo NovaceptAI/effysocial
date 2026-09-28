@@ -84,6 +84,7 @@ test('a business that wants both gets a saved, resumable onboarding and a real f
   await test.step('the plan stays visible on Marketing Plan', async () => {
     await page.goto('/app/plan');
     await expect(page.getByText(/^Plan for Roofseal Pune — a Waterproofing, paints & coatings in Pune/)).toBeVisible();
+    await page.getByRole('tab', { name: 'Tactics' }).click();
     await expect(page.getByRole('region', { name: '12 post ideas' })).toBeVisible();
   });
 });

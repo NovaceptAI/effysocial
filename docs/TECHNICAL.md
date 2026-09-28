@@ -52,7 +52,7 @@ registers every module's routes. By area:
 | Creation | `studio` · `filmlab` + `film_basis` (Ad Films) · `productlab` (Product Shots) · `avatarlab` (Personalized Avatar Video, Gemini image helpers) · `characters` · `audio` (ElevenLabs, music beds, fitting lines) · `veo` · `refusals` · `acceptance` · `medialib` · `brand` + `webread` (Brand Brain) · `sites` · `landing` |
 | Marketing | `workspaces` · `campaigns` · `publish` · `publisher` · `insights` · `engage` · `strategy` · `ideas` · `analytics` · `reports` · `ads` · `leads` · `forms` · `bio` · `tracking` · `conversions` · `followups` · `workflows` · `assistant` · `integrations` + `oauth` · `gbp` |
 
-`models.py` holds all tables. 267 routes are registered under `/api/effy`.
+`models.py` holds all tables. 268 routes are registered under `/api/effy`.
 
 ---
 
@@ -286,11 +286,24 @@ events).
   WhatsApp chats, followers, reach or engagement, with a monthly target), what's
   offered, who it's for, the monthly ad budget, the posts a week the team can make,
   and the website. Onboarding fills the first workspace's brief while it's under way.
-- **Marketing plan** (`onboarding.py`) — written per workspace from its brief (never
-  the organisation's sign-up answers), Brand Brain and connected channels; needs at
-  least the goal (400 `brief_needed`), reads the brief's website into that
-  workspace's Brand Brain, and cuts the cadence to the team's capacity. The SOSTAC
-  rebuild is 6.18.
+- **Marketing plan** (`sostac.py`, 6.18; routes in `onboarding.py`) — a four-week plan
+  on SOSTAC, written per workspace from its brief (never the organisation's sign-up
+  answers), Brand Brain and connected channels; needs at least the goal (400
+  `brief_needed`) and reads the brief's website into that workspace's Brand Brain.
+  *Situation*: numbers the engine counts itself — Instagram followers, reach and
+  interactions, posts published, leads, WhatsApp leads, purchases and appointments
+  marked on leads, recorded spend, connected channels, Brand Brain, competitors — each
+  with its source and date, or why it can't be measured; the model only reads them
+  (and writes a SWOT). *Objective*: the brief's one goal from today's baseline to the
+  brief's target (or the model's suggestion, marked, or a fifth above the baseline).
+  *Strategy*: audience, positioning, 3–5 pillars adding to 100%, the funnel.
+  *Tactics*: channels cut to the team's capacity, 12 ideas, a budget split that adds
+  up exactly to the brief's budget (none when it's 0 or blank), up to 3 campaigns.
+  *Action*: four weeks of tasks. *Control*: KPIs and each week's planned posts and
+  goal; `progress()` counts the actuals whenever the plan is read. *Accept plan*
+  creates the campaigns as drafts, once. The older top-level fields (pillars,
+  channels, ideas, kpis, funnel, firstWeek) stay, so Fill gaps and campaign
+  workspaces read the plan as before; plans written before 6.18 still display.
 - **Effy assistant** — 8 agents behind a keyword router; replies carry citations
   and deep-link actions; recommendations are rule-based detections (spec §3.3).
   See [Effy-AI.md](modules/Effy-AI.md).
@@ -398,18 +411,19 @@ commit ranges, in `~/effy-work/deploys.log`. Do not run `npm run build` in
 `effy_phase.sh check` runs every layer below; a phase cannot deploy unless they
 pass.
 
-**Backend** (`novalab-engine/tests/`, 77 files, pytest): run
+**Backend** (`novalab-engine/tests/`, 78 files, pytest): run
 `myenv/bin/python -m pytest -q` from the engine checkout. `conftest.py` points the
 app at a throwaway SQLite file, keeps rate limits and the scheduler lock in
 process, and provides `register`, `account`, `connect_instagram` and
 `switch_on(client, *settings)`; providers are stubbed per test. Tests that write a
-plan give the workspace a goal first (`PUT /marketing-plan/brief`).
+plan give the workspace a goal first (`PUT /marketing-plan/brief`); `SOSTAC_RAW` is a
+model answer on SOSTAC, and `sostac_answer(plan)` wraps an older flat test plan in it.
 
 **Route gate:** `conftest.py` records every API route a test calls; with
 `EFFY_ROUTE_GATE=1` (set by `check`) the run fails and lists any `/api/effy` route
-no test calls, so a new endpoint can't ship untested. All 267 routes are called.
+no test calls, so a new endpoint can't ship untested. All 268 routes are called.
 
-**Frontend unit and component** (Vitest + React Testing Library, jsdom, 61 files):
+**Frontend unit and component** (Vitest + React Testing Library, jsdom, 63 files):
 `npm test`. `src/test/mockApi.js` stubs `fetch` for `/api/effy` from a
 `"METHOD /path"` table and records calls; `src/test/render.jsx` renders inside the
 real auth, workspace, query and router providers. Fixtures in `src/test/fixtures/`
@@ -420,10 +434,11 @@ serves it with `vite preview` on port 4291 (`E2E_PORT`) and runs Chromium with
 `/api/effy` stubbed per test. `@playwright/test` is pinned to 1.63.0 to match the
 cached Chromium.
 
-**End to end, real engine** (`e2e-film/`, `npm run test:e2e:film`, 20 specs): the
+**End to end, real engine** (`e2e-film/`, `npm run test:e2e:film`, 22 specs): the
 demo film, workspaces and clients, onboarding, team, profiles, approvals, calendar,
 publishing, campaigns, reports, reviews, ads, forms, follow-ups, conversions,
-strategy, creative, organic, plans and settings, against the real engine.
+strategy, creative, organic, plans, settings, the plan brief and the SOSTAC plan,
+against the real engine.
 `playwright.film.config.js` starts `scripts/e2e_film_server.py` from the sibling
 `../engine` (or `EFFY_ENGINE_DIR`) on port 5099 under `env -i`, with a throwaway
 SQLite database, Instagram replaced by an in-process fake and paid providers

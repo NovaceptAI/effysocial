@@ -463,6 +463,10 @@ export const effyApi = {
   getMarketingPlan: (workspaceId) => http(`/marketing-plan?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.plan),
   // The Marketing Plan page: the newest plan, the workspace's plan brief and its options (6.17).
   getPlanPage: (workspaceId) => http(`/marketing-plan?workspace=${encodeURIComponent(workspaceId)}`),
+  // Marketing Plan (6.18): the new plan and each week's actuals.
+  writePlan: (workspaceId) =>
+    http('/marketing-plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId }) }),
+  acceptPlan: (planId) => http(`/marketing-plan/${planId}/accept`, { method: 'POST' }),
   saveBrief: (workspaceId, patch) =>
     http('/marketing-plan/brief', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId, ...patch }) }).then((d) => d.brief),
   createMarketingPlan: (workspaceId, source) =>

@@ -73,7 +73,9 @@ test('published posts drive Creative Performance, and a template opens Studio', 
     await brief.getByRole('button', { name: 'Save brief' }).click();
     await expect(brief.getByRole('status')).toHaveText('Brief saved.');
     await page.getByRole('button', { name: 'Generate plan' }).click();
+    await page.getByRole('tab', { name: 'Strategy' }).click();
     await expect(page.getByRole('region', { name: 'Content pillars' })).toBeVisible();
+    await page.getByRole('tab', { name: 'Tactics' }).click();
     await expect(page.getByRole('region', { name: '12 post ideas' })).toBeVisible();
     await page.reload();
     await expect(page.getByRole('button', { name: 'Write a new plan' })).toBeVisible();

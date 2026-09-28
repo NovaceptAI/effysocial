@@ -24,7 +24,7 @@ Backend tables: `campaign`, `campaign_kpi_snapshot` (time-series for charts), pl
 
 ## 5. Connections (object graph) — central hub
 - **ContentItem.campaign_id**, **Ad.campaign_id**, **Creative**, **LandingPage.campaign_id**, **Form.campaign_id**, **Lead.campaign_id**, **ConversionEvent.campaign_id** all point here.
-- **Marketing Plan** generates campaigns; **Calendar** shows campaign content; **Analytics/Reports** aggregate by campaign.
+- **Marketing Plan**: *Accept plan* creates the plan's campaigns here as drafts, once (6.18); **Calendar** shows campaign content; **Analytics/Reports** aggregate by campaign.
 - Funnel + KPIs are computed from the connected objects (leads from forms/ads, revenue from offline conversions).
 
 ## 6. AI involvement

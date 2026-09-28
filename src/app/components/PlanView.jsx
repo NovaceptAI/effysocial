@@ -1,7 +1,9 @@
 import React from 'react';
 import { CalendarDays, Lightbulb, ListChecks, Target, TrendingUp } from 'lucide-react';
+import SostacView from './SostacView';
 
-// A generated marketing plan (onboarding.py normalize_plan shape), read-only.
+// A marketing plan, read-only. Plans written since 6.18 follow SOSTAC (SostacView); older
+// ones keep their own shape — pillars, channels, ideas, funnel, KPIs, first week.
 const CHANNEL_NAMES = {
   instagram: 'Instagram', facebook: 'Facebook', linkedin: 'LinkedIn', whatsapp: 'WhatsApp',
   google_business: 'Google Business Profile', youtube: 'YouTube', x: 'X',
@@ -16,7 +18,8 @@ function Section({ icon: Icon, title, children }) {
   );
 }
 
-export default function PlanView({ plan: record }) {
+export default function PlanView({ plan: record, progress }) {
+  if (record?.plan?.format === 'sostac') return <SostacView plan={record} progress={progress} />;
   const plan = record?.plan || {};
   const created = record?.createdAt ? new Date(record.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
   return (
@@ -24,6 +27,7 @@ export default function PlanView({ plan: record }) {
       <div>
         <p className="text-sm text-ink leading-relaxed">{plan.summary}</p>
         {created && <p className="text-xs text-ink-faint mt-1">Generated {created}{record.inputs?.goals?.length ? ` for: ${record.inputs.goals.join(', ')}` : ''}</p>}
+        <p role="note" className="text-xs text-ink-faint mt-1">Written before plans followed SOSTAC, so it has no counted starting point or weekly check. A new plan has both.</p>
       </div>
 
       <Section icon={Target} title="Content pillars">

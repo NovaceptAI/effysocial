@@ -27,7 +27,7 @@
 - Invites add an organisation to someone's profiles; removal leaves their other profiles.
 
 ## 6. AI involvement
-The first marketing plan (Groq, grounded in the answers, Brand Brain and documents) and the website read during onboarding. Nothing else here calls AI.
+The first marketing plan (on SOSTAC, Groq, grounded in the workspace's brief, counted numbers, Brand Brain and documents) and the website read during onboarding. Nothing else here calls AI.
 
 ## 7. Integrations
 Onboarding's connect step uses the real OAuth flows with their true states; email goes through Resend (the test sender only reaches the account owner until effybiz.in is verified, G06).
