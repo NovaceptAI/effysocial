@@ -67,6 +67,11 @@ test('published posts drive Creative Performance, and a template opens Studio', 
 
   await test.step('the Marketing Plan writes a plan for this workspace (CAMP-013)', async () => {
     await page.goto('/app/plan');
+    // A plan needs the workspace's goal first (6.17).
+    const brief = page.getByRole('region', { name: 'Plan brief' });
+    await brief.getByLabel('Goal').selectOption('leads');
+    await brief.getByRole('button', { name: 'Save brief' }).click();
+    await expect(brief.getByRole('status')).toHaveText('Brief saved.');
     await page.getByRole('button', { name: 'Generate plan' }).click();
     await expect(page.getByRole('region', { name: 'Content pillars' })).toBeVisible();
     await expect(page.getByRole('region', { name: '12 post ideas' })).toBeVisible();
