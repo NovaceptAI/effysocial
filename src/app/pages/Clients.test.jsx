@@ -78,7 +78,7 @@ describe('Clients table', () => {
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(api.callsTo('POST /workspaces').map((c) => c.body)).toEqual([
-      { name: 'Lakeview Homes', industry: 'Real estate', location: 'Pune', managerId: clients.bootstrap.user.id },
+      { name: 'Lakeview Homes', industry: 'Real estate', location: 'Pune', managerId: clients.bootstrap.user.id, brandKind: 'business' },
     ]);
     const added = clients.added.workspace.id;
     await waitFor(() => expect(within(row(added)).getByText('Lakeview Homes')).toBeInTheDocument());
@@ -125,7 +125,7 @@ describe('Clients table', () => {
     await user.selectOptions(within(dialog).getByLabelText('Manager'), 'Asha Rao');
     await user.click(within(dialog).getByRole('button', { name: 'Save changes' }));
     await waitFor(() => expect(api.callsTo('PATCH /workspaces/ws_2').map((c) => c.body)).toEqual([
-      { name: 'Sunrise Motors', industry: 'Automotive', location: 'Nashik', managerId: clients.bootstrap.user.id },
+      { name: 'Sunrise Motors', industry: 'Automotive', location: 'Nashik', managerId: clients.bootstrap.user.id, brandKind: 'business' },
     ]));
   });
 

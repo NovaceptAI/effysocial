@@ -10,14 +10,16 @@ const INPUT = 'w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm
 // Create or edit a workspace (G21). For an agency every workspace is a client, so
 // the same form backs "New workspace", "+ Add client" and a client's Edit.
 export default function WorkspaceDialog({ open, onClose, onSaved, workspace = null }) {
-  const { user, refreshWorkspaces, switches } = useWorkspace();
+  const { org, user, refreshWorkspaces, switches } = useWorkspace();
+  // An Agency & Creators profile's clients are each a business or a personal brand (6.17).
+  const pickKind = org?.type === 'agency';
   const qc = useQueryClient();
   const editing = !!workspace;
   const client = switches.clientsPage;  // workspaces are clients once the Clients page is on (6.16)
   const noun = client ? 'client' : 'workspace';
   const nameRef = useRef(null);
 
-  const [form, setForm] = useState({ name: '', industry: '', location: '', managerId: '' });
+  const [form, setForm] = useState({ name: '', industry: '', location: '', managerId: '', brandKind: 'business' });
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -26,8 +28,8 @@ export default function WorkspaceDialog({ open, onClose, onSaved, workspace = nu
   useEffect(() => {
     if (!open) return;
     setForm(editing
-      ? { name: workspace.name, industry: workspace.industry || '', location: workspace.location || '', managerId: workspace.managerId ?? '' }
-      : { name: '', industry: '', location: '', managerId: user?.id ?? '' });
+      ? { name: workspace.name, industry: workspace.industry || '', location: workspace.location || '', managerId: workspace.managerId ?? '', brandKind: workspace.brandKind || 'business' }
+      : { name: '', industry: '', location: '', managerId: user?.id ?? '', brandKind: 'business' });
     setError('');
     setBusy(false);
     setTimeout(() => nameRef.current?.focus(), 0);
@@ -45,6 +47,7 @@ export default function WorkspaceDialog({ open, onClose, onSaved, workspace = nu
     const payload = {
       name: form.name.trim(), industry: form.industry.trim(), location: form.location.trim(),
       managerId: form.managerId === '' ? null : Number(form.managerId),
+      ...(pickKind ? { brandKind: form.brandKind } : {}),
     };
     try {
       const saved = editing ? await effyApi.updateWorkspace(workspace.id, payload) : await effyApi.createWorkspace(payload);
@@ -84,6 +87,19 @@ export default function WorkspaceDialog({ open, onClose, onSaved, workspace = nu
               <input className={INPUT} value={form.location} onChange={set('location')} maxLength={80} placeholder="e.g. Pune" />
             </label>
           </div>
+          {pickKind && (
+            <div>
+              <span className="block text-xs font-semibold text-ink-soft mb-1">{client ? 'This client is' : 'This workspace is'}</span>
+              <div role="radiogroup" aria-label="What’s marketed here" className="grid grid-cols-2 gap-2">
+                {[['business', 'A business'], ['personal_brand', 'A personal brand']].map(([k, label]) => (
+                  <button key={k} type="button" role="radio" aria-checked={form.brandKind === k} onClick={() => setForm((f) => ({ ...f, brandKind: k }))}
+                    className={`rounded-lg border-2 px-3 py-2 text-sm font-semibold text-left transition ${form.brandKind === k ? 'border-coral bg-coral-soft/40 text-ink' : 'border-line text-ink-soft hover:border-coral/50'}`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <label className="block">
             <span className="block text-xs font-semibold text-ink-soft mb-1">Manager</span>
             <select className={INPUT} value={form.managerId} onChange={set('managerId')}>

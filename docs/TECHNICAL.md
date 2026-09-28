@@ -1,7 +1,7 @@
 # EffySocial — Technical Reference
 
 The single top-to-bottom engineering document, current as of **27 Sep 2026**
-(engine `phase/6`, migration head `d4a8c2e6f1b7`). It links out to the per-module
+(engine `phase/6`, migration head `e2b7c4d9f1a3`). It links out to the per-module
 contracts ([docs/modules/](modules/README.md)) and the endpoint list
 ([API.md](API.md)) rather than duplicating them. Update it in the same commit as
 any change it describes.
@@ -48,11 +48,11 @@ registers every module's routes. By area:
 
 | Area | Modules |
 |---|---|
-| Accounts & platform | `auth` (session, active profile) · `tenancy` · `profiles` (profiles, work email, Roles & client approval) · `team` · `onboarding` (onboarding + marketing plan) · `plans` · `account` · `twofactor` · `ratelimit` · `email` · `interest` · `settings` · `aiusage` (credits, admin) · `scheduler` · `media_links` · `sample` · `cleanup` |
+| Accounts & platform | `auth` (session, active profile) · `tenancy` · `profiles` (profiles, work email, Roles & client approval) · `team` · `onboarding` (onboarding + marketing plan) · `brief` (plan brief, brand kind) · `plans` · `account` · `twofactor` · `ratelimit` · `email` · `interest` · `settings` · `aiusage` (credits, admin) · `scheduler` · `media_links` · `sample` · `cleanup` |
 | Creation | `studio` · `filmlab` + `film_basis` (Ad Films) · `productlab` (Product Shots) · `avatarlab` (Personalized Avatar Video, Gemini image helpers) · `characters` · `audio` (ElevenLabs, music beds, fitting lines) · `veo` · `refusals` · `acceptance` · `medialib` · `brand` + `webread` (Brand Brain) · `sites` · `landing` |
 | Marketing | `workspaces` · `campaigns` · `publish` · `publisher` · `insights` · `engage` · `strategy` · `ideas` · `analytics` · `reports` · `ads` · `leads` · `forms` · `bio` · `tracking` · `conversions` · `followups` · `workflows` · `assistant` · `integrations` + `oauth` · `gbp` |
 
-`models.py` holds all tables. 266 routes are registered under `/api/effy`.
+`models.py` holds all tables. 267 routes are registered under `/api/effy`.
 
 ---
 
@@ -85,7 +85,7 @@ organisations through memberships.
 EffyUser ──< EffyMembership (role) >── EffyOrg  = a profile: type business | personal_brand | agency,
    │                                     │        plan + trial, settings (Roles & client approval),
    │ preferences.profile (last used)     │        work_email (Business), onboarding answers
-   │                                     └──< EffyWorkspace (a brand, or an agency's client)
+   │                                     └──< EffyWorkspace (brand_kind business | personal_brand, plan brief)
    │                                                 │  every row below is workspace-scoped
    │     ┌───────────────┬──────────────────┬────────┴───────────┬──────────────────┐
    │  Campaign ◀─ Post   Conversation        Lead ◀─ Form/Submission   ClientFilm ─< FilmScene
@@ -280,10 +280,17 @@ events).
   safety refusals, and `refund_usage()` refunds a failed render's credits once.
 - **Credits** (`aiusage.py`) are counted per organisation per month; per-kind
   monthly caps come from `EFFY_LIMIT_*`.
-- **Marketing plan** (`onboarding.py`) — generated per workspace from the onboarding
-  answers, Brand Brain and connected channels. Until each workspace has its own
-  plan brief (6.17), only the organisation's first workspace uses the sign-up goals
-  and website; a client workspace plans without them. A SOSTAC rebuild is 6.18.
+- **Plan brief** (`brief.py`, 6.17) — every workspace is marked Business or Personal
+  Brand (it follows the profile, except in an Agency & Creators profile, where each
+  client is either) and has its own brief: one goal (leads, sales, bookings, calls,
+  WhatsApp chats, followers, reach or engagement, with a monthly target), what's
+  offered, who it's for, the monthly ad budget, the posts a week the team can make,
+  and the website. Onboarding fills the first workspace's brief while it's under way.
+- **Marketing plan** (`onboarding.py`) — written per workspace from its brief (never
+  the organisation's sign-up answers), Brand Brain and connected channels; needs at
+  least the goal (400 `brief_needed`), reads the brief's website into that
+  workspace's Brand Brain, and cuts the cadence to the team's capacity. The SOSTAC
+  rebuild is 6.18.
 - **Effy assistant** — 8 agents behind a keyword router; replies carry citations
   and deep-link actions; recommendations are rule-based detections (spec §3.3).
   See [Effy-AI.md](modules/Effy-AI.md).
@@ -312,7 +319,8 @@ ec89ceaca3ad tenancy → b1d2e3f40511 email/reset tokens → c2e4f60a7233 campai
 → d8b3f1c6e9a2 invites → e1c4a7b9d2f5 trial end → f7d2b8e4c1a6 preferences + 2FA
 → a3e6c9f1b7d4 interest → b8d4f2a6c9e3 post publish outcome → c5e8a1d3f7b2 scheduler jobs
 → d6f1b3a8e2c4 follow-up waits → e7a2c4f9b1d3 inbox tags + review links → f1c3e5a7b9d2 report shares
-→ a4d8e2f6c1b3 sample workspace → c7e1f3a9d5b2 profiles + work email → d4a8c2e6f1b7 org settings  [HEAD]
+→ a4d8e2f6c1b3 sample workspace → c7e1f3a9d5b2 profiles + work email → d4a8c2e6f1b7 org settings
+→ e2b7c4d9f1a3 workspace brand kind + plan brief  [HEAD]
 ```
 
 Deploys apply migrations (`effy_phase.sh deploy` runs
@@ -394,11 +402,12 @@ pass.
 `myenv/bin/python -m pytest -q` from the engine checkout. `conftest.py` points the
 app at a throwaway SQLite file, keeps rate limits and the scheduler lock in
 process, and provides `register`, `account`, `connect_instagram` and
-`switch_on(client, *settings)`; providers are stubbed per test.
+`switch_on(client, *settings)`; providers are stubbed per test. Tests that write a
+plan give the workspace a goal first (`PUT /marketing-plan/brief`).
 
 **Route gate:** `conftest.py` records every API route a test calls; with
 `EFFY_ROUTE_GATE=1` (set by `check`) the run fails and lists any `/api/effy` route
-no test calls, so a new endpoint can't ship untested. All 266 routes are called.
+no test calls, so a new endpoint can't ship untested. All 267 routes are called.
 
 **Frontend unit and component** (Vitest + React Testing Library, jsdom, 61 files):
 `npm test`. `src/test/mockApi.js` stubs `fetch` for `/api/effy` from a

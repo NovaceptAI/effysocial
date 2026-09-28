@@ -461,6 +461,10 @@ export const effyApi = {
     http('/onboarding', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
   completeOnboarding: () => http('/onboarding/complete', { method: 'POST' }).then((d) => d.onboarding),
   getMarketingPlan: (workspaceId) => http(`/marketing-plan?workspace=${encodeURIComponent(workspaceId)}`).then((d) => d.plan),
+  // The Marketing Plan page: the newest plan, the workspace's plan brief and its options (6.17).
+  getPlanPage: (workspaceId) => http(`/marketing-plan?workspace=${encodeURIComponent(workspaceId)}`),
+  saveBrief: (workspaceId, patch) =>
+    http('/marketing-plan/brief', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId, ...patch }) }).then((d) => d.brief),
   createMarketingPlan: (workspaceId, source) =>
     http('/marketing-plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(source ? { workspace: workspaceId, source } : { workspace: workspaceId }) }).then((d) => d.plan),
   // Workspaces and client workspaces (G21)

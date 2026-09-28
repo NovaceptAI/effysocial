@@ -1,10 +1,10 @@
 # Module: Clients & Workspaces
 
-> Agency-level oversight of all client workspaces. _Status: ✅ create, edit and list with real figures (14 Sep 2026, G21) · client profile pending._
+> Agency-level oversight of all client workspaces. _Status: ✅ create, edit and list with real figures (G21) · ✅ shown when the Clients page is switched on (6.16) · ✅ each client a business or a personal brand with its own plan brief (6.17) · client profile pending._
 > Spec ref: §8.1–8.2 · Phase 1
 
 ## 1. What it does
-Lets an agency add clients, see and switch between every client workspace, and read each one's health, spend, leads, approval backlog and alerts from its own data. Selecting a client sets the active workspace across the whole app. Businesses and freelancers create extra workspaces from **Choose a workspace**.
+Lets an agency add clients, see and switch between every client workspace, and read each one's health, spend, leads, approval backlog and alerts from its own data. Selecting a client sets the active workspace across the whole app. Any profile can create extra workspaces from **Choose a workspace**.
 
 ## 2. Where it lives
 - **Routes:** `/app/clients` (agency list), `/app/workspaces` (choose or create). Client profile `/app/clients/:id` — pending.
@@ -13,11 +13,11 @@ Lets an agency add clients, see and switch between every client workspace, and r
 
 ## 3. Screens & key UI
 - Table ⇄ card toggle. Columns: client, manager, channels (count; names on hover), organic and paid health (dot; level and reason as its label), spend, leads in the last 30 days (all-time on hover), approvals, alerts, last activity, edit.
-- **+ Add client** / **New workspace**: name (required), industry, location, manager (team members; defaults to you). Owners and admins only — other roles see the button disabled with the reason.
+- **+ Add client** / **New workspace**: name (required), industry, location, manager (team members; defaults to you) and, in an Agency & Creators profile, *A business* or *A personal brand*. Owners and admins only — other roles see the button disabled with the reason.
 - A new client is listed straight away; a new workspace from Choose a workspace becomes the selected one. The choice survives a reload.
 
 ## 4. Data model
-`effy_workspaces`: id, org_id, name, industry, location, logo, accent, **manager_user_id** (nullable, `SET NULL`; migration `b4e9c2d7a1f3` backfills the org owner). Names are unique per organisation, case-insensitively; at most 100 workspaces per organisation.
+`effy_workspaces`: id, org_id, name, industry, location, logo, accent, **manager_user_id** (nullable, `SET NULL`; migration `b4e9c2d7a1f3` backfills the org owner), is_sample, **brand_kind** and **brief** (6.17, migration `e2b7c4d9f1a3`). Names are unique per organisation, case-insensitively; at most 100 workspaces per organisation.
 
 Figures are derived on read by `client_summaries(org_id)`, never stored:
 
@@ -50,12 +50,11 @@ New workspace shows grey health dots ("No activity") and zeros; figures show "�
 - `POST /api/effy/workspaces`, `PATCH /api/effy/workspaces/:id`, `GET /api/effy/workspaces/summary` — see [API.md](../API.md).
 - Tests: `tests/test_effy_workspaces.py` (engine); `src/app/pages/Clients.test.jsx`; `e2e-film/workspaces.spec.js` against the real engine (TEN-004, TEN-006, TEN-007, TEN-008).
 
-## Org-type model (canon — decided 2026-07-02)
-- **Organization = who owns the account.** `business` (one brand marketing itself), `freelancer` (a person running **multiple businesses of their own** — no client semantics), `agency` (a marketing firm serving paying clients).
-- **Workspace = a brand being marketed.** For agencies these are clients; for freelancers, their own brands.
-- **Membership + role = who works inside.** Influencers/media managers are NOT org types — they're invited members (e.g. Copywriter) whose drafts flow through approvals; RBAC limits them.
-- **Agency chrome** (Clients page, agency rollup board, client approvers, white-label) shows only for `agency` orgs. Freelancers/businesses never see it. A neutral "All brands" rollup for any multi-workspace org is a possible later refinement.
-- No clash with EffySocial itself: EffySocial is the tool; account owners do the marketing through it. Agencies are a customer segment.
+## Profiles, workspaces and clients (canon — owner's decisions, 26–27 Sep 2026)
+- **A profile is who owns the account** — Business ("We market our own company or shop"), Personal Brand ("I market myself") or Agency & Creators ("I create and run marketing for other brands"; the old `freelancer`). One login can hold several profiles, each with its own plan and billing.
+- **A workspace is what is marketed**, marked Business or Personal Brand (`brand_kind`, 6.17). It follows the profile, except in an Agency & Creators profile, where each client is either (chosen in the Add client dialog or the plan brief). An agency's own first workspace is a business.
+- **Each workspace has its own plan brief** (goal, offer, customer, budget, capacity, website), so a client's plan never uses the agency's own sign-up answers or website.
+- **The Clients page, client wording and Home's all-clients view** show once *Clients page* is switched on in Settings → Roles & client approval (6.16); never for a Personal Brand. Influencers and media managers are members with roles (e.g. Copywriter), not profile types.
 
 ## 10. Open questions / TODO
 - Client workspace profile screen (§8.2).

@@ -75,7 +75,7 @@ test('a business that wants both gets a saved, resumable onboarding and a real f
     await expect(finish).toBeDisabled();
     await page.getByRole('button', { name: /generate first plan/i }).click();
     await expect(page.getByText('Your plan is ready')).toBeVisible();
-    await expect(page.getByText('Plan for Roofseal Pune — a Waterproofing, paints & coatings in Pune aiming at: Generate leads, Get phone calls. Grounded in the website.')).toBeVisible();
+    await expect(page.getByText('Plan for Roofseal Pune — a Waterproofing, paints & coatings in Pune aiming at: Leads. Grounded in the website.')).toBeVisible();
     await finish.click();
     await expect(page).toHaveURL(/\/app$/);
     await expect(page.getByRole('region', { name: 'Finish setting up' })).toHaveCount(0);
