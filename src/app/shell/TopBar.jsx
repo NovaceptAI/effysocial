@@ -10,6 +10,7 @@ import { effyApi } from '../api/effyApi';
 import WorkspaceDialog from '../components/WorkspaceDialog';
 import Dropdown from './Dropdown';
 import ProfileSwitcher from './ProfileSwitcher';
+import CreditsChip, { CreditsDot, CreditsMenuItem } from './CreditsChip';
 import { hasFeature } from '../plans';
 import { cn } from '../../lib/cn';
 
@@ -86,6 +87,8 @@ export default function TopBar({ onOpenPalette, onOpenAssistant, onOpenNav }) {
 
       <div className="flex-1" />
 
+      <CreditsChip />
+
       {/* Create */}
       <div className="relative">
         <button onClick={() => setCreateOpen((v) => !v)} className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-lg bg-coral-btn text-white text-sm font-bold shadow-coral hover:shadow-coral-lg hover:brightness-105 transition-all">
@@ -112,14 +115,16 @@ export default function TopBar({ onOpenPalette, onOpenAssistant, onOpenNav }) {
       </button>
       <Notifications />
       <div className="relative">
-        <button onClick={() => setProfileOpen((v) => !v)} title={user.name} className="grid place-items-center w-9 h-9 rounded-full bg-coral text-white text-xs font-bold shadow-coral">
+        <button onClick={() => setProfileOpen((v) => !v)} title={user.name} className="relative grid place-items-center w-9 h-9 rounded-full bg-coral text-white text-xs font-bold shadow-coral">
           {user.avatar}
+          <CreditsDot />
         </button>
         <Dropdown open={profileOpen} onClose={() => { setProfileOpen(false); setWsExpanded(false); }} className="right-0 w-64">
           <div className="px-3 py-2 border-b border-line">
             <div className="text-sm font-bold text-ink">{user.name}</div>
             <div className="text-xs text-ink-faint truncate">{authUser?.email || user.email}</div>
           </div>
+          <CreditsMenuItem onOpen={() => setProfileOpen(false)} />
 
           {/* Workspace — current shown; left chevron reveals other workspaces */}
           <div className="border-b border-line py-1">

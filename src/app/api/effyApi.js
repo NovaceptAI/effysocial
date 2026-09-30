@@ -1,6 +1,9 @@
 // Thin client for the EffySocial product API (/api/effy). Same-origin, sends
 // the session cookie. Used by TanStack Query hooks in the modules.
 const BASE = '/api/effy';
+// Sent after every change the app makes (any request that isn't a GET): it may have spent
+// credits — an image, a render, a plan — so the top bar's credits chip reads them again.
+export const CHANGED_EVENT = 'effy:changed';
 
 async function http(path, opts = {}) {
   const res = await fetch(BASE + path, { credentials: 'include', ...opts });
@@ -11,6 +14,7 @@ async function http(path, opts = {}) {
     err.data = data;
     throw err;
   }
+  if (opts.method && opts.method !== 'GET') window.dispatchEvent(new Event(CHANGED_EVENT));
   return data;
 }
 

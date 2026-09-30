@@ -27,9 +27,9 @@ export default function ProfileSwitcher() {
   };
 
   return (
-    <div className="relative min-w-0">
+    <div className="relative min-w-0 max-w-[10rem] sm:max-w-xs">
       <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-label={`Profile: ${current.name}. Switch profile`}
-        className="flex items-center gap-2 max-w-[10rem] sm:max-w-xs px-2.5 py-1.5 rounded-lg bg-transparent hover:bg-surface2 transition text-left">
+        className="flex items-center gap-2 max-w-full px-2.5 py-1.5 rounded-lg bg-transparent hover:bg-surface2 transition text-left">
         <span className="min-w-0">
           <span className="block text-[0.62rem] font-bold uppercase tracking-wide text-ink-faint truncate">{current.label || 'Profile'}</span>
           <span className="block text-sm font-bold text-ink truncate">{current.name}</span>

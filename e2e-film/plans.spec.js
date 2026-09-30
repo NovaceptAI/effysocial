@@ -2,7 +2,7 @@ import { test, expect, signInPlatformAdmin } from '../e2e/support/test';
 
 // Plans against the real engine (launch plan 3.4, G22): a platform admin moves an
 // organisation to Creative from Admin, and Performance Marketing closes in the UI and
-// the API at once; moving it to Pro opens it again. BILL-002.
+// the API at once; moving it to Pro opens it again, and the credits chip follows. BILL-002.
 
 test('an admin changes an organisation’s plan and the app follows', async ({ page, browser }) => {
   const stamp = Date.now();
@@ -18,6 +18,8 @@ test('an admin changes an organisation’s plan and the app follows', async ({ p
     ws = (await r.json()).workspaces[0].id;
     await page.goto('/app/billing');
     await expect(page.getByRole('status')).toContainText('Your free trial includes everything in Pro');
+    // The top bar's credits chip (6.20): the trial has Creative's 150 a month.
+    await expect(page.getByRole('link', { name: /^Credits:/ })).toHaveText('150 credits left');
   });
 
   const adminContext = await browser.newContext();
@@ -50,6 +52,7 @@ test('an admin changes an organisation’s plan and the app follows', async ({ p
     await expect(page.getByRole('region', { name: 'Upgrade needed' })).toHaveCount(0);
     const lead = await page.request.post('/api/effy/leads', { data: { workspace: ws, name: 'Kiran' } });
     expect(lead.status()).toBe(200);
+    await expect(page.getByRole('link', { name: /^Credits:/ })).toHaveText('1,500 credits left');
   });
 
   await adminContext.close();

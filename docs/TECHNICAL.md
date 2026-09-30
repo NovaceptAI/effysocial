@@ -48,7 +48,7 @@ registers every module's routes. By area:
 
 | Area | Modules |
 |---|---|
-| Accounts & platform | `auth` (session, active profile) · `tenancy` · `profiles` (profiles, work email, Roles & client approval) · `team` · `onboarding` (onboarding + marketing plan) · `brief` (plan brief, brand kind) · `plans` · `account` · `twofactor` · `ratelimit` · `email` · `interest` · `settings` · `aiusage` (credits, admin) · `scheduler` · `media_links` · `sample` · `cleanup` |
+| Accounts & platform | `auth` (session, active profile) · `tenancy` · `profiles` (profiles, work email, Roles & client approval) · `team` · `onboarding` (onboarding + marketing plan routes) · `sostac` (the plan on SOSTAC, weekly progress, accept) · `brief` (plan brief, brand kind) · `plans` · `account` · `twofactor` · `ratelimit` · `email` · `interest` · `settings` · `aiusage` (credits, admin) · `scheduler` · `media_links` · `sample` · `cleanup` |
 | Creation | `studio` · `filmlab` + `film_basis` (Ad Films) · `productlab` (Product Shots) · `avatarlab` (Personalized Avatar Video, Gemini image helpers) · `characters` · `audio` (ElevenLabs, music beds, fitting lines) · `veo` · `refusals` · `acceptance` · `medialib` · `brand` + `webread` (Brand Brain) · `sites` · `landing` |
 | Marketing | `workspaces` · `campaigns` · `publish` · `publisher` · `insights` · `engage` · `strategy` · `ideas` · `analytics` · `reports` · `ads` · `leads` · `forms` · `bio` · `tracking` · `conversions` · `followups` · `workflows` · `assistant` · `integrations` + `oauth` · `gbp` |
 
@@ -177,7 +177,8 @@ to revenue (spec §3.2).
   (15, 20, 6,000). A login's first own profile gets a 14-day Trial with Pro's
   features and limits and 150 credits, then counts as Creative. A before-request
   hook gates API prefixes by feature; workspace and seat limits are checked on
-  create and invite/accept; credits warn at 80%/100% and don't block. The web app
+  create and invite/accept; credits warn at 80%/100% and don't block, and the top
+  bar's credits chip always shows what's left (6.20). The web app
   mirrors the route split in `src/app/plans.js`. Platform admins change plans in
   Admin until checkout (6.6).
 - **Two-factor sign-in (G44, `twofactor.py`):** authenticator-app codes (RFC 6238),
