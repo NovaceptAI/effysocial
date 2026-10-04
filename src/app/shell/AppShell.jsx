@@ -34,8 +34,8 @@ function VerifyBanner() {
   );
 }
 
-// Plan notices (G22): a trial about to end or ended, and credits near or over the month's
-// allowance. Credits warn but don't block until top-ups exist.
+// Plan notices (G22): a trial or a bought plan (6.6) about to end or ended, and credits near
+// or over the month's allowance. Credits warn but don't block until top-ups exist.
 function PlanBanner() {
   const { workspace, planInfo } = useWorkspace();
   const { data } = useQuery({
@@ -45,8 +45,14 @@ function PlanBanner() {
     staleTime: 60_000,
   });
   const trial = planInfo?.trial;
+  const paid = planInfo?.paid;
+  const on = (iso) => new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
   let notice = null;
-  if (trial?.expired) {
+  if (paid?.expired) {
+    notice = { icon: Clock, text: `Your ${paid.plan} plan ended on ${on(paid.until)}, so you’re on the free Creative plan. Performance Marketing is paused until you renew.` };
+  } else if (paid && paid.daysLeft <= 3) {
+    notice = { icon: Clock, text: `Your ${paid.plan} plan ends in ${paid.daysLeft} day${paid.daysLeft === 1 ? '' : 's'} (${on(paid.until)}). Renew in Billing to keep it.` };
+  } else if (trial?.expired) {
     notice = { icon: Clock, text: 'Your free trial has ended, so you’re on the free Creative plan. Performance Marketing is paused until you upgrade.' };
   } else if (trial && trial.daysLeft <= 3) {
     notice = { icon: Clock, text: `Your free trial ends in ${trial.daysLeft} day${trial.daysLeft === 1 ? '' : 's'}. After that you’ll be on the free Creative plan.` };

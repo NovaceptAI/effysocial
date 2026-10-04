@@ -1,11 +1,13 @@
 # Module: Administration — Integrations, Team, Billing, Settings
 
-> Workspace administration: connections, people/roles, plan and configuration. _Status: ✅ Integrations + Team frontend · 🔌 backend + Billing/Settings pending._
+> Workspace administration: connections, people/roles, plan and configuration. _Status (4 Oct 2026): ✅ Integrations · ✅ Team and invites · ✅ Settings · ✅ Billing: plans, credits and buying a plan with Razorpay (test mode until live keys) · ⬜ automatic renewal._
 > Spec ref: §17 · Phase 1
 
 **Settings (15 Sep 2026, G44):** `/app/settings` (also *Profile & settings* in the profile menu) — profile name; notification choices and density saved to the account; the organisation's time zone and currency (admins; saved with the onboarding details); two-factor sign-in (turn on with password → QR or setup key → code → recovery codes; turn off with password and code; new recovery codes); and *Send reset link*, which emails the signed-in address. Theme stays per browser.
 
-**Billing and plans (15 Sep 2026, G22):** `/app/billing` shows the plan in force (or the trial and its end date), what it includes and what's locked, usage meters for credits (warning at 80%/100%), workspaces and seats, and a plan comparison. Payment isn't live; platform admins change a plan under Admin → Organisations and plans (choosing Trial starts a fresh 14 days). Pages a plan doesn't include show an upgrade screen instead, with a notice across the app when a trial ends or credits run low.
+**Billing and plans (15 Sep 2026, G22):** `/app/billing` shows the plan in force (or the trial and its end date), what it includes and what's locked, usage meters for credits (warning at 80%/100%), workspaces and seats, and a plan comparison. Pages a plan doesn't include show an upgrade screen instead, with a notice across the app when a trial ends or credits run low. Platform admins can still set a plan by hand under Admin → Organisations and plans (choosing Trial starts a fresh 14 days); a plan set by hand doesn't run out.
+
+**Buying a plan (4 Oct 2026, launch plan 6.6):** Billing → *Change plan* — Monthly or Yearly, then Growth (₹1,999 / ₹19,990), Pro (₹4,999 / ₹49,990) or Agency (₹12,999 / ₹1,29,990), each with *Pay ₹…*; the plan you're on offers *Extend by 1 month / 1 year*, a bigger plan says it starts today and the rest of the smaller one isn't credited, and a smaller plan waits until the paid period ends. Razorpay's own window takes the payment (cards, UPI, netbanking, wallets); closing it says *Payment cancelled — nothing was charged*, a declined payment says why. Once Razorpay's signature is checked the plan changes at once and the page says *Paid. You're on Pro until …*; Current plan shows *Pro, paid until … (N days left)*, and a banner across the app three days before it ends, and after. *Payments* lists each payment (date, plan, the period it covers, amount, Razorpay payment id). Plans don't renew by themselves yet. With Razorpay test keys only platform admins see *Change plan* (with a test-mode note); everyone else reads *Online payment is coming soon*. Engine `payments.py`; tests `test_effy_payments.py`, `billingCheckout.test.jsx`, `e2e/billing.spec.js`.
 
 **Team (15 Sep 2026, G23):** `/app/team` lists real members (owner and *You* marked) and, for owners and admins, pending and expired invites. *Invite member* takes an email and a role (Agency admin or Workspace admin by organisation type, Account manager, Copywriter, Client approver, View-only, each with a one-line description) and shows the join link to copy — the email may not arrive until the sending domain is verified. Admins change roles inline, remove members after a confirm, and resend (new link) or cancel invites. The owner can't be changed or removed. Invitees join at `/join`. Engine `team.py`; tests `test_effy_team.py`, `Team.test.jsx`, `Join.test.jsx`, `e2e-film/team.spec.js`.
 
@@ -48,7 +50,7 @@ Connected / partial (some scopes) / expired (reconnect) / available (connect) / 
 - **RBAC:** only admin/owner manage integrations, team, billing.
 
 ## 10. Open questions / TODO
-- Billing (Razorpay/Stripe) + AI credit metering.
+- Automatic renewal (Razorpay Subscriptions + webhook), GST invoices, credit top-ups, USD payments.
 - Settings: white-label, 2FA, audit log, density modes.
 
 **Scheduler (16 Sep 2026, launch plan 4.2):** Admin → Scheduler shows whether the minute scheduler is running (a run finished in the last five minutes), when it last ran, and for each job — publishing due posts, finishing processing uploads — its run and failure counts or the last error. On the server: `scripts/effy_phase.sh scheduler` installs or refreshes the systemd timer and prints the same status; `journalctl -u effy-scheduler` has one line per run that did something.

@@ -1,7 +1,7 @@
 # EffySocial — Technical Reference
 
 The single top-to-bottom engineering document, current as of **27 Sep 2026**
-(engine `phase/6`, migration head `e2b7c4d9f1a3`). It links out to the per-module
+(engine `phase/6`, migration head `f3c9a1d7b2e5`). It links out to the per-module
 contracts ([docs/modules/](modules/README.md)) and the endpoint list
 ([API.md](API.md)) rather than duplicating them. Update it in the same commit as
 any change it describes.
@@ -52,7 +52,7 @@ registers every module's routes. By area:
 | Creation | `studio` · `filmlab` + `film_basis` (Ad Films) · `productlab` (Product Shots) · `avatarlab` (Personalized Avatar Video, Gemini image helpers) · `characters` · `audio` (ElevenLabs, music beds, fitting lines) · `veo` · `refusals` · `acceptance` · `medialib` · `brand` + `webread` (Brand Brain) · `sites` · `landing` |
 | Marketing | `workspaces` · `campaigns` · `publish` · `publisher` · `insights` · `engage` · `strategy` · `ideas` · `analytics` · `reports` · `ads` · `leads` · `forms` · `bio` · `tracking` · `conversions` · `followups` · `workflows` · `assistant` · `integrations` + `oauth` · `gbp` |
 
-`models.py` holds all tables. 268 routes are registered under `/api/effy`.
+`models.py` holds all tables. 271 routes are registered under `/api/effy`.
 
 ---
 
@@ -102,7 +102,7 @@ followup_workflows, followup_runs, integrations, brand_facts, brand_sources,
 ideas, media, workflows, ai_usage, competitors, dealer_avatars, avatar_masters,
 client_films, film_scenes, film_signoffs, characters, product_shots,
 product_frames, job_events, acceptance, marketing_plans, scheduler_jobs,
-settings, tokens. Columns live in `novalab-engine/app/tools/effy/models.py`;
+settings, tokens, payments. Columns live in `novalab-engine/app/tools/effy/models.py`;
 each module's shape is in its [module doc](modules/README.md) and [API.md](API.md).
 
 **FK discipline:** child→workspace and workspace→organisation are `ON DELETE
@@ -179,8 +179,24 @@ to revenue (spec §3.2).
   hook gates API prefixes by feature; workspace and seat limits are checked on
   create and invite/accept; credits warn at 80%/100% and don't block, and the top
   bar's credits chip always shows what's left (6.20). The web app
-  mirrors the route split in `src/app/plans.js`. Platform admins change plans in
-  Admin until checkout (6.6).
+  mirrors the route split in `src/app/plans.js`. Platform admins can set a plan by
+  hand in Admin; a plan set that way doesn't run out.
+- **Buying a plan (6.6, `payments.py`):** Razorpay Standard Checkout. Billing →
+  *Change plan* → a plan and monthly or yearly → `POST /billing/orders` creates a
+  Razorpay order at the engine's price (`PRICES`, the pricing page's amounts, plus
+  `EFFY_GST_PERCENT`) and keeps it in `effy_payments`; Razorpay's window takes the
+  payment; `POST /billing/verify` checks Razorpay's signature —
+  HMAC-SHA256(`order_id|payment_id`, key secret), every time — and only then sets
+  `effy_orgs.plan` and `paid_until`, once per order. Paying for the plan you're on
+  extends it from the end of the paid period; a bigger plan starts today (the rest
+  of the smaller one isn't credited, and the screen says so); a smaller plan can be
+  bought once the paid period ends. A bought plan counts as Creative after
+  `paid_until` (`plans.lapsed`), with a banner three days before. A payment whose
+  browser never came back is found at Razorpay when Billing is next opened (orders
+  under two days old, three at a time). Test keys (`rzp_test_…`) offer checkout to
+  platform admins only; live keys (`rzp_live_…`) to every owner and admin; no keys,
+  *coming soon*. Plans don't renew by themselves yet (Razorpay Subscriptions and a
+  webhook come later).
 - **Two-factor sign-in (G44, `twofactor.py`):** authenticator-app codes (RFC 6238),
   secrets encrypted with the token key, a code works once, eight hashed recovery
   codes. A password sign-in with 2FA on leaves a 10-minute pending sign-in;
@@ -200,7 +216,10 @@ to revenue (spec §3.2).
   names are HTML-escaped in the verify, reset, invite, work-email and follow-up
   emails.
 - **Loading (G45):** every route in `App.jsx` except the landing page, and every
-  page in `AppRoot.jsx`, is `React.lazy`. `deploy/content-security-policy.conf` also
+  page in `AppRoot.jsx`, is `React.lazy`. The only outside script and frame the
+  Content-Security-Policy allows are Razorpay's checkout (`checkout.razorpay.com`,
+  `api.razorpay.com`), loaded only when someone pays (`src/lib/razorpay.js`).
+  `deploy/content-security-policy.conf` also
   turns on gzip for CSS, JavaScript, JSON and SVG, and sets `Cache-Control`
   (`no-cache` HTML, a year and `immutable` on hashed `/assets/`).
 - **Rail:** `railMode()` in `nav.js` keeps the Performance Marketing rail when it
@@ -334,7 +353,7 @@ ec89ceaca3ad tenancy → b1d2e3f40511 email/reset tokens → c2e4f60a7233 campai
 → a3e6c9f1b7d4 interest → b8d4f2a6c9e3 post publish outcome → c5e8a1d3f7b2 scheduler jobs
 → d6f1b3a8e2c4 follow-up waits → e7a2c4f9b1d3 inbox tags + review links → f1c3e5a7b9d2 report shares
 → a4d8e2f6c1b3 sample workspace → c7e1f3a9d5b2 profiles + work email → d4a8c2e6f1b7 org settings
-→ e2b7c4d9f1a3 workspace brand kind + plan brief  [HEAD]
+→ e2b7c4d9f1a3 workspace brand kind + plan brief → f3c9a1d7b2e5 payments + paid_until  [HEAD]
 ```
 
 Deploys apply migrations (`effy_phase.sh deploy` runs
@@ -386,7 +405,9 @@ commit ranges, in `~/effy-work/deploys.log`. Do not run `npm run build` in
 | `EFFY_TOKEN_KEY` | Comma-separated Fernet keys for stored OAuth tokens and 2FA secrets; the first encrypts, all decrypt. Rotate by prepending a key, then `scripts/rekey_tokens.py check` / `apply`. Keep a copy outside the server |
 | `EFFY_MEDIA_SIGNING_KEY` | Signs media links; must match nginx's `secure_link` secret (§5) |
 | `EFFY_BASE_URL` | Public base for email, media and OAuth links |
-| `EFFY_ADMIN_EMAILS` | Platform admins (Admin page, plan changes, scheduler) |
+| `EFFY_ADMIN_EMAILS` | Platform admins (Admin page, plan changes, scheduler, checkout in Razorpay test mode) |
+| `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` | Razorpay Standard Checkout for buying plans (§4). `rzp_test_…` keys: platform admins only; `rzp_live_…`: every owner and admin. The secret never leaves the engine. Read at start, so after changing them restart the engine (`sudo systemctl restart novalab-engine`), not just reload |
+| `EFFY_GST_PERCENT` | GST added to plan prices at checkout (0–28; default 0 until GST is charged) |
 | `EFFY_REQUIRE_VERIFIED_EMAIL` | `false` in production until the sending domain is verified (G06) |
 | `RESEND_API_KEY` **or** `EFFY_SMTP_HOST/PORT/USER/PASS`, `EFFY_EMAIL_SENDER` | Transactional email; if sending fails the link is only logged |
 | `EFFY_EXPOSE_DEV_LINKS` | **Development only** — returns verification/reset links in responses. Never in production |
@@ -412,7 +433,7 @@ commit ranges, in `~/effy-work/deploys.log`. Do not run `npm run build` in
 `effy_phase.sh check` runs every layer below; a phase cannot deploy unless they
 pass.
 
-**Backend** (`novalab-engine/tests/`, 78 files, pytest): run
+**Backend** (`novalab-engine/tests/`, 79 files, pytest): run
 `myenv/bin/python -m pytest -q` from the engine checkout. `conftest.py` points the
 app at a throwaway SQLite file, keeps rate limits and the scheduler lock in
 process, and provides `register`, `account`, `connect_instagram` and
@@ -422,9 +443,9 @@ model answer on SOSTAC, and `sostac_answer(plan)` wraps an older flat test plan 
 
 **Route gate:** `conftest.py` records every API route a test calls; with
 `EFFY_ROUTE_GATE=1` (set by `check`) the run fails and lists any `/api/effy` route
-no test calls, so a new endpoint can't ship untested. All 268 routes are called.
+no test calls, so a new endpoint can't ship untested. All 271 routes are called.
 
-**Frontend unit and component** (Vitest + React Testing Library, jsdom, 63 files):
+**Frontend unit and component** (Vitest + React Testing Library, jsdom, 65 files):
 `npm test`. `src/test/mockApi.js` stubs `fetch` for `/api/effy` from a
 `"METHOD /path"` table and records calls; `src/test/render.jsx` renders inside the
 real auth, workspace, query and router providers. Fixtures in `src/test/fixtures/`
@@ -433,7 +454,8 @@ are captured from the engine's test flow — regenerate rather than hand-edit.
 **End to end, mocked** (Playwright, `e2e/`): `npm run test:e2e` builds the app,
 serves it with `vite preview` on port 4291 (`E2E_PORT`) and runs Chromium with
 `/api/effy` stubbed per test. `@playwright/test` is pinned to 1.63.0 to match the
-cached Chromium.
+cached Chromium. `e2e/billing.spec.js` serves stand-ins for Razorpay's script and
+window from Razorpay's own origins, so the policy is checked for real.
 
 **End to end, real engine** (`e2e-film/`, `npm run test:e2e:film`, 22 specs): the
 demo film, workspaces and clients, onboarding, team, profiles, approvals, calendar,

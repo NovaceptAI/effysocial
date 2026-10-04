@@ -4,11 +4,12 @@ import { CreditCard, ArrowRight, Sparkles, Zap, Check, Lock, Clock } from 'lucid
 import { useWorkspace } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
 import { FEATURES, PLAN_SUMMARY } from '../plans';
+import PlanCheckout, { PaymentsList } from '../components/PlanCheckout';
 import { Card, PageHeader, Button, Badge } from '../../ui';
 
-// The organisation's plan, what it includes, and usage against its limits (G22).
-// Online checkout arrives with the payment provider (launch plan 6.6); until then a
-// platform admin changes plans. Credits warn at 80% and 100% but don't block work.
+// The organisation's plan, what it includes, and usage against its limits (G22), and buying
+// a plan with Razorpay (launch plan 6.6, PlanCheckout). A platform admin can still set a
+// plan by hand in Admin. Credits warn at 80% and 100% but don't block work.
 function Meter({ label, used, limit, hint }) {
   const pct = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
   const tone = used >= limit ? 'bg-error' : pct >= 80 ? 'bg-warning' : 'bg-coral-btn';
@@ -35,6 +36,8 @@ export default function Billing() {
   if (!info) return <p className="text-sm text-ink-soft">Loading your plan…</p>;
 
   const trial = info.trial;
+  const paid = info.paid;
+  const until = (iso) => new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
   const creditHint = data?.warning === 'over'
     ? 'You’ve used this month’s allowance. Work isn’t blocked yet — upgrade for more. Credits reset on the 1st.'
     : data?.warning === 'near'
@@ -44,7 +47,7 @@ export default function Billing() {
   return (
     <div>
       <PageHeader title="Billing" subtitle="Your plan, what it includes and what you’ve used" />
-      <div className="grid lg:grid-cols-3 gap-4 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
         <Card className="lg:col-span-2 p-6">
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-bold text-ink">Current plan</h3>
@@ -58,6 +61,14 @@ export default function Billing() {
                 : `Your free trial includes everything in Pro and ends in ${trial.daysLeft} day${trial.daysLeft === 1 ? '' : 's'} (${new Date(trial.endsAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}). After that you’ll be on the free Creative plan.`}
             </p>
           )}
+          {paid && (
+            <p role="status" className={`mb-4 text-sm rounded-lg px-3.5 py-2.5 flex gap-2 ${paid.expired || paid.daysLeft <= 3 ? 'bg-warning-soft text-warning' : 'bg-surface2 text-ink'}`}>
+              <Clock className="w-4 h-4 shrink-0 mt-0.5" />
+              {paid.expired
+                ? `Your ${paid.plan} plan ended on ${until(paid.until)}, so you’re on the free Creative plan. Your campaigns, leads and pages are kept — renew below to use them again.`
+                : `${paid.plan}, paid until ${until(paid.until)} (${paid.daysLeft} day${paid.daysLeft === 1 ? '' : 's'} left).`}
+            </p>
+          )}
           <ul className="space-y-2 mb-5" aria-label="What your plan includes">
             <li className="flex items-center gap-2 text-sm text-ink"><Check className="w-4 h-4 text-success" /> AI Studio, Ad Films, Product Shots and Brand Brain</li>
             {Object.entries(FEATURES).map(([key, f]) => (
@@ -69,7 +80,7 @@ export default function Billing() {
           <a href="/pricing" target="_blank" rel="noreferrer">
             <Button variant="secondary">Compare plans and prices <ArrowRight className="w-4 h-4" /></Button>
           </a>
-          <p className="text-xs text-ink-faint mt-3">Online payment is coming soon. To change your plan now, contact the EffySocial team.</p>
+          <PlanCheckout info={info} />
         </Card>
 
         <Card className="p-6 space-y-5">
@@ -104,8 +115,8 @@ export default function Billing() {
         </Card>
 
         <Card className="lg:col-span-3 p-6">
-          <h3 className="font-bold text-ink mb-2 flex items-center gap-2"><CreditCard className="w-4 h-4 text-coral-ink" /> Invoices</h3>
-          <p className="text-sm text-ink-soft">No invoices yet. They’ll appear here once online payment is live.</p>
+          <h3 className="font-bold text-ink mb-2 flex items-center gap-2"><CreditCard className="w-4 h-4 text-coral-ink" /> Payments</h3>
+          <PaymentsList />
         </Card>
       </div>
     </div>

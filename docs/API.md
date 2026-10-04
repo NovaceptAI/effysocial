@@ -4,7 +4,7 @@ The **implemented** backend endpoints. Base: `/api/effy` (proxied by nginx on
 effysocial.effybiz.in → Flask `novalab-engine`). Auth is a signed session
 cookie (`effy_uid`); the organisation a request works in is the session's active
 profile. Update this file in the same commit as any endpoint that ships or changes.
-All 268 routes are listed (checked against the engine's url_map on 28 Sep 2026).
+All 271 routes are listed (checked against the engine's url_map on 28 Sep 2026).
 
 Legend: 🔓 no auth · 🔒 requires session · 🏢 org-ownership enforced
 
@@ -87,9 +87,14 @@ Every session-authenticated route under a gated prefix answers **403** `{code: "
 |---|---|---|---|
 | GET | `/api/effy/billing/credits?workspace=ws_N` | 🔒🏢 | → `{plan, planInfo, used, allowance, remaining, warning: null\|"near"\|"over", hasPerformanceMarketing}` · credits count across the organisation; warnings don't block |
 | GET | `/api/effy/admin/orgs` | 🔒 platform admin | → `{orgs:[{id, name, type, owner, createdAt, creditsUsed, ...planInfo}], plans}` |
-| PATCH | `/api/effy/admin/orgs/:id` | 🔒 platform admin | `{plan, trialDays?}` → `{org}` · `Trial` starts a trial of `trialDays` (1–90, default 14) · 400 unknown plan · 404 |
+| PATCH | `/api/effy/admin/orgs/:id` | 🔒 platform admin | `{plan, trialDays?}` → `{org}` · `Trial` starts a trial of `trialDays` (1–90, default 14) · clears `paid_until`, so a plan set by hand doesn't run out · 400 unknown plan · 404 |
+| GET | `/api/effy/billing/checkout` | 🔒 | → `{mode: "off"\|"test"\|"live", available, reason, keyId (only when available), currency, gstPercent, prices:[{plan, period: "month"\|"year", label, base, amount (paise, GST included), refusal}], planInfo, payments:[payment]}` · the signed-in profile's organisation · first applies any order of the last two days that Razorpay shows as captured · `available` only for owners and admins, and with test keys only for platform admins |
+| POST | `/api/effy/billing/orders` | 🔒 owner/admin | `{plan: Growth\|Pro\|Agency, period: month\|year}` → `{orderId, amount, currency, keyId, name, description, prefill:{name, email}, mode}` · the amount is the engine's, never the request's · creates a Razorpay order and keeps it · 403 when checkout isn't offered to this person · 400 unknown plan or period, or a smaller plan while a bigger one is paid · 502 when Razorpay refuses or can't be reached (nothing kept) |
+| POST | `/api/effy/billing/verify` | 🔒 | `{razorpay_order_id, razorpay_payment_id, razorpay_signature}` (Razorpay's handler response, as is) → `{payment, plan, planInfo}` · changes the plan only when HMAC-SHA256(`order_id|payment_id`, key secret) matches — checked every time — and only once per order · 400 missing field or wrong signature (plan unchanged) · 404 another organisation's order |
 
-`planInfo` (also on bootstrap `org`): `{plan (in force), storedPlan, features[], limits:{workspaces, seats, credits}, usage:{workspaces, seats}, trial: null | {endsAt, daysLeft, expired}}`.
+`planInfo` (also on bootstrap `org`): `{plan (in force), storedPlan, features[], limits:{workspaces, seats, credits}, usage:{workspaces, seats}, trial: null | {endsAt, daysLeft, expired}, paid: null | {plan, until, daysLeft, expired}}` — `paid` is a plan bought online; once `expired` the plan in force is Creative.
+
+`payment`: `{id, plan, period, amount, currency, gstPercent, mode, status: created|paid, orderId, paymentId, periodStart, periodEnd, paidAt, createdAt}`.
 
 ## Campaigns  ([Campaigns.md](modules/Campaigns.md))
 | Method | Path | Auth | Body → Response |

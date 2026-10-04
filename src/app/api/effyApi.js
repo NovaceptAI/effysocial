@@ -269,6 +269,13 @@ export const effyApi = {
 
   // Admin (platform owner only)
   billingCredits: (workspaceId) => http(`/billing/credits?workspace=${encodeURIComponent(workspaceId)}`),
+  // Buying a plan with Razorpay (6.6): what can be bought, an order at the engine's price, and
+  // the check of Razorpay's signature that changes the plan.
+  billingCheckout: () => http('/billing/checkout'),
+  createPaymentOrder: (plan, period) =>
+    http('/billing/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ plan, period }) }),
+  verifyPayment: (response) =>
+    http('/billing/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(response) }),
   adminUsage: () => http('/admin/usage'),
   adminOrgs: () => http('/admin/orgs'),
   adminSetPlan: (orgId, plan, trialDays) =>
