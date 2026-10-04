@@ -136,10 +136,10 @@ describe('Onboarding answers (ONB-001)', () => {
 });
 
 describe('Connect step (ONB-002)', () => {
-  it('shows every channel’s real state and starts the real flow', async () => {
+  it('shows every channel’s real state and starts the real flow in its own tab', async () => {
     const user = userEvent.setup();
-    const assign = vi.fn();
-    vi.stubGlobal('location', { ...window.location, assign });
+    const tab = { location: { href: '' }, closed: false, close() { this.closed = true; }, opener: window };
+    const openTab = vi.spyOn(window, 'open').mockReturnValue(tab);
     const api = mockApi({
       'GET /bootstrap': ob.bootstrapFresh,
       'GET /onboarding': ob.saved,
@@ -158,9 +158,60 @@ describe('Connect step (ONB-002)', () => {
 
     await user.click(within(list).getByRole('button', { name: 'Connect Meta Ads' }));
     expect(await within(list).findByText(/Not available yet/)).toBeInTheDocument();
+    expect(tab.closed).toBe(true);                         // nothing to sign in to: the tab closes again
+    tab.closed = false;
+    await user.click(within(list).getByRole('button', { name: 'Connect LinkedIn' }));
+    await waitFor(() => expect(tab.location.href).toBe(ob.connectRedirect.redirect));
+    expect(openTab).toHaveBeenCalledWith('', '_blank');
+    expect(tab.opener).toBe(null);                         // the provider's page can't reach back
+    expect(api.callsTo('POST /integrations/linkedin/connect').map((c) => c.body)).toEqual([{ workspace: ob.saved.workspace.id, returnTo: 'onboarding-tab' }]);
+    openTab.mockRestore();
+  });
+
+  it('hears how a connection in its own tab went, and refreshes the list', async () => {
+    const user = userEvent.setup();
+    const tab = { location: { href: '' }, closed: false, close() { this.closed = true; } };
+    vi.spyOn(window, 'open').mockReturnValue(tab);
+    let linked = false;
+    mockApi({
+      'GET /bootstrap': ob.bootstrapFresh, 'GET /onboarding': ob.saved,
+      'GET /integrations': () => (linked ? { ...ob.integrations, integrations: ob.integrations.integrations.map((i) => (i.provider === 'linkedin' ? { ...i, state: 'connected', account: 'Asha Rao' } : i)) } : ob.integrations),
+      'POST /integrations/linkedin/connect': ob.connectRedirect,
+    });
+    open();
+    const list = await screen.findByRole('list', { name: 'Channels' });
+    await user.click(within(list).getByRole('button', { name: 'Connect LinkedIn' }));
+    await waitFor(() => expect(tab.location.href).toBe(ob.connectRedirect.redirect));
+    // The tab reports back (as /connected does) and waits for this page to hear it.
+    linked = true;
+    const tabSide = new BroadcastChannel('effy-connect');
+    const heard = new Promise((resolve) => { tabSide.onmessage = (e) => e.data.type === 'ack' && resolve(e.data.id); });
+    tabSide.postMessage({ type: 'result', id: 'r1', provider: 'linkedin', status: 'success' });
+    expect(await heard).toBe('r1');
+    tabSide.close();
+    expect(await screen.findByRole('status')).toHaveTextContent('LinkedIn connected.');
+    const row = within(screen.getByRole('list', { name: 'Channels' })).getByText('LinkedIn').closest('li');
+    expect(await within(row).findByText('Asha Rao')).toBeInTheDocument();
+    window.open.mockRestore();
+  });
+
+  it('a closed tab frees the button; a blocked tab signs in here instead', async () => {
+    const user = userEvent.setup();
+    const tab = { location: { href: '' }, closed: false, close() { this.closed = true; } };
+    vi.spyOn(window, 'open').mockReturnValueOnce(tab).mockReturnValueOnce(null);
+    const assign = vi.fn();
+    vi.stubGlobal('location', { ...window.location, assign });
+    mockApi({ 'GET /bootstrap': ob.bootstrapFresh, 'GET /onboarding': ob.saved, 'GET /integrations': ob.integrations,
+      'POST /integrations/linkedin/connect': ob.connectRedirect });
+    open();
+    const list = await screen.findByRole('list', { name: 'Channels' });
+    await user.click(within(list).getByRole('button', { name: 'Connect LinkedIn' }));
+    await waitFor(() => expect(within(list).getByRole('button', { name: 'Connect LinkedIn' })).toBeDisabled());
+    tab.closed = true;                                     // closed without finishing
+    await waitFor(() => expect(within(list).getByRole('button', { name: 'Connect LinkedIn' })).toBeEnabled(), { timeout: 2000 });
     await user.click(within(list).getByRole('button', { name: 'Connect LinkedIn' }));
     await waitFor(() => expect(assign).toHaveBeenCalledWith(ob.connectRedirect.redirect));
-    expect(api.callsTo('POST /integrations/linkedin/connect').map((c) => c.body)).toEqual([{ workspace: ob.saved.workspace.id, returnTo: 'onboarding' }]);
+    window.open.mockRestore();
   });
 
   it('says whether a connection worked when the provider sends the user back', async () => {

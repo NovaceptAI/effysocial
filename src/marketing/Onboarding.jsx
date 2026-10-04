@@ -7,6 +7,7 @@ import {
 import { useAppAuth } from '../app/context/AppAuth';
 import { WORKSPACE_ADMIN_ROLES } from '../app/context/WorkspaceContext';
 import { effyApi } from '../app/api/effyApi';
+import { listenForResults, startConnect, watchTab } from '../lib/connectTab';
 import BrandSources from '../app/components/BrandSources';
 import PlanView from '../app/components/PlanView';
 import { cn } from '../lib/cn';
@@ -70,25 +71,30 @@ function Choice({ selected, onClick, label, desc, disabled = false }) {
   );
 }
 
+// Each connection opens the provider's sign-in in its own tab (lib/connectTab.js); this step
+// stays put, hears how it went and refreshes the list.
 function ConnectStep({ workspace }) {
   const [params] = useSearchParams();
   const [items, setItems] = useState(null);
   const [notes, setNotes] = useState({});
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
+  const [result, setResult] = useState(() => (params.get('connected') ? { provider: params.get('connected'), status: params.get('status') } : null));
 
-  useEffect(() => {
+  const load = useCallback(() => {
     effyApi.listIntegrations(workspace.id).then(setItems).catch((e) => setError(e.message));
   }, [workspace.id]);
+  useEffect(load, [load]);
+  useEffect(() => listenForResults((r) => { setResult(r); setBusy(''); load(); }), [load]);
 
-  const returned = params.get('connected');
   const label = (provider) => items?.find((i) => i.provider === provider)?.label || provider;
 
   const connect = async (provider) => {
-    setBusy(provider); setError('');
+    setBusy(provider); setError(''); setResult(null);
     try {
-      const r = await effyApi.connectIntegration(provider, workspace.id, 'onboarding');
-      if (r.state === 'redirect' && r.redirect) { window.location.assign(r.redirect); return; }
+      const r = await startConnect(() => effyApi.connectIntegration(provider, workspace.id, 'onboarding-tab'));
+      if (r.tab) { watchTab(r.tab, () => setBusy((b) => (b === provider ? '' : b))); return; }
+      if (r.state === 'redirect') return;
       setNotes((n) => ({
         ...n,
         [provider]: r.state === 'pending_credentials'
@@ -103,9 +109,9 @@ function ConnectStep({ workspace }) {
 
   return (
     <Step title="Connect your accounts" sub="Connect what you use now, or skip — you can connect more from Integrations later.">
-      {returned && items && (
-        <p role="status" className={cn('mb-4 text-sm rounded-lg px-3.5 py-2.5', params.get('status') === 'success' ? 'bg-success-soft text-success' : 'bg-warning-soft text-warning')}>
-          {params.get('status') === 'success' ? `${label(returned)} connected.` : `${label(returned)} ${CONNECT_RESULT[params.get('status')] || 'didn’t connect — try again'}.`}
+      {result && items && (
+        <p role="status" className={cn('mb-4 text-sm rounded-lg px-3.5 py-2.5', result.status === 'success' ? 'bg-success-soft text-success' : 'bg-warning-soft text-warning')}>
+          {result.status === 'success' ? `${label(result.provider)} connected.` : `${label(result.provider)} ${CONNECT_RESULT[result.status] || 'didn’t connect — try again'}.`}
         </p>
       )}
       {error && <p role="alert" className="mb-4 text-sm rounded-lg bg-error-soft text-error px-3.5 py-2.5">{error}</p>}

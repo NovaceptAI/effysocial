@@ -17,15 +17,22 @@ const open = (integrations, handlers = {}) => {
 };
 
 describe('Integrations — Meta connections', () => {
-  it('sends Connect to Meta’s sign-in', async () => {
+  it('sends Connect to Meta’s sign-in in its own tab, and shows how it went', async () => {
     const user = userEvent.setup();
-    const href = vi.fn();
-    vi.spyOn(window, 'location', 'get').mockReturnValue({ href: '', search: '', set href(v) { href(v); } });
-    open({ status: 'ok', integrations: fx.connected.integrations.map((i) => (i.provider === 'instagram' ? { ...i, state: 'available', account: '', accessEndsAt: null } : i)) },
+    const tab = { location: { href: '' }, closed: false, close() { this.closed = true; } };
+    vi.spyOn(window, 'open').mockReturnValue(tab);
+    const api = open({ status: 'ok', integrations: fx.connected.integrations.map((i) => (i.provider === 'instagram' ? { ...i, state: 'available', account: '', accessEndsAt: null } : i)) },
       { 'POST /integrations/instagram/connect': fx.connectRedirect });
     await user.click(within(await card()).getByRole('button', { name: 'Connect' }));
-    await waitFor(() => expect(href).toHaveBeenCalledWith(fx.connectRedirect.redirect));
+    await waitFor(() => expect(tab.location.href).toBe(fx.connectRedirect.redirect));
     expect(fx.connectRedirect.redirect).toContain('facebook.com/v25.0/dialog/oauth');
+    expect(api.callsTo('POST /integrations/instagram/connect')[0].body.returnTo).toBe('integrations-tab');
+    // The tab reports back as /connected does; this page shows the result and reads the list again.
+    const tabSide = new BroadcastChannel('effy-connect');
+    tabSide.postMessage({ type: 'result', id: 'r1', provider: 'instagram', status: 'success' });
+    expect(await screen.findByText(/Connected successfully\./)).toBeInTheDocument();
+    await waitFor(() => expect(api.callsTo('GET /integrations').length).toBeGreaterThan(1));
+    tabSide.close();
     vi.restoreAllMocks();
   });
 

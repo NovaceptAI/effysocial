@@ -75,7 +75,7 @@ export default function Pricing() {
           </Link>
           <div className="flex items-center gap-2">
             <Link to="/login" className="px-4 py-2 rounded-lg text-sm font-bold text-ink hover:bg-surface2 transition">Log in</Link>
-            <Link to="/login" className="px-4 py-2 rounded-[11px] text-sm font-bold bg-coral-btn text-white shadow-coral hover:brightness-105 transition-all">Get started</Link>
+            <Link to="/login?mode=signup" className="px-4 py-2 rounded-[11px] text-sm font-bold bg-coral-btn text-white shadow-coral hover:brightness-105 transition-all">Get started</Link>
           </div>
         </div>
       </header>
@@ -124,7 +124,7 @@ export default function Pricing() {
               <p className={`text-xs mt-1 ${p.popular ? 'text-white/55' : 'text-ink-faint'}`}>
                 {p.monthly === 0 ? 'No credit card required' : `${yearly ? `${inr(p.yearly)}/yr · ` : ''}$${yearly ? p.usdY + '/yr' : p.usdM + '/mo'} · ex-GST`}
               </p>
-              <Link to="/login"
+              <Link to="/login?mode=signup"
                 className={`mt-5 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-[12px] font-bold transition-all ${p.popular
                   ? 'bg-white text-ink hover:-translate-y-0.5'
                   : 'bg-coral-btn text-white shadow-coral hover:shadow-coral-lg hover:brightness-105'}`}>
@@ -194,7 +194,7 @@ export default function Pricing() {
         <div className="rounded-[28px] bg-aurora text-white p-12 md:p-14 text-center shadow-e3">
           <h2 className="font-display text-[2rem] md:text-[2.6rem] font-semibold tracking-tightest leading-[1.1] mb-4">Start free. Grow when you're ready.</h2>
           <p className="text-white/85 mb-8 max-w-xl mx-auto">No credit card to start — connect your channels and see EffySocial run your growth.</p>
-          <Link to="/login" className="inline-flex items-center gap-2 px-8 py-4 rounded-[14px] bg-white text-ink font-extrabold shadow-[0_14px_36px_-10px_rgba(0,0,0,0.4)] hover:-translate-y-0.5 transition-all">
+          <Link to="/login?mode=signup" className="inline-flex items-center gap-2 px-8 py-4 rounded-[14px] bg-white text-ink font-extrabold shadow-[0_14px_36px_-10px_rgba(0,0,0,0.4)] hover:-translate-y-0.5 transition-all">
             Get started free <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

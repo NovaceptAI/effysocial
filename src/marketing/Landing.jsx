@@ -106,7 +106,7 @@ export default function Landing() {
           </nav>
           <div className="flex items-center gap-2">
             <Link to="/login" className="hidden sm:inline-flex px-4 py-2 rounded-lg text-sm font-bold hover:bg-white/10 transition" style={{ color: INK }}>Log in</Link>
-            <Link to="/login" className="px-4 py-2 rounded-[11px] text-sm font-bold transition-all hover:-translate-y-0.5" style={btnPrimary}>Get started</Link>
+            <Link to="/login?mode=signup" className="px-4 py-2 rounded-[11px] text-sm font-bold transition-all hover:-translate-y-0.5" style={btnPrimary}>Get started</Link>
             <button onClick={() => setMenuOpen((v) => !v)} className="md:hidden grid place-items-center w-9 h-9 rounded-lg hover:bg-white/10 transition" style={{ color: INK }} aria-label="Menu">
               {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -148,7 +148,7 @@ export default function Landing() {
             The AI content and growth platform for Indian business — from a single post to a full ad film to real revenue, all in one place.
           </p>
           <div className="rise rise-3 mt-9 flex flex-wrap items-center justify-center gap-3">
-            <Link to="/login" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-[13px] font-bold transition-all hover:-translate-y-0.5" style={btnPrimary}>
+            <Link to="/login?mode=signup" className="inline-flex items-center gap-2 px-7 py-3.5 rounded-[13px] font-bold transition-all hover:-translate-y-0.5" style={btnPrimary}>
               Start free <ArrowRight className="w-4 h-4" />
             </Link>
             <Link to="/login" className="inline-flex items-center px-7 py-3.5 rounded-[13px] font-bold transition-all hover:bg-white/10 backdrop-blur" style={btnGhost}>
@@ -184,14 +184,14 @@ export default function Landing() {
                 </div>
                 <h3 className="mt-4 font-display text-lg font-semibold tracking-tight" style={{ color: '#15161A' }}>{t.label}</h3>
                 <p className="mt-1.5 text-sm leading-relaxed flex-1" style={{ color: 'rgba(21,22,26,0.6)' }}>{t.desc}</p>
-                <Link to="/login" className="mt-3 inline-flex items-center gap-1.5 text-sm font-bold self-start hover:gap-2.5 transition-all" style={{ color: '#15161A' }}>
+                <Link to="/login?mode=signup" className="mt-3 inline-flex items-center gap-1.5 text-sm font-bold self-start hover:gap-2.5 transition-all" style={{ color: '#15161A' }}>
                   Try it <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
             ))}
           </div>
           <div className="text-center mt-9">
-            <Link to="/login" className="inline-flex items-center gap-1.5 text-sm font-bold hover:gap-2.5 transition-all" style={{ color: '#15161A' }}>Explore AI Studio <ArrowRight className="w-4 h-4" /></Link>
+            <Link to="/login?mode=signup" className="inline-flex items-center gap-1.5 text-sm font-bold hover:gap-2.5 transition-all" style={{ color: '#15161A' }}>Explore AI Studio <ArrowRight className="w-4 h-4" /></Link>
           </div>
         </div>
       </section>
@@ -210,7 +210,7 @@ export default function Landing() {
           </div>
           <MediaFrame kind="video" label="Ad Films demo" poster="/formats/yt_short.jpg" video="/landing/adfilm.mp4" className="max-w-2xl mx-auto" />
           <div className="text-center mt-6">
-            <Link to="/login" className="inline-flex items-center gap-1.5 text-sm font-bold hover:gap-2.5 transition-all" style={{ color: INK }}>Make a film <ArrowRight className="w-4 h-4" /></Link>
+            <Link to="/login?mode=signup" className="inline-flex items-center gap-1.5 text-sm font-bold hover:gap-2.5 transition-all" style={{ color: INK }}>Make a film <ArrowRight className="w-4 h-4" /></Link>
           </div>
         </div>
       </section>
@@ -231,7 +231,7 @@ export default function Landing() {
               <p className="mt-4 text-base leading-relaxed max-w-lg" style={{ color: 'rgba(255,255,255,0.82)' }}>
                 Upload a product shot; keep it perfectly faithful while AI builds the light, the scene and the motion around it. Add music, export any aspect.
               </p>
-              <Link to="/login" className="mt-6 inline-flex items-center gap-1.5 text-sm font-bold hover:gap-2.5 transition-all" style={{ color: '#FFFFFF' }}>Try it <ArrowRight className="w-4 h-4" /></Link>
+              <Link to="/login?mode=signup" className="mt-6 inline-flex items-center gap-1.5 text-sm font-bold hover:gap-2.5 transition-all" style={{ color: '#FFFFFF' }}>Try it <ArrowRight className="w-4 h-4" /></Link>
             </div>
           </div>
         </div>
@@ -315,7 +315,7 @@ export default function Landing() {
             <p className="mt-4 max-w-xl mx-auto leading-relaxed" style={{ color: MUTED }}>
               Connect your channels, build your Brand Brain, and let EffySocial take you from idea to revenue.
             </p>
-            <Link to="/login" className="mt-8 inline-flex items-center gap-2 px-8 py-4 rounded-[14px] font-extrabold transition-all hover:-translate-y-0.5" style={btnPrimary}>
+            <Link to="/login?mode=signup" className="mt-8 inline-flex items-center gap-2 px-8 py-4 rounded-[14px] font-extrabold transition-all hover:-translate-y-0.5" style={btnPrimary}>
               Get started free <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

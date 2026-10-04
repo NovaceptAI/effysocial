@@ -18,6 +18,11 @@ export default function Login() {
   const [twoFactor, setTwoFactor] = useState(false); // password accepted; waiting for the code
   const [code, setCode] = useState('');
   const [useRecovery, setUseRecovery] = useState(false);
+  // Two clear tabs, each with its own button, so Enter does what the open tab says. Sign-up
+  // links on the landing and pricing pages open "Create account" (/login?mode=signup).
+  const [mode, setMode] = useState(params.get('mode') === 'signup' && !next ? 'signup' : 'signin');
+  const signup = mode === 'signup';
+  const switchTo = (m) => { setMode(m); setError(''); };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -40,7 +45,8 @@ export default function Login() {
     else setError(r.message);
   };
 
-  const getStarted = async () => {
+  const getStarted = async (e) => {
+    e?.preventDefault();
     setError('');
     if (!email || password.length < 8) { setError('Enter an email and a password of at least 8 characters to sign up.'); return; }
     setBusy(true);
@@ -123,12 +129,30 @@ export default function Login() {
           <Link to="/" className="lg:hidden flex items-center gap-2 font-extrabold text-lg mb-8">
             <span className="grid place-items-center w-8 h-8 rounded-[9px] bg-coral text-white">✦</span> EffySocial
           </Link>
-          <h1 className="text-2xl font-extrabold tracking-tight">Welcome back</h1>
-          <p className="text-ink-soft text-sm mt-1 mb-7">{next ? 'Log in to accept your invite.' : 'Log in to continue to your workspace.'}</p>
+          <div role="tablist" aria-label="Log in or create an account" className="grid grid-cols-2 gap-1 p-1 mb-6 rounded-xl bg-surface2">
+            {[['signin', 'Log in'], ['signup', 'Create account']].map(([m, label]) => (
+              <button key={m} type="button" role="tab" aria-selected={mode === m} onClick={() => switchTo(m)}
+                className={`py-2 rounded-lg text-sm font-bold transition ${mode === m ? 'bg-surface text-ink shadow-sm' : 'bg-transparent text-ink-soft hover:text-ink'}`}>
+                {label}
+              </button>
+            ))}
+          </div>
+          <h1 className="text-2xl font-extrabold tracking-tight">{signup ? 'Create your free account' : 'Welcome back'}</h1>
+          <p className="text-ink-soft text-sm mt-1 mb-7">
+            {signup ? 'Your first 14 days include everything in Pro. No card needed.'
+              : next ? 'Log in to accept your invite.' : 'Log in to continue to your workspace.'}
+          </p>
 
-          {error && <div role="alert" className="mb-4 text-sm rounded-lg bg-error-soft text-error px-3.5 py-2.5">{error}</div>}
+          {error && (
+            <div role="alert" className="mb-4 text-sm rounded-lg bg-error-soft text-error px-3.5 py-2.5">
+              {error}
+              {!signup && !next && error === 'Invalid email or password.' && (
+                <> New to EffySocial? <button type="button" onClick={() => switchTo('signup')} className="font-bold underline bg-transparent">Create your free account</button></>
+              )}
+            </div>
+          )}
 
-          <form onSubmit={submit} className="space-y-4">
+          <form onSubmit={signup ? getStarted : submit} className="space-y-4">
             <div>
               <label className="block text-sm font-semibold text-ink-soft mb-1.5">Email</label>
               <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
@@ -138,14 +162,16 @@ export default function Login() {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="block text-sm font-semibold text-ink-soft">Password</label>
-                <Link to="/forgot" className="text-xs font-semibold text-coral-ink">Forgot password?</Link>
+                {signup
+                  ? <span className="text-xs text-ink-faint">At least 8 characters</span>
+                  : <Link to="/forgot" className="text-xs font-semibold text-coral-ink">Forgot password?</Link>}
               </div>
               <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                autoComplete={signup ? 'new-password' : 'current-password'} placeholder="••••••••"
                 className="w-full rounded-lg border border-line bg-surface px-3.5 py-3 text-sm focus:border-coral focus:ring-2 focus:ring-coral/30 outline-none" />
             </div>
             <button type="submit" disabled={busy} className="w-full flex items-center justify-center gap-2 rounded-lg bg-coral text-white font-bold py-3 shadow-[0_8px_20px_rgba(232,74,51,0.24)] hover:-translate-y-0.5 transition disabled:opacity-60">
-              {busy ? 'Please wait…' : <>Log in <ArrowRight className="w-4 h-4" /></>}
+              {busy ? 'Please wait…' : <>{signup ? 'Create account' : 'Log in'} <ArrowRight className="w-4 h-4" /></>}
             </button>
           </form>
 
@@ -156,15 +182,18 @@ export default function Login() {
             Continue with Google
           </button>
 
-          <p className="text-center text-xs font-semibold uppercase tracking-wide text-ink-faint mt-6 mb-2.5">New to EffySocial?</p>
-          <button type="button" onClick={getStarted} disabled={busy}
-            className="w-full flex items-center justify-center gap-2 rounded-lg border border-coral/40 bg-coral-tint text-coral-ink font-bold py-3 text-sm hover:bg-coral hover:text-white hover:border-coral transition disabled:opacity-60">
-            Create your free account <ArrowRight className="w-4 h-4" />
-          </button>
-          <p className="text-center text-xs text-ink-faint mt-3 leading-relaxed">
-            By creating an account you agree to the <Link to="/terms" className="font-semibold text-coral-ink">Terms of Service</Link> and
-            acknowledge the <Link to="/privacy" className="font-semibold text-coral-ink">Privacy Policy</Link>.
+          <p className="text-center text-sm text-ink-soft mt-6">
+            {signup ? 'Already have an account? ' : 'New to EffySocial? '}
+            <button type="button" onClick={() => switchTo(signup ? 'signin' : 'signup')} className="font-bold text-coral-ink bg-transparent">
+              {signup ? 'Log in' : 'Create your free account'}
+            </button>
           </p>
+          {signup && (
+            <p className="text-center text-xs text-ink-faint mt-3 leading-relaxed">
+              By creating an account you agree to the <Link to="/terms" className="font-semibold text-coral-ink">Terms of Service</Link> and
+              acknowledge the <Link to="/privacy" className="font-semibold text-coral-ink">Privacy Policy</Link>.
+            </p>
+          )}
         </div>
         )}
       </div>

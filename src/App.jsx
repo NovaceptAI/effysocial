@@ -13,6 +13,7 @@ const Join = lazy(() => import('./marketing/Join'));
 const Verify = lazy(() => import('./marketing/Verify'));
 const Forgot = lazy(() => import('./marketing/Forgot'));
 const Reset = lazy(() => import('./marketing/Reset'));
+const ConnectResult = lazy(() => import('./marketing/ConnectResult'));
 const PublicForm = lazy(() => import('./marketing/PublicForm'));
 const PublicReviews = lazy(() => import('./marketing/PublicReviews'));
 const PublicReport = lazy(() => import('./marketing/PublicReport'));
@@ -67,6 +68,7 @@ export default function App() {
             <Route path="/join" element={<Join />} />
             <Route path="/forgot" element={<Forgot />} />
             <Route path="/reset" element={<Reset />} />
+            <Route path="/connected/:back" element={<ConnectResult />} />
             <Route path="/f/:slug" element={<PublicForm />} />
             <Route path="/r/:slug" element={<PublicReviews />} />
             <Route path="/report/:token" element={<PublicReport />} />

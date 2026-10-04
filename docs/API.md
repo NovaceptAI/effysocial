@@ -451,7 +451,7 @@ Seven stages with server gates: direction → script → stills → animate → 
 | Method | Path | Auth | Body → Response |
 |---|---|---|---|
 | GET | `/api/effy/integrations?workspace=ws_N` | 🔒🏢 | → `{integrations:[{provider, label, category, state, status, account, credsConfigured, lastSync, accessEndsAt, daysLeft, reconnectSoon}]}` — an ended connection reads `expired` |
-| POST | `/api/effy/integrations/:provider/connect` | 🔒🏢 write | `{workspace, returnTo?}` → `{redirect}` (OAuth, state stored single-use) or `{setup}` steps when credentials are missing · 400 unknown provider |
+| POST | `/api/effy/integrations/:provider/connect` | 🔒🏢 write | `{workspace, returnTo?: integrations\|onboarding\|integrations-tab\|onboarding-tab}` → `{redirect}` (OAuth, state stored single-use) or `{setup}` steps when credentials are missing · after the provider, the browser returns to `/app/integrations`, `/onboarding`, or — for a connection opened in its own tab (the app's default) — `/connected/integrations` or `/connected/onboarding`, each with `?connected=…&status=…[&reason=…]`; anything else returns to Integrations · 400 unknown provider |
 | GET | `/api/effy/integrations/:provider/callback` | 🔓 (state) | OAuth return → redirects to `/app/integrations?status=connected\|denied\|invalid_state\|exchange_failed&reason=…` |
 | POST | `/api/effy/integrations/instagram/connect-token` | 🔒🏢 write | `{workspace, token}` → `{account, igUserId, accessEndsAt}` — development path: a pasted Meta user token exchanged for a long-lived one · 400 |
 | POST | `/api/effy/integrations/:provider/disconnect` | 🔒🏢 write | → `{status}` — the stored token is removed |

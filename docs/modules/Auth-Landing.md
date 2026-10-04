@@ -7,13 +7,13 @@
 `/` markets EffySocial and sends visitors to **/login**, which signs in or creates an account and continues to **/onboarding** or **/app**. Every account works inside a **profile** — an organisation of one of three types — and one login can hold several.
 
 ## 2. Where it lives
-- **Routes:** `/` (Landing), `/login`, `/verify`, `/forgot`, `/reset`, `/join` (invites), `/onboarding`, `/privacy`, `/terms`, `/app/*` (gated by `RequireAuth`).
+- **Routes:** `/` (Landing), `/login` (`?mode=signup` opens Create account), `/connected/:page` (where a connection opened in its own tab comes back), `/verify`, `/forgot`, `/reset`, `/join` (invites), `/onboarding`, `/privacy`, `/terms`, `/app/*` (gated by `RequireAuth`).
 - **Frontend:** `src/marketing/{Landing, Login, Onboarding, Join, Privacy, Terms}.jsx`, auth state `src/app/context/AppAuth.jsx` (bootstrap, `switchProfile`, `addProfile`), profile definitions `src/app/profiles.js`, switcher `src/app/shell/ProfileSwitcher.jsx`, `src/app/components/AddProfileDialog.jsx`, `WorkEmailForm.jsx`, `WorkEmailBanner` in `AppShell.jsx`.
 - **Engine:** `routes.py` (register, login, verify, reset, bootstrap), `auth.py` (session, active profile), `profiles.py`, `onboarding.py`, `team.py` (invites), `twofactor.py`, `account.py`, `email.py`, `ratelimit.py`.
 
 ## 3. Screens & key UI
 - **Landing:** positioning hero with the product films, connected-journey strip, feature grid, pricing link, footer with Privacy and Terms.
-- **Login:** sign in or create an account (email + 8–128 character password); two-factor code step when on; resend verification; *Continue with Google* is not built yet (6.5).
+- **Login:** two tabs, **Log in** and **Create account** (email + 8–128 character password), each with its own button, so Enter does what the open tab says; the landing and pricing pages' sign-up buttons open *Create account* (`/login?mode=signup`), the *Log in* links open *Log in*; an invite link always opens *Log in*. A failed log-in adds *New to EffySocial? Create your free account*, which keeps what was typed — it never says whether the email has an account. Two-factor code step when on; resend verification; *Continue with Google* is not built yet (6.5).
 - **Onboarding:** profile type → details → what you need (create, market, both) → goals → connect → Brand Brain → first plan (or *Start creating* for creation only). A Personal Brand is asked about themselves; a Creative-plan profile (a second profile) onboards for creation only.
 - **Profile switcher** (top bar): every profile on the login with its type, role and plan; *Add account type* (type + name; says whether the trial comes with it).
 - **Work email** (Business): a banner until verified; Settings → Organisation → Work email sends and checks the code.

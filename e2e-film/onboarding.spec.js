@@ -4,10 +4,11 @@ import { test, expect } from '../e2e/support/test';
 // connections show their real state, the first plan is really generated and stays
 // visible, and creation-only users go straight to creating. ONB-001..005.
 async function signUp(page, email) {
-  await page.goto('/login');
+  await page.goto('/login?mode=signup');                  // as the landing page's sign-up buttons do
+  await expect(page.getByRole('tab', { name: 'Create account' })).toHaveAttribute('aria-selected', 'true');
   await page.locator('input[type=email]').fill(email);
   await page.locator('input[type=password]').fill('onboarding-e2e-1');
-  await page.getByRole('button', { name: /create your free account/i }).click();
+  await page.getByRole('button', { name: /^create account/i }).click();
   await expect(page).toHaveURL(/\/onboarding$/);
 }
 

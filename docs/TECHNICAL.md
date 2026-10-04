@@ -445,7 +445,7 @@ model answer on SOSTAC, and `sostac_answer(plan)` wraps an older flat test plan 
 `EFFY_ROUTE_GATE=1` (set by `check`) the run fails and lists any `/api/effy` route
 no test calls, so a new endpoint can't ship untested. All 271 routes are called.
 
-**Frontend unit and component** (Vitest + React Testing Library, jsdom, 65 files):
+**Frontend unit and component** (Vitest + React Testing Library, jsdom, 67 files):
 `npm test`. `src/test/mockApi.js` stubs `fetch` for `/api/effy` from a
 `"METHOD /path"` table and records calls; `src/test/render.jsx` renders inside the
 real auth, workspace, query and router providers. Fixtures in `src/test/fixtures/`

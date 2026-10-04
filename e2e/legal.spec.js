@@ -33,7 +33,7 @@ test.describe('legal pages', () => {
   });
 
   test('sign-up states that creating an account accepts the terms', async ({ page }) => {
-    await page.goto('/login');
+    await page.goto('/login?mode=signup');
     await page.getByRole('link', { name: 'Terms of Service' }).click();
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Terms of Service');
     await page.goBack();

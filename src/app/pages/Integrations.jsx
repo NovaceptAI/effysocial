@@ -4,6 +4,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { Plug, AlertTriangle, Check, KeyRound, Loader2, X, FlaskConical, Building2, ExternalLink } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
+import { listenForResults, startConnect, watchTab } from '../../lib/connectTab';
 import { useInvalidatingMutation } from '../api/hooks';
 import { followPublish, instagramCaptionProblem } from '../publishing';
 import { formatInZone, orgZone } from '../timezone';
@@ -93,16 +94,22 @@ export default function Integrations() {
     }
   }, [cbStatus]); // eslint-disable-line
 
+  // The provider's sign-in opens in its own tab (lib/connectTab.js); this page stays put,
+  // hears how it went and shows the same banner as a return to ?connected=…&status=….
+  useEffect(() => listenForResults(({ provider, status, reason }) => {
+    setBusy(null);
+    queryClient.invalidateQueries({ queryKey: ['integrations', workspace?.id] });
+    setParams({ connected: provider, status, ...(reason ? { reason } : {}) }, { replace: true });
+  }), [workspace?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const connect = async (provider) => {
     setBusy(provider);
     try {
-      const r = await effyApi.connectIntegration(provider, workspace.id);
-      if (r.state === 'redirect' && r.redirect) {
-        window.location.href = r.redirect; // real OAuth handoff
-      } else if (r.state === 'pending_credentials') {
-        setSetup({ provider, steps: r.setup || [] });
-      }
-    } finally {
+      const r = await startConnect(() => effyApi.connectIntegration(provider, workspace.id, 'integrations-tab'));
+      if (r.tab) { watchTab(r.tab, () => setBusy((b) => (b === provider ? null : b))); return; }
+      if (r.state === 'pending_credentials') setSetup({ provider, steps: r.setup || [] });
+      if (r.state !== 'redirect') setBusy(null);
+    } catch {
       setBusy(null);
     }
   };
