@@ -11,7 +11,7 @@ test('with approval required, a post goes through review before it can be schedu
   await test.step('a Business turns on Require approval', async () => {
     await page.goto('/login');
     const r = await api.post('/api/effy/auth/register', {
-      data: { email: `approvals-${Date.now()}@example.in`, password: 'approvals-e2e-1', name: 'Asha Rao', orgName: 'Rao Dental', orgType: 'business' },
+      data: { email: `approvals-${Date.now()}@example.in`, password: 'kettle-e2e-123', name: 'Asha Rao', orgName: 'Rao Dental', orgType: 'business' },
     });
     expect(r.ok()).toBeTruthy();
     ws = (await r.json()).workspaces[0].id;

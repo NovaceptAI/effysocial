@@ -48,7 +48,7 @@ test('a rule breach is found on a schedule, alerts, and only suggests the pause'
   await test.step('sign up, turn the sandbox on and set a pause rule', async () => {
     await page.goto('/login');
     const r = await page.request.post('/api/effy/auth/register', {
-      data: { email: `rules-${Date.now()}@example.in`, password: 'rules-e2e-123', name: 'Asha Rao', orgName: 'Roofseal' },
+      data: { email: `rules-${Date.now()}@example.in`, password: 'kettle-e2e-123', name: 'Asha Rao', orgName: 'Roofseal' },
     });
     expect(r.ok()).toBeTruthy();
     ws = (await r.json()).workspaces[0].id;

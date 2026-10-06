@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { ArrowRight, MailCheck } from 'lucide-react';
+import PasswordField from './PasswordField';
 import { useAppAuth } from '../app/context/AppAuth';
 
 export default function Login() {
@@ -163,10 +164,10 @@ export default function Login() {
               <div className="flex items-center justify-between mb-1.5">
                 <label className="block text-sm font-semibold text-ink-soft">Password</label>
                 {signup
-                  ? <span className="text-xs text-ink-faint">At least 8 characters</span>
+                  ? <span className="text-xs text-ink-faint">At least 8 characters, not a common password</span>
                   : <Link to="/forgot" className="text-xs font-semibold text-coral-ink">Forgot password?</Link>}
               </div>
-              <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
+              <PasswordField required value={password} onChange={(e) => setPassword(e.target.value)} showStrength={signup}
                 autoComplete={signup ? 'new-password' : 'current-password'} placeholder="••••••••"
                 className="w-full rounded-lg border border-line bg-surface px-3.5 py-3 text-sm focus:border-coral focus:ring-2 focus:ring-coral/30 outline-none" />
             </div>

@@ -19,7 +19,7 @@ test('the demo film runs from brief to a playable export', async ({ page }, test
   await test.step('sign up', async () => {
     await page.goto('/login');
     const r = await page.request.post('/api/effy/auth/register', {
-      data: { email: `film-${Date.now()}@example.in`, password: 'demo-film-1', name: 'Demo Director' },
+      data: { email: `film-${Date.now()}@example.in`, password: 'kettle-e2e-123', name: 'Demo Director' },
     });
     expect(r.ok()).toBeTruthy();
   });

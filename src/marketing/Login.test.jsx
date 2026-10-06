@@ -64,7 +64,7 @@ describe('Log in / Create account', () => {
     open('/login?mode=signup');
     expect(await screen.findByRole('tab', { name: 'Create account' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('heading', { name: 'Create your free account' })).toBeInTheDocument();
-    expect(screen.getByText('At least 8 characters')).toBeInTheDocument();
+    expect(screen.getByText('At least 8 characters, not a common password')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Forgot password?' })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Terms of Service' })).toBeInTheDocument();
     await type(user, 'meera@northwind.in', 'secret-123');
@@ -88,6 +88,47 @@ describe('Log in / Create account', () => {
     open('/login?mode=signup&next=%2Fjoin%3Ftoken%3Dabc');
     expect(await screen.findByRole('tab', { name: 'Log in' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByText('Log in to accept your invite.')).toBeInTheDocument();
+  });
+});
+
+describe('Password field', () => {
+  it('Create account shows the password on request and rates its strength', async () => {
+    const user = userEvent.setup();
+    mockApi({ 'GET /bootstrap': signedOut });
+    open('/login?mode=signup');
+    const field = await screen.findByPlaceholderText('••••••••');
+    expect(field).toHaveAttribute('type', 'password');
+    await user.click(screen.getByRole('button', { name: 'Show password' }));
+    expect(field).toHaveAttribute('type', 'text');
+    await user.click(screen.getByRole('button', { name: 'Hide password' }));
+    expect(field).toHaveAttribute('type', 'password');
+    await user.type(field, 'short');
+    expect(screen.getByText('Strength: Too short')).toBeInTheDocument();
+    await user.type(field, 'erhand');
+    expect(screen.getByText('Strength: Weak')).toBeInTheDocument();
+    await user.clear(field);
+    await user.type(field, 'Blue kettle 41 rain');
+    expect(screen.getByText('Strength: Strong')).toBeInTheDocument();
+  });
+
+  it('a password refused by the server is shown as sent', async () => {
+    const user = userEvent.setup();
+    mockApi({ 'GET /bootstrap': signedOut,
+      'POST /auth/register': [400, { status: 'error', message: 'This password is too common and easy to guess. Choose another.' }] });
+    open('/login?mode=signup');
+    await screen.findByRole('tab', { name: 'Create account' });
+    await type(user, 'meera@northwind.in', 'Password1');
+    expect(await screen.findByRole('alert')).toHaveTextContent('This password is too common and easy to guess. Choose another.');
+  });
+
+  it('Log in has the show button but no strength meter', async () => {
+    const user = userEvent.setup();
+    mockApi({ 'GET /bootstrap': signedOut });
+    open('/login');
+    const field = await screen.findByPlaceholderText('••••••••');
+    await user.type(field, 'anything-at-all');
+    expect(screen.getByRole('button', { name: 'Show password' })).toBeInTheDocument();
+    expect(screen.queryByText(/Strength:/)).not.toBeInTheDocument();
   });
 });
 

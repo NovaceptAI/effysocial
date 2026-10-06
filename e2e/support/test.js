@@ -23,7 +23,7 @@ export { expect };
 // The one platform admin the real-engine run shares (EFFY_ADMIN_EMAILS in
 // scripts/e2e_film_server.py). Whichever spec reaches it first creates it, so
 // every spec must sign in with the same password.
-export const PLATFORM_ADMIN = { email: 'admin-e2e@example.in', password: 'plans-admin-123' };
+export const PLATFORM_ADMIN = { email: 'admin-e2e@example.in', password: 'kettle-e2e-123' };
 
 export async function signInPlatformAdmin(page) {
   await page.goto('/login');

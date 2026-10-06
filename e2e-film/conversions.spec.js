@@ -11,7 +11,7 @@ test('an ad lead marked as a purchase keeps a conversion event that says it is n
   await test.step('sign up and publish a lead form', async () => {
     await page.goto('/login');
     const r = await page.request.post('/api/effy/auth/register', {
-      data: { email: `conversions-${Date.now()}@example.in`, password: 'conversions-e2e-123', name: 'Asha Rao', orgName: 'Roofseal' },
+      data: { email: `conversions-${Date.now()}@example.in`, password: 'kettle-e2e-123', name: 'Asha Rao', orgName: 'Roofseal' },
     });
     expect(r.ok()).toBeTruthy();
     ws = (await r.json()).workspaces[0].id;

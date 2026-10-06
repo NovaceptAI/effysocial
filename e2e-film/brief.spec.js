@@ -7,7 +7,7 @@ test('the plan is written from the workspace’s own brief', async ({ page }) =>
   await test.step('a new business has no goal yet, so no plan can be written', async () => {
     await page.goto('/login');
     const r = await page.request.post('/api/effy/auth/register', {
-      data: { email: `brief-${Date.now()}@example.in`, password: 'brief-e2e-123', name: 'Asha Rao', orgName: 'Roofseal Pune', orgType: 'business' },
+      data: { email: `brief-${Date.now()}@example.in`, password: 'kettle-e2e-123', name: 'Asha Rao', orgName: 'Roofseal Pune', orgType: 'business' },
     });
     expect(r.ok()).toBeTruthy();
     await page.goto('/app/plan');

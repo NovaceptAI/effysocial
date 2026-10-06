@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Loader2, Users } from 'lucide-react';
+import PasswordField from './PasswordField';
 import { useAppAuth } from '../app/context/AppAuth';
 import { effyApi } from '../app/api/effyApi';
 
@@ -113,10 +114,10 @@ export default function Join() {
               <span className="block text-sm font-semibold text-ink-soft mb-1.5">Your name</span>
               <input className={input} value={name} onChange={(e) => setName(e.target.value)} maxLength={120} autoComplete="name" />
             </label>
-            <label className="block">
-              <span className="block text-sm font-semibold text-ink-soft mb-1.5">Choose a password</span>
-              <input className={input} type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" placeholder="At least 8 characters" />
-            </label>
+            <div>
+              <label htmlFor="join-password" className="block text-sm font-semibold text-ink-soft mb-1.5">Choose a password</label>
+              <PasswordField id="join-password" className={input} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" placeholder="At least 8 characters" showStrength />
+            </div>
             {error && <p role="alert" className="text-sm rounded-lg bg-error-soft text-error px-3.5 py-2.5">{error}</p>}
             <button type="submit" disabled={busy || !name.trim() || password.length < 8} className={primary}>
               {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Create account and join

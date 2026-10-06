@@ -11,7 +11,7 @@ test('a follow-up emails, is honest about WhatsApp, and waits out its delay', as
   await test.step('sign up and turn on a follow-up with a one-day wait', async () => {
     await page.goto('/login');
     const r = await page.request.post('/api/effy/auth/register', {
-      data: { email: `followups-${Date.now()}@example.in`, password: 'followups-e2e-123', name: 'Asha Rao', orgName: 'Roofseal' },
+      data: { email: `followups-${Date.now()}@example.in`, password: 'kettle-e2e-123', name: 'Asha Rao', orgName: 'Roofseal' },
     });
     expect(r.ok()).toBeTruthy();
     ws = (await r.json()).workspaces[0].id;

@@ -9,7 +9,7 @@ test('a review link is shared, used, and its feedback lands in Reviews', async (
   await test.step('sign up and make the review link', async () => {
     await page.goto('/login');
     const r = await page.request.post('/api/effy/auth/register', {
-      data: { email: `reviews-${Date.now()}@example.in`, password: 'reviews-e2e-123', name: 'Asha Rao', orgName: 'Roofseal' },
+      data: { email: `reviews-${Date.now()}@example.in`, password: 'kettle-e2e-123', name: 'Asha Rao', orgName: 'Roofseal' },
     });
     expect(r.ok()).toBeTruthy();
     await page.goto('/app/reviews');

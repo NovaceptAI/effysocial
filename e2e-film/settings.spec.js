@@ -24,7 +24,7 @@ function totp(secret, ahead = 0) {
 
 test('settings save, and two-factor sign-in works end to end', async ({ page }) => {
   const email = `settings-${Date.now()}@example.in`;
-  const password = 'settings-e2e-123';
+  const password = 'kettle-e2e-123';
 
   await test.step('Profile & settings opens Settings (SHELL-008)', async () => {
     await page.goto('/login');

@@ -10,7 +10,7 @@ test('a form lists its submissions, links to their leads and exports them', asyn
   await test.step('sign up and publish a lead form', async () => {
     await page.goto('/login');
     const r = await page.request.post('/api/effy/auth/register', {
-      data: { email: `forms-${Date.now()}@example.in`, password: 'forms-e2e-123', name: 'Asha Rao', orgName: 'Roofseal' },
+      data: { email: `forms-${Date.now()}@example.in`, password: 'kettle-e2e-123', name: 'Asha Rao', orgName: 'Roofseal' },
     });
     expect(r.ok()).toBeTruthy();
     const ws = (await r.json()).workspaces[0].id;

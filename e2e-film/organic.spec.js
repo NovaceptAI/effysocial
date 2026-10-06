@@ -11,7 +11,7 @@ test('organic analytics shows real numbers, says what is missing, and exports th
   await test.step('sign up, connect Instagram and publish a post with numbers', async () => {
     await page.goto('/login');
     const r = await page.request.post('/api/effy/auth/register', {
-      data: { email: `organic-${Date.now()}@example.in`, password: 'organic-e2e-123', name: 'Asha Rao', orgName: 'Roofseal' },
+      data: { email: `organic-${Date.now()}@example.in`, password: 'kettle-e2e-123', name: 'Asha Rao', orgName: 'Roofseal' },
     });
     expect(r.ok()).toBeTruthy();
     ws = (await r.json()).workspaces[0].id;

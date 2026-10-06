@@ -15,7 +15,7 @@ test('published posts drive Creative Performance, and a template opens Studio', 
   await test.step('sign up, connect Instagram and publish two posts', async () => {
     await page.goto('/login');
     const r = await page.request.post('/api/effy/auth/register', {
-      data: { email: `creative-${stamp}@example.in`, password: 'creative-e2e-123', name: 'Asha Rao', orgName: 'Roofseal' },
+      data: { email: `creative-${stamp}@example.in`, password: 'kettle-e2e-123', name: 'Asha Rao', orgName: 'Roofseal' },
     });
     expect(r.ok()).toBeTruthy();
     ws = (await r.json()).workspaces[0].id;

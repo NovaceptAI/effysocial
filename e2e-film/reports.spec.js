@@ -10,7 +10,7 @@ test('a report downloads as a PDF and a shared link opens read-only until it is 
   await test.step('sign up and start a campaign', async () => {
     await page.goto('/login');
     const r = await page.request.post('/api/effy/auth/register', {
-      data: { email: `reports-${Date.now()}@example.in`, password: 'reports-e2e-123', name: 'Asha Rao', orgName: 'Roofseal' },
+      data: { email: `reports-${Date.now()}@example.in`, password: 'kettle-e2e-123', name: 'Asha Rao', orgName: 'Roofseal' },
     });
     expect(r.ok()).toBeTruthy();
     const ws = (await r.json()).workspaces[0].id;

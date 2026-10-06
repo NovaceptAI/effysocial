@@ -7,7 +7,7 @@ test('trends and competitors name their source, date and coverage', async ({ pag
   await test.step('sign up with no Brand Brain', async () => {
     await page.goto('/login');
     const r = await page.request.post('/api/effy/auth/register', {
-      data: { email: `strategy-${Date.now()}@example.in`, password: 'strategy-e2e-123', name: 'Asha Rao', orgName: 'Roofseal' },
+      data: { email: `strategy-${Date.now()}@example.in`, password: 'kettle-e2e-123', name: 'Asha Rao', orgName: 'Roofseal' },
     });
     expect(r.ok()).toBeTruthy();
   });
