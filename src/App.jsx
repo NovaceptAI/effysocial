@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useRef } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
 import { AppAuthProvider, useAppAuth } from './app/context/AppAuth';
 import Landing from './marketing/Landing';
@@ -65,6 +65,12 @@ export function SignedInGoesToApp({ children }) {
   return children;
 }
 
+// The marketing and public pages render outside .app-root, so their buttons get the button
+// baseline in tailwind.css from this wrapper. display: contents leaves page layout untouched.
+function SitePage() {
+  return <div className="site-page contents"><Outlet /></div>;
+}
+
 // EffySocial — `/` marketing landing → /login → /app product shell.
 // The standalone demo tools live under /tools (and their own routes).
 export default function App() {
@@ -74,24 +80,26 @@ export default function App() {
         <BrowserRouter>
           <Suspense fallback={<AppLoading />}>
           <Routes>
-            <Route path="/" element={<SignedInGoesToApp><Landing /></SignedInGoesToApp>} />
-            <Route path="/login" element={<SignedInGoesToApp><Login /></SignedInGoesToApp>} />
-            <Route path="/verify" element={<Verify />} />
-            <Route path="/join" element={<Join />} />
-            <Route path="/forgot" element={<Forgot />} />
-            <Route path="/reset" element={<Reset />} />
-            <Route path="/connected/:back" element={<ConnectResult />} />
-            <Route path="/f/:slug" element={<PublicForm />} />
-            <Route path="/r/:slug" element={<PublicReviews />} />
-            <Route path="/report/:token" element={<PublicReport />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/p/:slug" element={<PublicLanding />} />
-            <Route path="/s/:slug" element={<PublicSite />} />
-            <Route path="/s/:slug/:pageKey" element={<PublicSite />} />
-            <Route path="/b/:slug" element={<PublicBio />} />
-            <Route path="/onboarding" element={<RequireAuth><Onboarding /></RequireAuth>} />
+            <Route element={<SitePage />}>
+              <Route path="/" element={<SignedInGoesToApp><Landing /></SignedInGoesToApp>} />
+              <Route path="/login" element={<SignedInGoesToApp><Login /></SignedInGoesToApp>} />
+              <Route path="/verify" element={<Verify />} />
+              <Route path="/join" element={<Join />} />
+              <Route path="/forgot" element={<Forgot />} />
+              <Route path="/reset" element={<Reset />} />
+              <Route path="/connected/:back" element={<ConnectResult />} />
+              <Route path="/f/:slug" element={<PublicForm />} />
+              <Route path="/r/:slug" element={<PublicReviews />} />
+              <Route path="/report/:token" element={<PublicReport />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/p/:slug" element={<PublicLanding />} />
+              <Route path="/s/:slug" element={<PublicSite />} />
+              <Route path="/s/:slug/:pageKey" element={<PublicSite />} />
+              <Route path="/b/:slug" element={<PublicBio />} />
+              <Route path="/onboarding" element={<RequireAuth><Onboarding /></RequireAuth>} />
+            </Route>
 
             {/* Authenticated product */}
             <Route

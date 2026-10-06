@@ -31,3 +31,8 @@
 :where(.onboarding-page) button { background-color: transparent; color: inherit; font-family: inherit; cursor: pointer; }
 :where(.onboarding-page) :is(h1, h2, h3, p) { margin: 0; }
 :where(.onboarding-page) :is(ul, ol) { margin: 0; padding: 0; list-style: none; }
+
+/* Marketing and public pages (wrapped in .site-page by App.jsx) are outside .app-root too, so
+   their buttons showed the browser's 2px bevelled border and grey fill. Buttons only, in :where()
+   so every Tailwind utility still wins and `border` utilities draw a solid line. */
+:where(.site-page) button { border-width: 0; border-style: solid; border-color: rgb(var(--ui-line)); background-color: transparent; color: inherit; font-family: inherit; cursor: pointer; }
