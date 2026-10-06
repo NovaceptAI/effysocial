@@ -1,10 +1,11 @@
 import React from 'react';
 import { describe, expect, it } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AppAuthProvider } from '../app/context/AppAuth';
 import Login from './Login';
+import { SignedInGoesToApp } from '../App';
 import { mockApi } from '../test/mockApi';
 import ob from '../test/fixtures/onboarding';
 
@@ -23,7 +24,8 @@ function open(route = '/login') {
     <AppAuthProvider>
       <MemoryRouter initialEntries={[route]}>
         <Routes>
-          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<SignedInGoesToApp><h1>Landing page</h1></SignedInGoesToApp>} />
+          <Route path="/login" element={<SignedInGoesToApp><Login /></SignedInGoesToApp>} />
           <Route path="*" element={<Where />} />
         </Routes>
       </MemoryRouter>
@@ -86,5 +88,35 @@ describe('Log in / Create account', () => {
     open('/login?mode=signup&next=%2Fjoin%3Ftoken%3Dabc');
     expect(await screen.findByRole('tab', { name: 'Log in' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByText('Log in to accept your invite.')).toBeInTheDocument();
+  });
+});
+
+// Someone already signed in skips the landing page and the login screen.
+describe('Signed in already', () => {
+  it('the landing page opens the app', async () => {
+    mockApi({ 'GET /bootstrap': ob.bootstrapCompleted });
+    open('/');
+    expect(await screen.findByRole('status', { name: 'Current page' })).toHaveTextContent('/app');
+    expect(screen.queryByRole('heading', { name: 'Landing page' })).not.toBeInTheDocument();
+  });
+
+  it('the login screen opens the app', async () => {
+    mockApi({ 'GET /bootstrap': ob.bootstrapCompleted });
+    open('/login');
+    expect(await screen.findByRole('status', { name: 'Current page' })).toHaveTextContent('/app');
+  });
+
+  it('an invite link still opens Log in', async () => {
+    mockApi({ 'GET /bootstrap': ob.bootstrapCompleted });
+    open('/login?next=%2Fjoin%3Ftoken%3Dabc');
+    expect(await screen.findByText('Log in to accept your invite.')).toBeInTheDocument();
+  });
+
+  it('signed out, the landing page stays', async () => {
+    const api = mockApi({ 'GET /bootstrap': signedOut });
+    open('/');
+    expect(await screen.findByRole('heading', { name: 'Landing page' })).toBeInTheDocument();
+    await waitFor(() => expect(api.callsTo('GET /bootstrap')).toHaveLength(1));
+    expect(screen.getByRole('heading', { name: 'Landing page' })).toBeInTheDocument();
   });
 });

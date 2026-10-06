@@ -1,5 +1,5 @@
-import React, { Suspense, lazy } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React, { Suspense, lazy, useRef } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
 import { AppAuthProvider, useAppAuth } from './app/context/AppAuth';
 import Landing from './marketing/Landing';
@@ -53,6 +53,18 @@ function RequireAuth({ children }) {
   return children;
 }
 
+// Someone already signed in who opens / or /login goes straight to the app. Decided once, when
+// the session check settles, so signing in or up here still lands where Login sends it.
+// /login?next=… (an invite) is left alone.
+export function SignedInGoesToApp({ children }) {
+  const { user, loading } = useAppAuth();
+  const { search } = useLocation();
+  const signedIn = useRef(null);
+  if (!loading && signedIn.current === null) signedIn.current = !!user;
+  if (signedIn.current && !new URLSearchParams(search).has('next')) return <Navigate to="/app" replace />;
+  return children;
+}
+
 // EffySocial — `/` marketing landing → /login → /app product shell.
 // The standalone demo tools live under /tools (and their own routes).
 export default function App() {
@@ -62,8 +74,8 @@ export default function App() {
         <BrowserRouter>
           <Suspense fallback={<AppLoading />}>
           <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/login" element={<Login />} />
+            <Route path="/" element={<SignedInGoesToApp><Landing /></SignedInGoesToApp>} />
+            <Route path="/login" element={<SignedInGoesToApp><Login /></SignedInGoesToApp>} />
             <Route path="/verify" element={<Verify />} />
             <Route path="/join" element={<Join />} />
             <Route path="/forgot" element={<Forgot />} />
