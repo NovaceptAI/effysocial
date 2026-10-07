@@ -92,6 +92,17 @@ describe('The Clients page follows its switch', () => {
       unmount();
     }
   });
+
+  it('the hub menu has Admin too, and no Settings or Pricing of its own', async () => {
+    const user = userEvent.setup();
+    mockApi({ 'GET /bootstrap': withProfile(settingsFx.bootstrap, business(), 'Workspace admin') });
+    renderApp(<NavRail />, { route: '/app' });
+    expect(await screen.findByRole('link', { name: 'AI Studio' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Pricing' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Settings' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Admin/ }));
+    for (const name of ['Team', 'Billing', 'Settings']) expect(screen.getByRole('link', { name })).toBeInTheDocument();
+  });
 });
 
 describe('Require approval before publishing', () => {

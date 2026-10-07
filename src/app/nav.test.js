@@ -8,6 +8,7 @@ describe('railMode', () => {
     ['/app/campaigns', 'hub', 'pm'], ['/app/home', null, 'pm'],      // marketing routes always the deep rail
     ['/app/studio', 'pm', 'pm'], ['/app/media', 'pm', 'pm'], ['/app/settings', 'pm', 'pm'], ['/app/films/3', 'pm', 'pm'],
     ['/app/studio', 'hub', 'hub'], ['/app/settings', null, 'hub'],   // from the hub, or a fresh load, stay on the hub
+    ['/app/billing', 'pm', 'pm'], ['/app/team', 'hub', 'hub'], ['/app/admin', null, 'hub'], // Admin pages are on both rails
   ])('%s after %s → %s', (path, previous, expected) => {
     expect(railMode(path, previous)).toBe(expected);
   });

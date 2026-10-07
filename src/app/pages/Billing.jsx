@@ -1,5 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { CreditCard, ArrowRight, Sparkles, Zap, Check, Lock, Clock } from 'lucide-react';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { effyApi } from '../api/effyApi';
@@ -27,6 +28,7 @@ function Meter({ label, used, limit, hint }) {
 
 export default function Billing() {
   const { workspace, planInfo: bootInfo } = useWorkspace();
+  const [params] = useSearchParams();
   const { data } = useQuery({
     queryKey: ['billing-credits', workspace?.id],
     queryFn: () => effyApi.billingCredits(workspace.id),
@@ -80,7 +82,7 @@ export default function Billing() {
           <a href="/pricing" target="_blank" rel="noreferrer">
             <Button variant="secondary">Compare plans and prices <ArrowRight className="w-4 h-4" /></Button>
           </a>
-          <PlanCheckout info={info} />
+          <PlanCheckout info={info} pick={params.get('plan')} />
         </Card>
 
         <Card className="p-6 space-y-5">

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { CreditCard, Loader2 } from 'lucide-react';
 import { effyApi } from '../api/effyApi';
@@ -18,13 +18,18 @@ export function usePlanCheckout() {
   return useQuery({ queryKey: ['billing-checkout'], queryFn: effyApi.billingCheckout });
 }
 
-export default function PlanCheckout({ info }) {
+// `pick` (Billing's ?plan=) is the plan chosen on a pricing page: it's outlined and scrolled to.
+export default function PlanCheckout({ info, pick }) {
   const qc = useQueryClient();
   const { refresh } = useAppAuth();
   const { data, isLoading } = usePlanCheckout();
   const [period, setPeriod] = useState('month');
   const [busy, setBusy] = useState(null);
   const [msg, setMsg] = useState(null);
+  const section = useRef(null);
+  useEffect(() => {
+    if (pick && data?.available) section.current?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+  }, [pick, data?.available]);
 
   if (isLoading || !data) return null;
   if (!data.available) return <p className="text-xs text-ink-faint mt-3">{data.reason}</p>;
@@ -72,7 +77,7 @@ export default function PlanCheckout({ info }) {
 
   const prices = Object.fromEntries(data.prices.filter((p) => p.period === period).map((p) => [p.plan, p]));
   return (
-    <section aria-label="Change plan" className="mt-5 border-t border-line pt-4">
+    <section ref={section} aria-label="Change plan" className="mt-5 border-t border-line pt-4">
       <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
         <h4 className="font-bold text-ink flex items-center gap-2"><CreditCard className="w-4 h-4 text-coral-ink" /> Change plan</h4>
         <div role="radiogroup" aria-label="Billing period" className="inline-flex rounded-lg border border-line p-0.5">
@@ -95,7 +100,8 @@ export default function PlanCheckout({ info }) {
           const current = paid?.plan === plan;
           const bigger = paid && !current && PLANS.indexOf(plan) > PLANS.indexOf(paid.plan);
           return (
-            <li key={plan} className={cn('rounded-xl border p-3 flex flex-col gap-2', current ? 'border-coral' : 'border-line')}>
+            <li key={plan} aria-current={pick === plan ? 'true' : undefined}
+              className={cn('rounded-xl border p-3 flex flex-col gap-2', current || pick === plan ? 'border-coral' : 'border-line', pick === plan && 'ring-2 ring-coral/30')}>
               <span className="text-sm font-bold text-ink">{plan}</span>
               <span className="text-lg font-extrabold text-ink tabular-nums">{rupees(p.amount)}<span className="text-xs font-semibold text-ink-faint"> / {period === 'month' ? 'month' : 'year'}</span></span>
               <span className="text-[0.7rem] text-ink-faint">{data.gstPercent ? `Includes ${data.gstPercent}% GST` : 'GST not added'}</span>

@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Billing from './Billing';
+import Pricing from '../../marketing/Pricing';
 import { mockApi } from '../../test/mockApi';
 import { renderApp } from '../../test/render';
 import pay from '../../test/fixtures/payments';
@@ -31,6 +32,20 @@ function fakeRazorpay(outcome) {
 afterEach(() => { delete window.Razorpay; });
 
 describe('Billing → buy a plan', () => {
+  it('signed in, the pricing page’s plan buttons open Billing with that plan picked', async () => {
+    mockApi({ 'GET /bootstrap': pay.bootstrap, 'GET /billing/credits': credits, 'GET /billing/checkout': pay.checkoutTest });
+    const { unmount } = renderApp(<Pricing />, { route: '/pricing' });
+    expect(await screen.findByRole('link', { name: /Choose Pro/ })).toHaveAttribute('href', '/app/billing?plan=Pro');
+    expect(screen.queryByRole('link', { name: /Start free trial/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Open the app' })).toHaveAttribute('href', '/app');
+    unmount();
+
+    renderApp(<Billing />, { route: '/app/billing?plan=Pro' });
+    const section = await screen.findByRole('region', { name: 'Change plan' });
+    const picked = within(section).getAllByRole('listitem').filter((li) => li.getAttribute('aria-current') === 'true');
+    expect(picked.map((li) => li.textContent.slice(0, 3))).toEqual(['Pro']);
+  });
+
   it('pays with Razorpay at the engine’s price, verifies, and shows the new plan', async () => {
     const user = userEvent.setup();
     const opened = fakeRazorpay('pay');

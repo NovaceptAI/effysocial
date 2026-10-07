@@ -41,7 +41,7 @@ export default function PricingApp() {
                 </li>
               ))}
             </ul>
-            <Button className="w-full" variant={p.popular ? 'primary' : 'secondary'} onClick={() => navigate('/app/billing')}>
+            <Button className="w-full" variant={p.popular ? 'primary' : 'secondary'} onClick={() => navigate(p.monthly === 0 ? '/app/billing' : `/app/billing?plan=${p.name}`)}>
               {p.monthly === 0 ? 'Current plan' : 'Choose ' + p.name}
             </Button>
           </Card>

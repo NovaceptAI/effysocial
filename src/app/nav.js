@@ -93,13 +93,14 @@ export const HUB_NAV = [
   { label: 'Media Library', to: '/app/media', icon: Images },
   { label: 'Blog', to: '/app/blog', icon: FileBarChart },
   { label: "What's New", to: '/app/whats-new', icon: Zap },
-  { label: 'Settings', to: '/app/settings', icon: Settings },
-  { label: 'Pricing', to: '/app/pricing', icon: CreditCard },
 ];
+// Groups from NAV that both rails show (Admin: team, billing, settings…).
+export const SHARED_GROUPS = ['Administration'];
 
 // Route prefixes that render the Hub menu; everything else under /app is
 // Performance Marketing (deep menu).
-const HUB_PREFIXES = ['/app/studio', '/app/films', '/app/media', '/app/blog', '/app/whats-new', '/app/settings', '/app/pricing'];
+const HUB_PREFIXES = ['/app/studio', '/app/films', '/app/media', '/app/blog', '/app/whats-new', '/app/settings', '/app/pricing',
+  '/app/clients', '/app/team', '/app/integrations', '/app/billing', '/app/admin'];
 export function isHubRoute(pathname) {
   if (pathname === '/app' || pathname === '/app/') return true;
   return HUB_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
@@ -107,7 +108,7 @@ export function isHubRoute(pathname) {
 
 // Which rail to show (G45). Home is always the hub and Performance Marketing routes
 // always the deep menu; the routes both menus share (AI Studio, Ad Films, Media
-// Library, Settings…) keep whichever rail brought you there, so opening AI Studio from
+// Library, Admin pages…) keep whichever rail brought you there, so opening AI Studio from
 // the marketing rail no longer collapses it to the hub.
 export function railMode(pathname, previous) {
   if (pathname === '/app' || pathname === '/app/') return 'hub';

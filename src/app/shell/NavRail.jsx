@@ -4,7 +4,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
   Compass, Wand2, Send, Inbox, Target, FileInput, BarChart3, Settings, Lock,
 } from 'lucide-react';
-import { NAV, HUB_NAV, railMode } from '../nav';
+import { NAV, HUB_NAV, SHARED_GROUPS, railMode } from '../nav';
 import { FEATURES, featureForPath, hasFeature } from '../plans';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useAppAuth } from '../context/AppAuth';
@@ -128,11 +128,11 @@ export default function NavRail({ mobileOpen = false, onNavigate }) {
           <RailItem key={it.to} to={it.to} end={it.end} icon={it.icon} label={it.label} onNavigate={onNavigate} />
         ))}
 
-        {/* Deep Performance-Marketing menu — Home + grouped flyouts */}
+        {/* Deep Performance-Marketing menu — Home + grouped flyouts; the hub shows the shared groups */}
         {!hub && home && (
           <RailItem to={home.to} end={home.end} icon={home.icon} label="Home" onNavigate={onNavigate} />
         )}
-        {!hub && groups.map((grp) => {
+        {(hub ? groups.filter((grp) => SHARED_GROUPS.includes(grp.group)) : groups).map((grp) => {
           const visibleItems = grp.items.filter((item) => (switches.clientsPage || !CLIENTS_ONLY.has(item.to)) && (!item.adminOnly || authUser?.is_admin));
           if (!visibleItems.length) return null;
           const GIcon = GROUP_ICONS[grp.group] || Compass;

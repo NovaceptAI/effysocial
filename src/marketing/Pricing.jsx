@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, Minus, ArrowRight, Sparkles } from 'lucide-react';
 import { LegalFooterLinks } from './legal/LegalLayout';
+import { useAppAuth } from '../app/context/AppAuth';
 
 const PLANS = [
   {
@@ -65,6 +66,8 @@ const inr = (n) => '₹' + n.toLocaleString('en-IN');
 
 export default function Pricing() {
   const [yearly, setYearly] = useState(false);
+  // Signed in already: the buttons open Billing for the profile in use, not sign-up.
+  const { user } = useAppAuth();
 
   return (
     <div className="min-h-dvh bg-canvas text-ink font-sans overflow-x-hidden">
@@ -74,8 +77,14 @@ export default function Pricing() {
             <img src="/brand/effysocial-logo-trim.png" alt="EffySocial" className="w-auto" style={{ height: 26 }} />
           </Link>
           <div className="flex items-center gap-2">
-            <Link to="/login" className="px-4 py-2 rounded-lg text-sm font-bold text-ink hover:bg-surface2 transition">Log in</Link>
-            <Link to="/login?mode=signup" className="px-4 py-2 rounded-[11px] text-sm font-bold bg-coral-btn text-white shadow-coral hover:brightness-105 transition-all">Get started</Link>
+            {user ? (
+              <Link to="/app" className="px-4 py-2 rounded-[11px] text-sm font-bold bg-coral-btn text-white shadow-coral hover:brightness-105 transition-all">Open the app</Link>
+            ) : (
+              <>
+                <Link to="/login" className="px-4 py-2 rounded-lg text-sm font-bold text-ink hover:bg-surface2 transition">Log in</Link>
+                <Link to="/login?mode=signup" className="px-4 py-2 rounded-[11px] text-sm font-bold bg-coral-btn text-white shadow-coral hover:brightness-105 transition-all">Get started</Link>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -124,11 +133,11 @@ export default function Pricing() {
               <p className={`text-xs mt-1 ${p.popular ? 'text-white/55' : 'text-ink-faint'}`}>
                 {p.monthly === 0 ? 'No credit card required' : `${yearly ? `${inr(p.yearly)}/yr · ` : ''}$${yearly ? p.usdY + '/yr' : p.usdM + '/mo'} · ex-GST`}
               </p>
-              <Link to="/login?mode=signup"
+              <Link to={!user ? '/login?mode=signup' : p.monthly === 0 ? '/app/billing' : `/app/billing?plan=${p.name}`}
                 className={`mt-5 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-[12px] font-bold transition-all ${p.popular
                   ? 'bg-white text-ink hover:-translate-y-0.5'
                   : 'bg-coral-btn text-white shadow-coral hover:shadow-coral-lg hover:brightness-105'}`}>
-                {p.monthly === 0 ? 'Start for free' : 'Start free trial'} <ArrowRight className="w-4 h-4" />
+                {user ? (p.monthly === 0 ? 'See your plan' : `Choose ${p.name}`) : p.monthly === 0 ? 'Start for free' : 'Start free trial'} <ArrowRight className="w-4 h-4" />
               </Link>
               <ul className="mt-6 space-y-2.5">
                 {p.highlights.map((h) => (
