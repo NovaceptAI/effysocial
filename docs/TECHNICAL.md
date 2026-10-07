@@ -271,7 +271,8 @@ events).
   budget for starting new work; each run is recorded in `effy_scheduler_jobs`
   (Admin → Scheduler, with Run now). Jobs: `publish-due-posts`,
   `follow-publishing-posts`, `resume-followups` (every minute), `check-ad-rules`
-  (every 30 minutes; alerts only, never pauses a campaign) and `check-connections`
+  (every 30 minutes; alerts only, never pauses a campaign), `listen-instagram` (every 30
+  minutes; Instagram comments and tags into Social Listening) and `check-connections`
   (hourly; asks Meta about each connection every 12 hours).
 - Full contract: [Integrations-Framework.md](modules/Integrations-Framework.md).
 

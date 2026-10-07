@@ -377,6 +377,9 @@ export const effyApi = {
   // Analytics
   organicAnalytics: (workspaceId) => http(`/analytics/organic?workspace=${encodeURIComponent(workspaceId)}`),
   instagramInsights: (workspaceId) => http(`/insights/instagram?workspace=${encodeURIComponent(workspaceId)}`),
+  listening: (workspaceId) => http(`/listening?workspace=${encodeURIComponent(workspaceId)}`),
+  refreshListening: (workspaceId) =>
+    http('/listening/refresh', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workspace: workspaceId }) }),
   leadAnalytics: (workspaceId) => http(`/analytics/leads?workspace=${encodeURIComponent(workspaceId)}`),
   revenueAnalytics: (workspaceId) => http(`/analytics/revenue?workspace=${encodeURIComponent(workspaceId)}`),
   creativeAnalytics: (workspaceId) => http(`/analytics/creative?workspace=${encodeURIComponent(workspaceId)}`),

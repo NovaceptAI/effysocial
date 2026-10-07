@@ -1,10 +1,10 @@
 # Module: Strategy — Marketing Plan, Plan brief, Trends, Competitors, Ideas, Social Listening
 
-> The planning layer that feeds everything downstream. _Status (28 Sep 2026): ✅ Marketing Plan on SOSTAC (6.18) written from each workspace's own plan brief (6.17) · ✅ Trends and Competitors with sources and dates · ✅ Ideas board · ⬜ Social Listening (needs a data provider, 6.13)._
+> The planning layer that feeds everything downstream. _Status (28 Sep 2026): ✅ Marketing Plan on SOSTAC (6.18) written from each workspace's own plan brief (6.17) · ✅ Trends and Competitors with sources and dates · ✅ Ideas board · 🟡 Social Listening part 1 (7 Oct 2026): Instagram comments and tags; sentiment and intent, and mentions beyond the account (6.13), still to come._
 > Spec ref: §9
 
 ## 1. What it does
-**Marketing Plan** turns a workspace's plan brief, Brand Brain and its own counted numbers into a four-week plan on **SOSTAC** — Situation, Objectives, Strategy, Tactics, Action, Control — and checks each week against what really happened. **Plan brief** says what is marketed in the workspace (a business or a personal brand) and holds its one goal, offer, customer, ad budget, posting capacity and website. **Trends** and **Competitors** surface angles, each labelled with where it comes from. **Ideas** collects post ideas. Social Listening waits on a data provider.
+**Marketing Plan** turns a workspace's plan brief, Brand Brain and its own counted numbers into a four-week plan on **SOSTAC** — Situation, Objectives, Strategy, Tactics, Action, Control — and checks each week against what really happened. **Plan brief** says what is marketed in the workspace (a business or a personal brand) and holds its one goal, offer, customer, ad budget, posting capacity and website. **Trends** and **Competitors** surface angles, each labelled with where it comes from. **Ideas** collects post ideas. **Social Listening** lists comments on the connected Instagram account's recent posts and posts that tag it, refreshed every 30 minutes or on Refresh.
 
 ## 2. Where it lives
 - **Routes:** `/app/plan`, `/app/trends`, `/app/competitors`, `/app/ideas`, `/app/listening`.
@@ -40,7 +40,7 @@
 Groq writes the plan on SOSTAC from the brief in words (kind — a personal brand is written in the person's voice — goal and target, or a request to suggest one; offer; customer; budget or *organic only*; capacity; website; connected channels; season), Brand Brain and its documents, and the workspace's counted numbers with today's baseline for the goal. It is told to use only those numbers, never to invent statistics, results, prices, testimonials or competitor figures, and to make the first KPI the objective itself. The output is normalised (3–5 pillars adding to 100%, known channels only, up to 12 ideas, budget rows scaled to add up exactly to the brief's budget, up to 3 campaigns within the four weeks with a known objective and the plan's own channels) and the cadence is cut to the team's capacity, every channel keeping at least one post a week when there's room; an unusable answer is refused (503) and nothing is stored. The numbers, the baseline, the target when the brief sets one, and the weekly plan are the engine's, never the model's.
 
 ## 7. Integrations
-Connected channels are named to the plan. Trends' themes come from Brand Brain or general guidance; Social Listening needs a provider (6.13).
+Connected channels are named to the plan. Trends' themes come from Brand Brain or general guidance. Social Listening reads the connected Instagram account through Graph v25 (`listening.py`, needs `instagram_manage_comments`); mentions anywhere else need a provider (6.13).
 
 ## 8. States
 No brief goal (generate disabled, the brief lists what's missing) · no plan yet · writing (under a minute) · plan on SOSTAC · accepted · an older plan (its own layout, with a note) · a week's goal not measurable (*not measured*, and why) · the four weeks over (*write a new plan*) · refused (503, try again) · too many plans this hour (429) · read-only role (sees, can't write or accept).
@@ -51,4 +51,4 @@ No brief goal (generate disabled, the brief lists what's missing) · no plan yet
 ## 10. Open questions / TODO
 - Calls can't be counted yet (no call tracking), so a *Phone calls* goal has no baseline or weekly actual.
 - Reach per week needs Instagram's daily reach series; engagement per week counts only posts whose Instagram numbers have been read.
-- Social Listening data source (6.13).
+- Social Listening: sentiment and intent (part 2); mentions beyond the connected account need a data source (6.13). Tests: `test_effy_listening.py`, `SocialListening.test.jsx`.
