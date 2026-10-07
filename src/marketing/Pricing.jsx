@@ -108,7 +108,7 @@ export default function Pricing() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 items-start">
           {PLANS.map((p) => (
             <div key={p.id} className={`relative rounded-2xl p-6 flex flex-col ${p.popular
-              ? 'bg-rail text-white shadow-e3 ring-1 ring-coral/40 lg:-mt-3 lg:mb-3'
+              ? 'bg-ink text-white shadow-e3 ring-1 ring-coral/40 lg:-mt-3 lg:mb-3'
               : 'bg-card-sheen border border-hair shadow-e2'}`}>
               {p.popular && (
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[0.65rem] font-bold uppercase tracking-wide bg-aurora text-white px-3 py-1 rounded-full shadow-coral">Most popular</span>
